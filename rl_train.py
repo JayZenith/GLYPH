@@ -84,7 +84,7 @@ def build_command(args: argparse.Namespace) -> list[str]:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Launch PRIME-RL on TASK data.")
-    parser.add_argument("--model", default="Qwen/Qwen3-4B", help="Base or checkpoint HF model id.")
+    parser.add_argument("--model", required=True, help="Path or HF id of the SFT checkpoint to RL from. Required to avoid silently RL-ing on top of an already-post-trained model.")
     parser.add_argument("--data", default="traces.processed.jsonl", help="Prompt dataset file.")
     parser.add_argument("--output", type=Path, default=Path("outputs"), help="Output directory for PRIME-RL artifacts.")
     parser.add_argument("--max-steps", type=int, default=200, help="Number of trainer/orchestrator steps.")

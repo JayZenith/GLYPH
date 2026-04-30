@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 """
-Count tokens in TASK traces JSONL file.
+Count tokens in TASK traces JSONL file using the target model tokenizer.
 """
 
 import argparse
 import json
 from pathlib import Path
 
-try:
-    import tiktoken
-    HAS_TIKTOKEN = True
-except ImportError:
-    HAS_TIKTOKEN = False
+from transformers import AutoTokenizer
 
 
 def estimate_tokens_simple(text: str) -> int:
@@ -19,24 +15,27 @@ def estimate_tokens_simple(text: str) -> int:
     return len(text) // 4
 
 
-def estimate_tokens_tiktoken(text: str, encoding_name: str = "cl100k_base") -> int:
-    """Accurate token count using tiktoken."""
-    enc = tiktoken.get_encoding(encoding_name)
-    return len(enc.encode(text))
+def percentile(values: list[int], pct: float) -> int:
+    """Return an integer percentile using nearest-rank semantics."""
+    if not values:
+        return 0
+    sorted_values = sorted(values)
+    index = int((len(sorted_values) - 1) * pct)
+    return sorted_values[index]
 
 
-def analyze_traces(file_path: Path, use_tiktoken: bool = True):
+def analyze_traces(file_path: Path, model_name: str, use_simple: bool = False):
     """Analyze token counts in traces JSONL."""
     if not file_path.exists():
         print(f"Error: {file_path} not found")
         return
     
     print(f"Analyzing {file_path}...")
-    
-    if use_tiktoken and not HAS_TIKTOKEN:
-        print("Warning: tiktoken not installed, using simple estimation")
-        print("Install with: pip install tiktoken")
-        use_tiktoken = False
+
+    tokenizer = None
+    if not use_simple:
+        print(f"Loading tokenizer: {model_name}")
+        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     
     traces = []
     total_tokens = 0
@@ -47,10 +46,16 @@ def analyze_traces(file_path: Path, use_tiktoken: bool = True):
                 item = json.loads(line)
                 trace_text = item.get("trace", "")
                 
-                if use_tiktoken:
-                    tokens = estimate_tokens_tiktoken(trace_text)
-                else:
+                if use_simple:
                     tokens = estimate_tokens_simple(trace_text)
+                else:
+                    tokens = len(
+                        tokenizer(
+                            trace_text,
+                            truncation=False,
+                            add_special_tokens=True,
+                        )["input_ids"]
+                    )
                 
                 traces.append({
                     "index": i,
@@ -70,7 +75,9 @@ def analyze_traces(file_path: Path, use_tiktoken: bool = True):
     min_tokens = min(trace_tokens)
     max_tokens = max(trace_tokens)
     avg_tokens = sum(trace_tokens) // len(trace_tokens)
-    median_tokens = sorted(trace_tokens)[len(trace_tokens) // 2]
+    median_tokens = percentile(trace_tokens, 0.50)
+    p95_tokens = percentile(trace_tokens, 0.95)
+    p99_tokens = percentile(trace_tokens, 0.99)
     
     print(f"\n{'='*60}")
     print(f"Total traces: {len(traces):,}")
@@ -81,12 +88,12 @@ def analyze_traces(file_path: Path, use_tiktoken: bool = True):
     print(f"  Max:     {max_tokens:,} tokens")
     print(f"  Average: {avg_tokens:,} tokens")
     print(f"  Median:  {median_tokens:,} tokens")
+    print(f"  P95:     {p95_tokens:,} tokens")
+    print(f"  P99:     {p99_tokens:,} tokens")
     
     # Training estimates (rough)
     print(f"\n{'='*60}")
     print("Training estimates (very rough):")
-    print(f"  GPT-3.5-turbo fine-tune cost: ~${total_tokens * 0.008 / 1000:.2f}")
-    print(f"  GPT-4o-mini fine-tune cost:   ~${total_tokens * 0.0003 / 1000:.2f}")
     print(f"  Base model SFT (1 epoch):     ~{total_tokens:,} tokens")
     
     # Distribution
@@ -127,13 +134,18 @@ def main():
     parser.add_argument(
         "--simple",
         action="store_true",
-        help="Use simple estimation instead of tiktoken"
+        help="Use simple character-based estimation instead of the HF tokenizer"
+    )
+    parser.add_argument(
+        "--model",
+        default="Qwen/Qwen3-4B-Base",
+        help="HF tokenizer/model name to use for token counting"
     )
     
     args = parser.parse_args()
     file_path = Path(args.file)
     
-    analyze_traces(file_path, use_tiktoken=not args.simple)
+    analyze_traces(file_path, model_name=args.model, use_simple=args.simple)
 
 
 if __name__ == "__main__":

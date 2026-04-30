@@ -34,6 +34,7 @@ from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 class TrainConfig:
     # Model
     model_name: str = "Qwen/Qwen3-4B-Base"
+    tokenizer_name: Optional[str] = None
     
     # Data
     data_path: str = "traces.processed.jsonl"
@@ -52,7 +53,7 @@ class TrainConfig:
     # LoRA (set use_lora=False for full fine-tune)
     use_lora: bool = False
     lora_r: int = 64
-    lora_alpha: int = 128
+    lora_alpha: int = 64
     lora_dropout: float = 0.05
     lora_target_modules: list = field(default_factory=lambda: [
         "q_proj", "k_proj", "v_proj", "o_proj",
@@ -167,10 +168,11 @@ def setup_model_and_tokenizer(config: TrainConfig):
     """Load model and tokenizer."""
     
     print(f"Loading model: {config.model_name}")
+    tokenizer_name = config.tokenizer_name or config.model_name
     
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(
-        config.model_name,
+        tokenizer_name,
         trust_remote_code=True,
         padding_side="right",
     )
@@ -221,9 +223,10 @@ def setup_model_and_tokenizer(config: TrainConfig):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="Qwen/Qwen3-4B")
+    parser.add_argument("--model", type=str, default="Qwen/Qwen3-4B-Base")
     parser.add_argument("--data", type=str, default="traces.processed.jsonl")
     parser.add_argument("--output", type=str, default="./checkpoints")
+    parser.add_argument("--tokenizer", type=str, help="Tokenizer name/path; defaults to --model")
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--grad-accum", type=int, default=8)
@@ -231,6 +234,7 @@ def main():
     parser.add_argument("--max-seq-length", type=int, default=8192)
     parser.add_argument("--use-lora", action="store_true")
     parser.add_argument("--lora-r", type=int, default=64)
+    parser.add_argument("--lora-alpha", type=int, default=64)
     parser.add_argument("--resume", action="store_true", help="Resume from latest checkpoint")
     parser.add_argument("--resume-from", type=str, help="Resume from specific checkpoint")
     parser.add_argument("--save-steps", type=int, default=500)
@@ -240,6 +244,7 @@ def main():
     # Build config
     config = TrainConfig(
         model_name=args.model,
+        tokenizer_name=args.tokenizer,
         data_path=args.data,
         output_dir=args.output,
         num_train_epochs=args.epochs,
@@ -249,6 +254,7 @@ def main():
         max_seq_length=args.max_seq_length,
         use_lora=args.use_lora,
         lora_r=args.lora_r,
+        lora_alpha=args.lora_alpha,
         save_steps=args.save_steps,
     )
     
@@ -343,10 +349,17 @@ def main():
     print("\nSaving final model...")
     trainer.save_model(os.path.join(config.output_dir, "final"))
     tokenizer.save_pretrained(os.path.join(config.output_dir, "final"))
+
+    if config.use_lora:
+        print("Merging LoRA adapter into base model...")
+        merged_model = trainer.model.merge_and_unload()
+        merged_dir = os.path.join(config.output_dir, "merged")
+        merged_model.save_pretrained(merged_dir)
+        tokenizer.save_pretrained(merged_dir)
+        print(f"Merged checkpoint saved to: {merged_dir}")
     
     print("Training complete!")
 
 
 if __name__ == "__main__":
     main()
-

@@ -162,6 +162,24 @@ response「Final answer to user.」※ [result1 • thought1] ⊨ 3
 7. PARAM DEFINITIONS: Every param needs type ↦ X or enum ↦ [...], never leave undefined
 8. ONE ACT PER PHASE: Don't split sequential thinking into multiple act blocks. One act block can have one think step - if you need extended reasoning, put it all in ONE think, not separate acts"""
 
+NO_THINK_TAGS_RULE = """
+## CRITICAL - No internal reasoning tags
+- DO NOT output <think>...</think> or any other hidden reasoning tags.
+- All reasoning must be written directly in TASK format act { think ↦ ... } steps.
+"""
+
+TRACE_SYSTEM_PROMPT_NO_THINK = TRACE_SYSTEM_PROMPT + "\n" + NO_THINK_TAGS_RULE
+BOOTSTRAP_RULES = """
+
+## BOOTSTRAP MODE - STRICT OUTPUT SHAPE
+- Generate SINGLE-TURN traces only
+- Exactly one user message, one plan, and one final response
+- Keep traces short: usually 2-5 act phases total
+- Stop immediately after the final response
+- No follow-ups, no extra plans, no repeated same-tool loops, no trailing junk
+"""
+TRACE_SYSTEM_PROMPT_BOOTSTRAP = TRACE_SYSTEM_PROMPT_NO_THINK + BOOTSTRAP_RULES
+
 
 TRACE_USER_PROMPT = """Generate a complete TASK format trace for this scenario:
 
@@ -181,6 +199,30 @@ Generate the trace with:
 4. Act phases ({act_instruction}) - aim for {num_steps} total
 5. Response referencing sources
 {multi_turn_instruction}
+
+Output ONLY the TASK format trace, no explanations."""
+
+BOOTSTRAP_TRACE_USER_PROMPT = """Generate a complete TASK format trace for this scenario:
+
+**Domain:** {domain}
+**System Prompt:** {system_prompt}
+**Initial User Request:** {user_request}
+**Target Length:** {num_steps} total act phases
+**Tools:**
+{tools_desc}
+
+Generate the trace with:
+1. System message {tools_instruction}
+2. One user message (tagged usr1)
+3. One plan with todo list and rationale
+4. A short sequence of act/result phases ({act_instruction}) - aim for {num_steps} total
+5. Exactly one final response
+
+Critical constraints:
+- Single-turn only
+- No follow-ups
+- No content after the final response
+- Prefer 2-5 act phases and finish cleanly
 
 Output ONLY the TASK format trace, no explanations."""
 
@@ -217,6 +259,22 @@ INLINE_TRACE_PROMPT = """Generate a complete, realistic TASK format trace.
 {error_instruction}
 
 Output ONLY the TASK format trace, no explanations. Make sure the scenario feels real and grounded."""
+
+BOOTSTRAP_INLINE_TRACE_PROMPT = """Generate a strict bootstrap TASK format trace.
+
+**Parameters:**
+- Domain: {domain}
+- Has tools: {has_tools}
+- Target length: {num_steps} act phases total
+
+Requirements:
+1. Invent one realistic single-turn scenario
+2. Create appropriate tools only if needed
+3. Generate exactly one user turn, one plan, a short act/result sequence, and one final response
+4. Stop immediately after the response
+5. Do not add follow-ups, extra plans, trailing junk, or repeated same-tool loops
+
+Output ONLY the TASK format trace, no explanations."""
 
 DOMAINS = ["coding", "data_analysis", "research", "writing", "planning", "math", "troubleshooting", "creative", "education", "business"]
 
@@ -266,7 +324,12 @@ response「The weather in 94103 today is 68 degrees Fahrenheit and overcast. Tod
 # Generation
 # ============================================================================
 
-def build_trace_messages(scenario: Scenario, include_tool_error: bool = False, num_steps: int = 5) -> list[dict]:
+def build_trace_messages(
+    scenario: Scenario,
+    include_tool_error: bool = False,
+    num_steps: int = 5,
+    bootstrap: bool = False,
+) -> list[dict]:
     """Build the messages for trace generation."""
     has_tools = len(scenario.tools) > 0
     has_follow_ups = len(scenario.follow_up_requests) > 0
@@ -286,20 +349,29 @@ def build_trace_messages(scenario: Scenario, include_tool_error: bool = False, n
         tool_error_instruction = ""
     
     # Follow-ups section
-    if has_follow_ups:
+    if bootstrap:
+        follow_ups_section = ""
+        multi_turn_instruction = ""
+        prompt_template = BOOTSTRAP_TRACE_USER_PROMPT
+        system_prompt = TRACE_SYSTEM_PROMPT_BOOTSTRAP
+    elif has_follow_ups:
         follow_ups_section = "**Follow-up requests:**\n" + "\n".join(
             f"  - usr{i+2}: \"{req}\"" for i, req in enumerate(scenario.follow_up_requests)
         )
         multi_turn_instruction = MULTI_TURN_INSTRUCTION
+        prompt_template = TRACE_USER_PROMPT
+        system_prompt = TRACE_SYSTEM_PROMPT_NO_THINK
     else:
         follow_ups_section = ""
         multi_turn_instruction = ""
+        prompt_template = TRACE_USER_PROMPT
+        system_prompt = TRACE_SYSTEM_PROMPT_NO_THINK
     
     return [
-        {"role": "system", "content": TRACE_SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": f"Here's an example trace:\n\n{EXAMPLE_TRACE}"},
         {"role": "assistant", "content": "I understand the TASK format. I'll generate traces following this exact syntax with proper tags, references, confidence scores, and todo satisfaction markers."},
-        {"role": "user", "content": TRACE_USER_PROMPT.format(
+        {"role": "user", "content": prompt_template.format(
             domain=scenario.domain,
             system_prompt=scenario.system_prompt,
             user_request=scenario.user_request,
@@ -315,11 +387,29 @@ def build_trace_messages(scenario: Scenario, include_tool_error: bool = False, n
 
 
 class TraceGenerator:
-    def __init__(self, model: str = "gpt-5-mini", concurrency: int = 5, error_rate: float = 0.2, 
-                 no_tools_rate: float = 0.2, follow_up_rate: float = 0.3,
-                 min_steps: int = 5, max_steps: int = 50):
-        self.async_client = AsyncOpenAI()
-        self.sync_client = OpenAI()
+    def __init__(
+        self,
+        model: str = "gpt-5-mini",
+        concurrency: int = 5,
+        error_rate: float = 0.2,
+        no_tools_rate: float = 0.2,
+        follow_up_rate: float = 0.3,
+        min_steps: int = 5,
+        max_steps: int = 50,
+        bootstrap: bool = False,
+        reject_think: bool = True,
+        reject_severe_warnings: bool = True,
+        base_url: str | None = None,
+        api_key: str | None = None,
+    ):
+        client_kwargs = {}
+        if base_url:
+            client_kwargs["base_url"] = base_url
+        if api_key:
+            client_kwargs["api_key"] = api_key
+        self._client_kwargs = client_kwargs
+        self.async_client = None
+        self.sync_client = OpenAI(**client_kwargs)
         self.model = model
         self.semaphore = asyncio.Semaphore(concurrency)
         self.error_rate = error_rate
@@ -327,13 +417,42 @@ class TraceGenerator:
         self.follow_up_rate = follow_up_rate
         self.min_steps = min_steps
         self.max_steps = max_steps
+        self.bootstrap = bootstrap
+        self.reject_think = reject_think
+        self.reject_severe_warnings = reject_severe_warnings
+
+    def _get_async_client(self) -> AsyncOpenAI:
+        if self.async_client is None:
+            self.async_client = AsyncOpenAI(**self._client_kwargs)
+        return self.async_client
+
+    def _passes_bootstrap_shape(self, trace_text: str) -> bool:
+        if trace_text.count("user「") != 1:
+            return False
+        if trace_text.count("response「") != 1:
+            return False
+        if trace_text.count("plan {") != 1:
+            return False
+        if trace_text.count("act {") > 5 or trace_text.count("result {") > 5:
+            return False
+        if "łazienk" in trace_text or "permission ↦" in trace_text:
+            return False
+        response_idx = trace_text.find("response「")
+        if response_idx == -1:
+            return False
+        tail = trace_text[response_idx:]
+        end_quote = tail.find("」")
+        if end_quote == -1:
+            return False
+        trailing = tail[end_quote + 1 :].strip()
+        return not any(tok in trailing for tok in ["user「", "plan {", "act {", "result {", "tool {"])
     
     async def generate_scenarios(self, count: int, no_tools: bool = False, include_follow_ups: bool = False) -> list[Scenario]:
         """Generate diverse scenarios for trace generation."""
         system_prompt = SCENARIO_NO_TOOLS_PROMPT if no_tools else SCENARIO_SYSTEM_PROMPT
         follow_up_instruction = FOLLOW_UP_INSTRUCTION_YES if include_follow_ups else FOLLOW_UP_INSTRUCTION_NO
         async with self.semaphore:
-            response = await self.async_client.beta.chat.completions.parse(
+            response = await self._get_async_client().beta.chat.completions.parse(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -354,9 +473,14 @@ class TraceGenerator:
             num_steps = random.randint(self.min_steps, self.max_steps)
         
         async with self.semaphore:
-            response = await self.async_client.chat.completions.create(
+            response = await self._get_async_client().chat.completions.create(
                 model=self.model,
-                messages=build_trace_messages(scenario, include_tool_error=include_tool_error, num_steps=num_steps),
+                messages=build_trace_messages(
+                    scenario,
+                    include_tool_error=include_tool_error,
+                    num_steps=num_steps,
+                    bootstrap=self.bootstrap,
+                ),
             )
             return response.choices[0].message.content.strip()
     
@@ -368,7 +492,7 @@ class TraceGenerator:
         follow_up_instruction = MULTI_TURN_INSTRUCTION if has_follow_ups else ""
         error_instruction = "Include a realistic tool error and recovery." if include_error else ""
         
-        prompt = INLINE_TRACE_PROMPT.format(
+        prompt = (BOOTSTRAP_INLINE_TRACE_PROMPT if self.bootstrap else INLINE_TRACE_PROMPT).format(
             domain=domain,
             has_tools=has_tools,
             has_follow_ups=has_follow_ups,
@@ -379,10 +503,10 @@ class TraceGenerator:
         )
         
         async with self.semaphore:
-            response = await self.async_client.chat.completions.create(
+            response = await self._get_async_client().chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": TRACE_SYSTEM_PROMPT},
+                    {"role": "system", "content": TRACE_SYSTEM_PROMPT_NO_THINK},
                     {"role": "user", "content": f"Here's an example trace:\n\n{EXAMPLE_TRACE}"},
                     {"role": "assistant", "content": "I understand the TASK format. I'll generate traces following this exact syntax."},
                     {"role": "user", "content": prompt}
@@ -418,6 +542,48 @@ class TraceGenerator:
         tasks = [generate_with_retry(s, i) for i, s in enumerate(all_scenarios)]
         outputs = await asyncio.gather(*tasks)
         return [r for r in outputs if r is not None]
+
+    async def generate_batch_realtime_inline(self, count: int, progress_callback=None, max_retries: int = 3) -> list[dict]:
+        """Generate traces in real-time with inline scenarios for OpenAI-compatible backends."""
+
+        async def generate_with_retry(idx: int) -> dict | None:
+            for attempt in range(max_retries):
+                try:
+                    if progress_callback:
+                        retry_str = f" (retry {attempt})" if attempt > 0 else ""
+                        progress_callback(f"Generating inline trace {idx + 1}/{count}{retry_str}...")
+
+                    has_tools = random.random() > self.no_tools_rate
+                    has_follow_ups = False if self.bootstrap else (random.random() < self.follow_up_rate)
+                    include_error = False if self.bootstrap else (has_tools and random.random() < self.error_rate)
+                    num_steps = random.randint(self.min_steps, self.max_steps)
+
+                    trace_text = await self.generate_trace_inline(
+                        has_tools=has_tools,
+                        has_follow_ups=has_follow_ups,
+                        include_error=include_error,
+                        num_steps=num_steps,
+                    )
+                    validation = validate_trace(trace_text)
+                    if validation.valid and (not self.bootstrap or self._passes_bootstrap_shape(trace_text)):
+                        return {
+                            "trace": trace_text,
+                            "validation": {
+                                "tags_defined": list(validation.tags_defined),
+                                "todos_defined": list(validation.todos_defined),
+                                "todos_satisfied": list(validation.todos_satisfied),
+                            },
+                        }
+                    if not progress_callback and attempt == max_retries - 1:
+                        print(f"\n  Inline trace {idx + 1} invalid: {validation.errors}")
+                except Exception as e:
+                    if attempt == max_retries - 1 and not progress_callback:
+                        print(f"\n  Inline trace {idx + 1} failed: {e}")
+            return None
+
+        tasks = [generate_with_retry(i) for i in range(count)]
+        outputs = await asyncio.gather(*tasks)
+        return [r for r in outputs if r is not None]
     
     async def _generate_all_scenarios(self, count: int, progress_callback=None) -> list[Scenario]:
         """Generate all scenarios in batches of 10, with variety in tools and follow-ups."""
@@ -426,9 +592,9 @@ class TraceGenerator:
         tools_count = count - no_tools_count
         
         # Within each category, split by follow-ups
-        tools_with_followup = int(tools_count * self.follow_up_rate)
+        tools_with_followup = 0 if self.bootstrap else int(tools_count * self.follow_up_rate)
         tools_without_followup = tools_count - tools_with_followup
-        no_tools_with_followup = int(no_tools_count * self.follow_up_rate)
+        no_tools_with_followup = 0 if self.bootstrap else int(no_tools_count * self.follow_up_rate)
         no_tools_without_followup = no_tools_count - no_tools_with_followup
         
         all_scenarios = []
@@ -457,12 +623,33 @@ class TraceGenerator:
         random.shuffle(all_scenarios)
         return all_scenarios[:count]
     
+    @staticmethod
+    def _is_severe_warning(w: str) -> bool:
+        return (
+            w.startswith("References to undefined tags:")
+            or w.startswith("Unsatisfied todo items:")
+            or w.startswith("Satisfaction markers for undefined todos:")
+        )
+
     def _validate_and_wrap(self, scenario: Scenario, trace_text: str, idx: int, silent: bool = False) -> dict | None:
         """Validate trace and wrap with metadata."""
+        if self.reject_think and ("<think>" in trace_text or "</think>" in trace_text):
+            if not silent:
+                print(f"\n  Trace {idx + 1} rejected: contains <think> tag(s)")
+            return None
         validation = validate_trace(trace_text)
         if not validation.valid:
             if not silent:
                 print(f"\n  Trace {idx + 1} invalid: {validation.errors}")
+            return None
+
+        if self.reject_severe_warnings and any(self._is_severe_warning(w) for w in validation.warnings):
+            if not silent:
+                print(f"\n  Trace {idx + 1} rejected (severe warnings): {validation.warnings}")
+            return None
+        if self.bootstrap and not self._passes_bootstrap_shape(trace_text):
+            if not silent:
+                print(f"\n  Trace {idx + 1} rejected (bootstrap shape)")
             return None
         
         if validation.warnings and not silent:
@@ -496,8 +683,8 @@ class TraceGenerator:
         for i in range(count):
             # Determine characteristics for this trace
             has_tools = i >= no_tools_count  # First no_tools_count are without tools
-            has_follow_ups = random.random() < self.follow_up_rate
-            include_error = has_tools and random.random() < self.error_rate
+            has_follow_ups = False if self.bootstrap else (random.random() < self.follow_up_rate)
+            include_error = False if self.bootstrap else (has_tools and random.random() < self.error_rate)
             num_steps = random.randint(self.min_steps, self.max_steps)
             domain = random.choice(DOMAINS)
             
@@ -521,7 +708,7 @@ class TraceGenerator:
                 "body": {
                     "model": self.model,
                     "messages": [
-                        {"role": "system", "content": TRACE_SYSTEM_PROMPT},
+                        {"role": "system", "content": TRACE_SYSTEM_PROMPT_BOOTSTRAP if self.bootstrap else TRACE_SYSTEM_PROMPT_NO_THINK},
                         {"role": "user", "content": f"Here's an example trace:\n\n{EXAMPLE_TRACE}"},
                         {"role": "assistant", "content": "I understand the TASK format. I'll generate traces following this exact syntax."},
                         {"role": "user", "content": prompt}
@@ -721,8 +908,15 @@ class TraceGenerator:
                     failed_indices.append(idx)
             else:
                 # No scenario data (inline mode), just save trace with validation
+                if self.reject_think and ("<think>" in trace_text or "</think>" in trace_text):
+                    failed_indices.append(idx)
+                    continue
+
                 validation = validate_trace(trace_text)
-                if validation.valid:
+                if validation.valid and not (
+                    self.reject_severe_warnings
+                    and any(self._is_severe_warning(w) for w in validation.warnings)
+                ):
                     results.append({
                         "trace": trace_text,
                         "validation": {
@@ -838,6 +1032,16 @@ async def main():
         help="OpenAI model to use (default: gpt-5-mini)"
     )
     parser.add_argument(
+        "--base-url",
+        type=str,
+        help="OpenAI-compatible API base URL (for local servers such as vLLM)"
+    )
+    parser.add_argument(
+        "--api-key",
+        type=str,
+        help="API key for the configured provider/base URL"
+    )
+    parser.add_argument(
         "--concurrency", "-c",
         type=int,
         default=5,
@@ -906,6 +1110,21 @@ async def main():
         default=50,
         help="Maximum act phases per trace (default: 50)"
     )
+    parser.add_argument(
+        "--allow-think",
+        action="store_true",
+        help="Allow <think> tags in traces (default: reject)"
+    )
+    parser.add_argument(
+        "--allow-severe-warnings",
+        action="store_true",
+        help="Allow severe validator warnings (default: reject)"
+    )
+    parser.add_argument(
+        "--bootstrap",
+        action="store_true",
+        help="Strict single-turn bootstrap generation mode"
+    )
     
     args = parser.parse_args()
     output_path = Path(args.output)
@@ -914,12 +1133,17 @@ async def main():
     
     generator = TraceGenerator(
         model=args.model, 
+        base_url=args.base_url,
+        api_key=args.api_key,
         concurrency=args.concurrency, 
         error_rate=args.error_rate, 
         no_tools_rate=args.no_tools_rate,
         follow_up_rate=args.follow_up_rate,
         min_steps=args.min_steps,
-        max_steps=args.max_steps
+        max_steps=args.max_steps,
+        bootstrap=args.bootstrap,
+        reject_think=not args.allow_think,
+        reject_severe_warnings=not args.allow_severe_warnings,
     )
     
     # Check batch status
@@ -963,7 +1187,18 @@ async def main():
     
     # Real-time generation (default)
     print(f"Generating {args.count} traces using {args.model}...")
-    results = await generator.generate_batch_realtime(args.count, progress_callback=print_progress, max_retries=args.retries)
+    if args.inline:
+        results = await generator.generate_batch_realtime_inline(
+            args.count,
+            progress_callback=print_progress,
+            max_retries=args.retries,
+        )
+    else:
+        results = await generator.generate_batch_realtime(
+            args.count,
+            progress_callback=print_progress,
+            max_retries=args.retries,
+        )
     print()
     
     # Write JSONL (append)
