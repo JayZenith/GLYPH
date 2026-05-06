@@ -25,9 +25,141 @@ from transformers import (
     AutoTokenizer,
     TrainingArguments,
     Trainer,
+    TrainerCallback,
     DataCollatorForSeq2Seq,
 )
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+
+
+import re as _re
+
+_GEN_EVAL_PROMPTS = [
+    {
+        "name": "no_tools",
+        "prompt": (
+            "<|im_start|>system\n"
+            "system「You are a helpful AI assistant that completes tasks step by step.」🏷 sys1\n"
+            "<|im_end|>\n\n"
+            "<|im_start|>user\n"
+            "user「Plan a 3-day study schedule for an exam.」🏷 usr1\n"
+            "<|im_end|>\n\n"
+            "<|im_start|>assistant\n"
+        ),
+    },
+    {
+        "name": "with_tool",
+        "prompt": (
+            "<|im_start|>system\n"
+            "system「You are a helpful AI assistant that completes tasks step by step.」🏷 sys1\n"
+            "tool {\n    name ↦ get_weather •\n    description ↦ \"Fetch weather\"\n}\n"
+            "<|im_end|>\n\n"
+            "<|im_start|>user\n"
+            "user「Check the weather for Yosemite this weekend.」🏷 usr1\n"
+            "<|im_end|>\n\n"
+            "<|im_start|>assistant\n"
+        ),
+    },
+]
+_REP_PATTERN = _re.compile(r"(.{20,200}?)\1{4,}", _re.DOTALL)
+_TAIL_OK = _re.compile(r"[\s※⊨𝑝🏷•\[\]\w\d\.\-\"']*")
+
+
+class GenEvalCallback(TrainerCallback):
+    """Runs greedy generation on a few prompts after each evaluation; logs
+    ends_with_response_rate / no_repetition_rate / not_truncated_rate."""
+
+    def __init__(self, tokenizer, prompts=_GEN_EVAL_PROMPTS, max_new_tokens: int = 5500, every_n_evals: int = 2):
+        self.tokenizer = tokenizer
+        self.prompts = prompts
+        self.max_new_tokens = max_new_tokens
+        self.every_n_evals = every_n_evals
+        self._eval_count = 0
+
+    def on_evaluate(self, args, state, control, model=None, **kwargs):
+        if not state.is_world_process_zero or model is None:
+            return
+        self._eval_count += 1
+        if self._eval_count % self.every_n_evals != 0:
+            return
+        try:
+            im_end_id = self.tokenizer.convert_tokens_to_ids("<|im_end|>")
+            stop_ids = [self.tokenizer.eos_token_id]
+            if im_end_id != self.tokenizer.unk_token_id:
+                stop_ids.append(im_end_id)
+
+            ends = no_rep = not_trunc = 0
+            was_training = model.training
+            model.eval()
+            with torch.no_grad():
+                for item in self.prompts:
+                    inputs = self.tokenizer(item["prompt"], return_tensors="pt").to(model.device)
+                    in_len = inputs["input_ids"].shape[1]
+                    out = model.generate(
+                        **inputs,
+                        max_new_tokens=self.max_new_tokens,
+                        do_sample=False,
+                        pad_token_id=self.tokenizer.pad_token_id,
+                        eos_token_id=stop_ids,
+                    )
+                    new_tokens = out.shape[1] - in_len
+                    text = self.tokenizer.decode(out[0, in_len:], skip_special_tokens=False)
+                    if "<|im_end|>" in text:
+                        text = text.split("<|im_end|>")[0]
+
+                    last_resp = text.rfind("response「")
+                    last_close = text.rfind("」")
+                    tail = text[last_close + 1:].strip() if last_close >= 0 else ""
+                    if last_resp >= 0 and last_close > last_resp and bool(_TAIL_OK.fullmatch(tail)):
+                        ends += 1
+                    if _REP_PATTERN.search(text) is None:
+                        no_rep += 1
+                    if new_tokens < self.max_new_tokens - 10:
+                        not_trunc += 1
+            if was_training:
+                model.train()
+
+            n = len(self.prompts)
+            metrics = {
+                "gen/ends_with_response_rate": ends / n,
+                "gen/no_repetition_rate": no_rep / n,
+                "gen/not_truncated_rate": not_trunc / n,
+            }
+            print(f"[gen-eval @ step {state.global_step}] {metrics}")
+            state.log_history.append({**metrics, "step": state.global_step})
+        except Exception as e:
+            print(f"[gen-eval @ step {state.global_step}] FAILED: {e}")
+
+
+class ParamGroupTrainer(Trainer):
+    """Trainer that puts modules_to_save params in a separate optimizer group with their own LR."""
+
+    def __init__(self, *args, lm_head_lr: float = 5e-6, lm_head_module_names=("lm_head",), **kwargs):
+        self._lm_head_lr = lm_head_lr
+        self._lm_head_module_names = tuple(lm_head_module_names)
+        super().__init__(*args, **kwargs)
+
+    def create_optimizer(self):
+        if self.optimizer is not None:
+            return self.optimizer
+
+        head_params, other_params = [], []
+        for n, p in self.model.named_parameters():
+            if not p.requires_grad:
+                continue
+            if any(m in n for m in self._lm_head_module_names):
+                head_params.append(p)
+            else:
+                other_params.append(p)
+
+        optim_cls, optim_kwargs = Trainer.get_optimizer_cls_and_kwargs(self.args)
+        param_groups = [
+            {"params": other_params, "lr": self.args.learning_rate},
+            {"params": head_params, "lr": self._lm_head_lr},
+        ]
+        self.optimizer = optim_cls(param_groups, **{k: v for k, v in optim_kwargs.items() if k != "lr"})
+        print(f"✓ Param groups — trunk LR={self.args.learning_rate}, head LR={self._lm_head_lr} "
+              f"({len(head_params)} head tensors, {len(other_params)} other tensors)")
+        return self.optimizer
 
 
 @dataclass
@@ -59,6 +191,13 @@ class TrainConfig:
         "q_proj", "k_proj", "v_proj", "o_proj",
         "gate_proj", "up_proj", "down_proj"
     ])
+    # Fully trained (not LoRA'd) so we can shift the vocab prior — should be needed for
+    # termination/repetition fixes. Qwen3-4B-Base has tied embeddings, so
+    # training lm_head also updates embed_tokens.
+    lora_modules_to_save: list = field(default_factory=lambda: ["lm_head"])
+    # Separate LR for lm_head. Bumped to match trunk LR after 5e-6 didn't move
+    # the vocab prior enough to teach termination.
+    lm_head_lr: float = 2e-5
     
     # Optimization
     bf16: bool = True
@@ -99,7 +238,7 @@ def create_dataset(traces: list[dict], tokenizer, max_seq_length: int, cache_dir
     
     # Create cache key from data + tokenizer + max_seq_length
     cache_key = hashlib.md5(
-        f"{len(traces)}_{tokenizer.name_or_path}_{max_seq_length}".encode()
+        f"v2_assistant_mask_{len(traces)}_{tokenizer.name_or_path}_{max_seq_length}".encode()
     ).hexdigest()[:12]
     cache_path = Path(cache_dir) / f"tokenized_{cache_key}"
     
@@ -129,8 +268,32 @@ def create_dataset(traces: list[dict], tokenizer, max_seq_length: int, cache_dir
     else:
         print(f"✓ No truncation needed (max trace: {max(true_lengths)} tokens)")
     
+    # Mask everything except assistant turns. Each assistant span runs from after
+    # `<|im_start|>assistant\n` up to and INCLUDING the next `<|im_end|>` (so the
+    # model is trained to actually emit the stop token).
+    asst_header_ids = tokenizer.encode("<|im_start|>assistant\n", add_special_tokens=False)
+    im_end_id = tokenizer.convert_tokens_to_ids("<|im_end|>")
+    H = len(asst_header_ids)
+
+    def make_labels(ids):
+        labels = [-100] * len(ids)
+        i = 0
+        while i <= len(ids) - H:
+            if ids[i:i + H] == asst_header_ids:
+                j = i + H
+                while j < len(ids) and ids[j] != im_end_id:
+                    labels[j] = ids[j]
+                    j += 1
+                if j < len(ids):
+                    labels[j] = ids[j]
+                    i = j + 1
+                else:
+                    break
+            else:
+                i += 1
+        return labels
+
     def tokenize(examples):
-        # Tokenize the text
         tokenized = tokenizer(
             examples["text"],
             truncation=True,
@@ -138,8 +301,7 @@ def create_dataset(traces: list[dict], tokenizer, max_seq_length: int, cache_dir
             padding=False,
             return_attention_mask=True,
         )
-        # For causal LM, labels = input_ids
-        tokenized["labels"] = tokenized["input_ids"].copy()
+        tokenized["labels"] = [make_labels(ids) for ids in tokenized["input_ids"]]
         return tokenized
     
     dataset = Dataset.from_list(traces)
@@ -199,12 +361,7 @@ def setup_model_and_tokenizer(config: TrainConfig):
             attn_implementation="sdpa",
         )
     
-    # Enable gradient checkpointing
-    if config.gradient_checkpointing:
-        model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
-        print("✓ Gradient checkpointing enabled")
-    
-    # Apply LoRA if enabled
+    # Apply LoRA FIRST (before grad checkpointing) so PEFT can wire trainable params correctly.
     if config.use_lora:
         print("Applying LoRA...")
         lora_config = LoraConfig(
@@ -212,11 +369,20 @@ def setup_model_and_tokenizer(config: TrainConfig):
             lora_alpha=config.lora_alpha,
             lora_dropout=config.lora_dropout,
             target_modules=config.lora_target_modules,
+            modules_to_save=config.lora_modules_to_save,
             bias="none",
             task_type="CAUSAL_LM",
         )
         model = get_peft_model(model, lora_config)
         model.print_trainable_parameters()
+
+    # Enable gradient checkpointing AFTER LoRA. With frozen base weights, input
+    # embeddings need explicit require_grads or grads won't flow through.
+    if config.gradient_checkpointing:
+        if hasattr(model, "enable_input_require_grads"):
+            model.enable_input_require_grads()
+        model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+        print("✓ Gradient checkpointing enabled")
     
     return model, tokenizer
 
@@ -238,6 +404,8 @@ def main():
     parser.add_argument("--resume", action="store_true", help="Resume from latest checkpoint")
     parser.add_argument("--resume-from", type=str, help="Resume from specific checkpoint")
     parser.add_argument("--save-steps", type=int, default=500)
+    parser.add_argument("--save-total-limit", type=int, default=3)
+    parser.add_argument("--skip-merge", action="store_true", help="Skip merged-model save (do it locally instead)")
     parser.add_argument("--cache-dir", type=str, default=".cache", help="Cache directory for tokenized data")
     args = parser.parse_args()
     
@@ -256,6 +424,7 @@ def main():
         lora_r=args.lora_r,
         lora_alpha=args.lora_alpha,
         save_steps=args.save_steps,
+        save_total_limit=args.save_total_limit,
     )
     
     # Handle resume
@@ -278,10 +447,22 @@ def main():
     
     # Load and prepare data
     traces = load_traces(config.data_path)
-    dataset = create_dataset(traces, tokenizer, config.max_seq_length, args.cache_dir)
-    
-    print(f"Dataset size: {len(dataset)}")
-    print(f"Sample token lengths: {[len(dataset[i]['input_ids']) for i in range(min(5, len(dataset)))]}")
+    full_dataset = create_dataset(traces, tokenizer, config.max_seq_length, args.cache_dir)
+
+    # 80/10/10 train/val/test split with fixed seed.
+    # val: in-loop loss tracking + early stopping
+    # test: HELD OUT — never touched during training/HP tuning. Final eval only.
+    first = full_dataset.train_test_split(test_size=0.2, seed=42)
+    dataset = first["train"]
+    holdout = first["test"].train_test_split(test_size=0.5, seed=42)
+    eval_dataset = holdout["train"]
+    test_dataset = holdout["test"]
+
+    test_dir = Path(config.output_dir) / "test_set"
+    test_dir.parent.mkdir(parents=True, exist_ok=True)
+    test_dataset.save_to_disk(str(test_dir))
+    print(f"Train: {len(dataset)}, Val: {len(eval_dataset)}, Test: {len(test_dataset)} (saved to {test_dir})")
+    print(f"Sample token lengths (train): {[len(dataset[i]['input_ids']) for i in range(min(5, len(dataset)))]}")
     
     # Data collator - handles padding for variable length sequences
     data_collator = DataCollatorForSeq2Seq(
@@ -306,6 +487,12 @@ def main():
         save_strategy=config.save_strategy,
         save_steps=config.save_steps,
         save_total_limit=config.save_total_limit,
+        eval_strategy="steps",
+        eval_steps=25,
+        per_device_eval_batch_size=1,
+        load_best_model_at_end=True,
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,
         logging_steps=config.logging_steps,
         logging_first_step=config.logging_first_step,
         report_to=config.report_to,
@@ -319,13 +506,20 @@ def main():
     )
     
     # Trainer
-    trainer = Trainer(
+    trainer_cls = ParamGroupTrainer if config.use_lora and config.lora_modules_to_save else Trainer
+    trainer_kwargs = dict(
         model=model,
         args=training_args,
         train_dataset=dataset,
+        eval_dataset=eval_dataset,
         data_collator=data_collator,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
     )
+    if trainer_cls is ParamGroupTrainer:
+        trainer_kwargs["lm_head_lr"] = config.lm_head_lr
+        trainer_kwargs["lm_head_module_names"] = tuple(config.lora_modules_to_save)
+    trainer = trainer_cls(**trainer_kwargs)
+    trainer.add_callback(GenEvalCallback(tokenizer))
     
     # Train
     print("\n" + "="*60)
@@ -350,13 +544,15 @@ def main():
     trainer.save_model(os.path.join(config.output_dir, "final"))
     tokenizer.save_pretrained(os.path.join(config.output_dir, "final"))
 
-    if config.use_lora:
+    if config.use_lora and not args.skip_merge:
         print("Merging LoRA adapter into base model...")
         merged_model = trainer.model.merge_and_unload()
         merged_dir = os.path.join(config.output_dir, "merged")
         merged_model.save_pretrained(merged_dir)
         tokenizer.save_pretrained(merged_dir)
         print(f"Merged checkpoint saved to: {merged_dir}")
+    elif config.use_lora:
+        print("Skipping merge (use --skip-merge=False to enable; merge locally instead).")
     
     print("Training complete!")
 

@@ -1,12 +1,31 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import re
 from pathlib import Path
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from validator import validate_trace
+
+
+REPETITION_PATTERN = re.compile(r"(.{20,200}?)\1{4,}", re.DOTALL)
+CALL_ID_PATTERN = re.compile(r"call\s*↦\s*\{[^}]*?id\s*↦\s*([\w\"\-]+)", re.DOTALL)
+ACT_BLOCK_END = re.compile(r"act\s*\{[^}]*\}\s*$", re.DOTALL)
+
+
+def extract_pending_call_ids(text: str) -> list[str]:
+    """Find call ids in the latest act block that don't yet have a matching result."""
+    call_ids = CALL_ID_PATTERN.findall(text)
+    result_ids = re.findall(r"result\s*\{[^}]*?\}\s*🏷\s*([\w\"\-]+)", text, re.DOTALL)
+    result_ids += re.findall(r'data\s*↦\s*[^🏷]*🏷\s*([\w\"\-]+)', text, re.DOTALL)
+    pending = [cid.strip('"') for cid in call_ids if cid.strip('"') not in {r.strip('"') for r in result_ids}]
+    return pending
+
+
+def inject_mock_result(call_id: str) -> str:
+    return f'\n\nresult {{\n    data ↦ "Mocked tool result for {call_id}." 🏷 {call_id}\n}}\n\n'
 
 
 PROMPTS = [
@@ -60,8 +79,19 @@ def build_prompt(user_message: str, tools: list[dict]) -> str:
             parts.append(f'    description ↦ "{tool["description"]}" •')
         if tool.get("params"):
             parts.append("    params ↦ {")
+            param_lines = []
             for param_name, param_def in tool["params"].items():
-                parts.append(f"        {param_name} ↦ {{ type ↦ {param_def['type']} }}")
+                inner = []
+                if "type" in param_def:
+                    inner.append(f"type ↦ {param_def['type']}")
+                if "enum" in param_def:
+                    inner.append(f"enum ↦ [ {' • '.join(param_def['enum'])} ]")
+                if "description" in param_def:
+                    inner.append(f'description ↦ "{param_def["description"]}"')
+                if param_def.get("required") is False:
+                    inner.append("required ↦ false")
+                param_lines.append(f"        {param_name} ↦ {{ {' • '.join(inner)} }}")
+            parts.append(" •\n".join(param_lines))
             parts.append("    }")
         parts.append("}")
     parts.extend(
@@ -100,8 +130,9 @@ def load_model(model_path: str):
     return model, tokenizer
 
 
-def generate(model, tokenizer, prompt: str, max_new_tokens: int) -> str:
+def _generate_once(model, tokenizer, prompt: str, max_new_tokens: int) -> tuple[str, int, bool]:
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    input_len = inputs["input_ids"].shape[1]
     stop_ids = [tokenizer.eos_token_id]
     im_end_id = tokenizer.convert_tokens_to_ids("<|im_end|>")
     if im_end_id != tokenizer.unk_token_id:
@@ -116,15 +147,46 @@ def generate(model, tokenizer, prompt: str, max_new_tokens: int) -> str:
             eos_token_id=stop_ids,
         )
 
-    response = tokenizer.decode(outputs[0], skip_special_tokens=False)
-    if "<|im_start|>assistant" in response:
-        response = response.split("<|im_start|>assistant")[-1]
-    if "<|im_end|>" in response:
-        response = response.split("<|im_end|>")[0]
-    return response.strip()
+    new_token_count = outputs.shape[1] - input_len
+    last_tok = outputs[0, -1].item()
+    hit_stop = last_tok in stop_ids
+    text = tokenizer.decode(outputs[0, input_len:], skip_special_tokens=False)
+    if "<|im_end|>" in text:
+        text = text.split("<|im_end|>")[0]
+    return text, new_token_count, hit_stop
 
 
-def score_output(prompt_text: str, output_text: str, tools: list[dict]) -> dict:
+def generate(model, tokenizer, prompt: str, max_new_tokens: int, max_tool_rounds: int = 4) -> tuple[str, int]:
+    """Multi-round generation that injects mocked tool results when the model calls a tool."""
+    accumulated = ""
+    total_new_tokens = 0
+    remaining = max_new_tokens
+    cur_prompt = prompt
+    for _ in range(max_tool_rounds + 1):
+        if remaining <= 0:
+            break
+        chunk, n_tok, hit_stop = _generate_once(model, tokenizer, cur_prompt, remaining)
+        accumulated += chunk
+        total_new_tokens += n_tok
+        remaining -= n_tok
+        pending = extract_pending_call_ids(accumulated)
+        if hit_stop and not pending:
+            break
+        if not pending:
+            break
+        injection = "".join(inject_mock_result(cid) for cid in pending)
+        accumulated += injection
+        cur_prompt = prompt + accumulated
+    return accumulated.strip(), total_new_tokens
+
+
+def score_output(
+    prompt_text: str,
+    output_text: str,
+    tools: list[dict],
+    new_token_count: int,
+    max_new_tokens: int,
+) -> dict:
     full_trace = prompt_text + output_text
     validation = validate_trace(full_trace)
     metrics = {
@@ -145,12 +207,21 @@ def score_output(prompt_text: str, output_text: str, tools: list[dict]) -> dict:
     else:
         metrics["mentions_any_tool_name"] = False
 
+    metrics["no_repetition"] = REPETITION_PATTERN.search(output_text) is None
+    last_resp = output_text.rfind("response「")
+    last_close = output_text.rfind("」")
+    tail = output_text[last_close + 1 :].strip() if last_close >= 0 else ""
+    tail_ok = bool(re.fullmatch(r"[\s※⊨𝑝🏷•\[\]\w\d\.\-\"']*", tail))
+    metrics["ends_with_response"] = last_resp >= 0 and last_close > last_resp and tail_ok
+    metrics["not_truncated"] = new_token_count < max_new_tokens - 10
+    metrics["new_token_count"] = new_token_count
+
     score = 0
-    score += 3 if metrics["valid_trace"] else 0
+    score += 3 if metrics["valid_trace"] and metrics["no_repetition"] else 0
     score += 1 if metrics["has_plan"] else 0
-    score += 1 if metrics["has_act"] else 0
-    score += 1 if metrics["has_response"] else 0
+    score += 1 if metrics["has_response"] and metrics["ends_with_response"] else 0
     score += 1 if (metrics["has_tool_call"] if tools else metrics["has_think_block"]) else 0
+    score += 1 if metrics["not_truncated"] else 0
     metrics["score"] = score
     metrics["validation_errors"] = validation.errors
     metrics["validation_warnings"] = validation.warnings
@@ -167,6 +238,9 @@ def summarize(name: str, rows: list[dict]) -> dict:
         "has_plan_rate": sum(1 for row in rows if row["metrics"]["has_plan"]) / total,
         "has_response_rate": sum(1 for row in rows if row["metrics"]["has_response"]) / total,
         "has_tool_call_rate": sum(1 for row in rows if row["metrics"]["has_tool_call"]) / total,
+        "no_repetition_rate": sum(1 for row in rows if row["metrics"]["no_repetition"]) / total,
+        "ends_with_response_rate": sum(1 for row in rows if row["metrics"]["ends_with_response"]) / total,
+        "not_truncated_rate": sum(1 for row in rows if row["metrics"]["not_truncated"]) / total,
     }
 
 
@@ -175,7 +249,7 @@ def main() -> int:
     parser.add_argument("--base-model", required=True)
     parser.add_argument("--sft-model", required=True)
     parser.add_argument("--output", required=True)
-    parser.add_argument("--max-new-tokens", type=int, default=320)
+    parser.add_argument("--max-new-tokens", type=int, default=6000)
     args = parser.parse_args()
 
     print("Loading base model...")
@@ -188,24 +262,24 @@ def main() -> int:
         prompt = build_prompt(item["user"], item["tools"])
 
         print(f"Running {item['name']} on base...")
-        base_out = generate(base_model, base_tok, prompt, args.max_new_tokens)
+        base_out, base_n = generate(base_model, base_tok, prompt, args.max_new_tokens)
         results["base"].append(
             {
                 "name": item["name"],
                 "prompt": item["user"],
                 "output": base_out,
-                "metrics": score_output(prompt, base_out, item["tools"]),
+                "metrics": score_output(prompt, base_out, item["tools"], base_n, args.max_new_tokens),
             }
         )
 
         print(f"Running {item['name']} on sft...")
-        sft_out = generate(sft_model, sft_tok, prompt, args.max_new_tokens)
+        sft_out, sft_n = generate(sft_model, sft_tok, prompt, args.max_new_tokens)
         results["sft"].append(
             {
                 "name": item["name"],
                 "prompt": item["user"],
                 "output": sft_out,
-                "metrics": score_output(prompt, sft_out, item["tools"]),
+                "metrics": score_output(prompt, sft_out, item["tools"], sft_n, args.max_new_tokens),
             }
         )
 
