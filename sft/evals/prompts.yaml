@@ -1,0 +1,69 @@
+# Eval prompts for glyph.
+#
+# `gen_eval`: short set used during training (every N evals via GenEvalCallback)
+#             to track ends_with_response / no_repetition / not_truncated rates.
+#             Keep this small (≤3) — runs every checkpoint, costs latency.
+#
+# `formal_eval`: post-training set scored by validator (scripts/eval_sft_formal.py).
+#                Grow this freely. 30+ is the goal.
+#
+# Each entry: { name, user, tools? }
+# `tools` is a list of {name, description?, params?} where params is a map
+# {param_name: {type, enum?, description?, required?}}.
+
+gen_eval:
+  - name: no_tools
+    user: "Plan a 3-day study schedule for an exam."
+    tools: []
+
+  - name: with_tool
+    user: "Check the weather for Yosemite this weekend."
+    tools:
+      - name: get_weather
+        description: Fetch weather
+
+formal_eval:
+  - name: reasoning_no_tools
+    user: "Explain whether a small coffee shop should open a second location now or wait six months, using a clear step-by-step plan and final recommendation."
+    tools: []
+
+  - name: tool_using_search
+    user: "Find the latest CPU benchmark results for Ryzen 9 9950X and compare them to Intel Core Ultra 9 285K."
+    tools:
+      - name: search_web
+        description: Search the web
+        params:
+          query: { type: string }
+      - name: fetch_page
+        description: Fetch a webpage
+        params:
+          url: { type: string }
+
+  - name: long_horizon
+    user: "Plan a 3-phase migration from a monolith to services for a 12-engineer startup. Include risks, order of operations, and checkpoints."
+    tools:
+      - name: list_services
+        description: List candidate services
+        params:
+          system: { type: string }
+
+  - name: error_recovery
+    user: "Check the weather for Yosemite this weekend and tell me if hiking conditions look good."
+    tools:
+      - name: get_weather
+        description: Fetch weather
+        params:
+          location: { type: string }
+          date: { type: string }
+
+  - name: tool_plan_followthrough
+    user: "Audit a CSV export for duplicate user IDs and tell me what cleanup steps to take."
+    tools:
+      - name: load_csv
+        description: Load CSV
+        params:
+          path: { type: string }
+      - name: find_duplicates
+        description: Find duplicate values
+        params:
+          column: { type: string }

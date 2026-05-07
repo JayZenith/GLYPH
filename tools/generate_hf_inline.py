@@ -2,13 +2,15 @@
 import argparse
 import json
 import random
+import sys
 from pathlib import Path
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from generate import DOMAINS, EXAMPLE_TRACE, INLINE_TRACE_PROMPT, TRACE_SYSTEM_PROMPT
-from validator import validate_trace
+from core.validator import validate_trace
 
 
 def build_messages(domain: str, has_tools: bool, has_follow_ups: bool, num_steps: int, include_error: bool):

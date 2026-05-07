@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import os
 import shutil
 import subprocess
 import sys
@@ -133,7 +134,10 @@ def main():
     if args.dry_run:
         return
 
-    subprocess.run(cmd, check=True)
+    env = os.environ.copy()
+    pythonpath = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = str(Path.cwd()) if not pythonpath else f"{Path.cwd()}:{pythonpath}"
+    subprocess.run(cmd, check=True, env=env)
 
 
 if __name__ == "__main__":

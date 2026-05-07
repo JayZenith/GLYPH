@@ -6,8 +6,6 @@ from pathlib import Path
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from validator import validate_trace
-
 
 PROMPTS = [
     {
@@ -16,7 +14,7 @@ PROMPTS = [
         "tools": [],
     },
     {
-        "name": "tool_using_search",
+        "name": "tool_using",
         "user": "Find the latest CPU benchmark results for Ryzen 9 9950X and compare them to Intel Core Ultra 9 285K.",
         "tools": [
             {"name": "search_web", "description": "Search the web", "params": {"query": {"type": "string"}}},
@@ -28,13 +26,6 @@ PROMPTS = [
         "user": "Plan a 3-phase migration from a monolith to services for a 12-engineer startup. Include risks, order of operations, and checkpoints.",
         "tools": [
             {"name": "list_services", "description": "List candidate services", "params": {"system": {"type": "string"}}},
-        ],
-    },
-    {
-        "name": "error_recovery",
-        "user": "Check the weather for Yosemite this weekend and tell me if hiking conditions look good.",
-        "tools": [
-            {"name": "get_weather", "description": "Fetch weather", "params": {"location": {"type": "string"}, "date": {"type": "string"}}},
         ],
     },
 ]
@@ -92,7 +83,7 @@ def load_model(model_path: str):
     return model, tokenizer
 
 
-def generate(model, tokenizer, prompt: str, max_new_tokens: int) -> str:
+def generate(model, tokenizer, prompt: str) -> str:
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     stop_ids = [tokenizer.eos_token_id]
     im_end_id = tokenizer.convert_tokens_to_ids("<|im_end|>")
@@ -102,42 +93,45 @@ def generate(model, tokenizer, prompt: str, max_new_tokens: int) -> str:
     with torch.no_grad():
         outputs = model.generate(
             **inputs,
-            max_new_tokens=max_new_tokens,
+            max_new_tokens=512,
             do_sample=False,
             pad_token_id=tokenizer.pad_token_id,
             eos_token_id=stop_ids,
         )
 
-    text = tokenizer.decode(outputs[0], skip_special_tokens=False)
-    if "<|im_start|>assistant" in text:
-        text = text.split("<|im_start|>assistant")[-1]
-    if "<|im_end|>" in text:
-        text = text.split("<|im_end|>")[0]
-    return text.strip()
+    response = tokenizer.decode(outputs[0], skip_special_tokens=False)
+    if "<|im_start|>assistant" in response:
+        response = response.split("<|im_start|>assistant")[-1]
+    if "<|im_end|>" in response:
+        response = response.split("<|im_end|>")[0]
+    return response.strip()
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", required=True)
+    parser.add_argument("--base-model", required=True)
+    parser.add_argument("--sft-model", required=True)
     parser.add_argument("--output", required=True)
-    parser.add_argument("--max-new-tokens", type=int, default=1024)
     args = parser.parse_args()
 
-    model, tokenizer = load_model(args.model)
+    print("Loading base model...")
+    base_model, base_tok = load_model(args.base_model)
+    print("Loading SFT model...")
+    sft_model, sft_tok = load_model(args.sft_model)
 
     rows = []
     for item in PROMPTS:
         prompt = build_prompt(item["user"], item["tools"])
-        output = generate(model, tokenizer, prompt, args.max_new_tokens)
-        validation = validate_trace(prompt + output)
+        print(f"Running {item['name']} on base...")
+        base_out = generate(base_model, base_tok, prompt)
+        print(f"Running {item['name']} on sft...")
+        sft_out = generate(sft_model, sft_tok, prompt)
         rows.append(
             {
                 "name": item["name"],
                 "prompt": item["user"],
-                "output": output,
-                "valid_trace": validation.valid,
-                "errors": validation.errors,
-                "warnings": validation.warnings,
+                "base": base_out,
+                "sft": sft_out,
             }
         )
 

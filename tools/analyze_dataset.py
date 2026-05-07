@@ -2,10 +2,12 @@
 import argparse
 import hashlib
 import json
+import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from validator import validate_trace
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from core.validator import validate_trace
 
 
 def _sha1(s: str) -> str:

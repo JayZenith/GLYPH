@@ -33,33 +33,17 @@ from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 
 import re as _re
 
-_GEN_EVAL_PROMPTS = [
-    {
-        "name": "no_tools",
-        "prompt": (
-            "<|im_start|>system\n"
-            "system「You are a helpful AI assistant that completes tasks step by step.」🏷 sys1\n"
-            "<|im_end|>\n\n"
-            "<|im_start|>user\n"
-            "user「Plan a 3-day study schedule for an exam.」🏷 usr1\n"
-            "<|im_end|>\n\n"
-            "<|im_start|>assistant\n"
-        ),
-    },
-    {
-        "name": "with_tool",
-        "prompt": (
-            "<|im_start|>system\n"
-            "system「You are a helpful AI assistant that completes tasks step by step.」🏷 sys1\n"
-            "tool {\n    name ↦ get_weather •\n    description ↦ \"Fetch weather\"\n}\n"
-            "<|im_end|>\n\n"
-            "<|im_start|>user\n"
-            "user「Check the weather for Yosemite this weekend.」🏷 usr1\n"
-            "<|im_end|>\n\n"
-            "<|im_start|>assistant\n"
-        ),
-    },
-]
+from evals import build_prompt as _build_prompt, load_prompts as _load_prompts
+
+
+def _render_gen_eval_prompts() -> list[dict]:
+    """Load gen_eval prompts from evals/prompts.yaml and render to TASK strings."""
+    return [
+        {"name": p["name"], "prompt": _build_prompt(p["user"], p.get("tools", []))}
+        for p in _load_prompts("gen_eval")
+    ]
+
+
 _REP_PATTERN = _re.compile(r"(.{20,200}?)\1{4,}", _re.DOTALL)
 _TAIL_OK = _re.compile(r"[\s※⊨𝑝🏷•\[\]\w\d\.\-\"']*")
 
@@ -68,7 +52,9 @@ class GenEvalCallback(TrainerCallback):
     """Runs greedy generation on a few prompts after each evaluation; logs
     ends_with_response_rate / no_repetition_rate / not_truncated_rate."""
 
-    def __init__(self, tokenizer, prompts=_GEN_EVAL_PROMPTS, max_new_tokens: int = 5500, every_n_evals: int = 2):
+    def __init__(self, tokenizer, prompts=None, max_new_tokens: int = 5500, every_n_evals: int = 2):
+        if prompts is None:
+            prompts = _render_gen_eval_prompts()
         self.tokenizer = tokenizer
         self.prompts = prompts
         self.max_new_tokens = max_new_tokens

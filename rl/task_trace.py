@@ -50,4 +50,3 @@ def load_environment(
         env_id=env_id,
     )
     return env
-

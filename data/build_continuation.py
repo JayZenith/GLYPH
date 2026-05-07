@@ -10,7 +10,7 @@ if str(ROOT) not in sys.path:
 
 from transformers import AutoTokenizer
 
-from validator import validate_trace
+from core.validator import validate_trace
 
 
 def main() -> int:

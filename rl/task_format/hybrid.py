@@ -59,4 +59,3 @@ class HybridRewardFunction:
         if self.judge:
             stats.update(self.judge.stats())
         return stats
-

@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from validator import validate_trace
+from core.validator import validate_trace
 
 
 def keep_trace(trace: str, token_count: int, max_tokens: int, max_acts: int) -> tuple[bool, str]:

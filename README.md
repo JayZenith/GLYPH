@@ -1,197 +1,106 @@
 # glyph
 
-A message format and training pipeline that teaches LLMs structured, long-horizon task execution. Models emit traces with explicit `plan` / `act` / `response` phases, an internal todo list, and Unicode operators for tagging (`🏷`), referencing (`※`), confidence (`𝑝`), and todo satisfaction (`⊨`).
+Teach an LLM a structured trace format with explicit `plan` / `act` / `response` phases, todos, and Unicode operators (`🏷` tag, `※` ref, `⊨` satisfies, `𝑝` confidence). See [`def.md`](def.md).
 
-**Status:** SFT shipped (Qwen3-4B-Base + LoRA). RL via prime-rl is the next stage.
+**Status:** SFT shipped (Qwen3-4B-Base + LoRA). RL is next.
 
-**Artifacts on HF:**
-- Model: [`JayZenith/glyph-sft-v1`](https://huggingface.co/JayZenith/glyph-sft-v1) (private)
-- Dataset: [`JayZenith/glyph-sft-v1-data`](https://huggingface.co/datasets/JayZenith/glyph-sft-v1-data) (private)
-
-## Format
-
-See [`def.md`](def.md) for the full spec. Example:
-
-```js
-plan {
-    todo ↦ {
-        1 ↦ "Fetch the weather." •
-        2 ↦ "Recommend clothing." ※ usr1
-    }
-}
-
-act {
-    call ↦ { tool ↦ get_weather • zip_code ↦ "94103" • id ↦ "w1" } ⊨ 1
-}
-
-response「68°F and overcast — light sweater works.」※ "w1" ⊨ 2
-```
+**HF artifacts (private):**
+- Model: [`JayZenith/glyph-sft-v1`](https://huggingface.co/JayZenith/glyph-sft-v1)
+- Dataset: [`JayZenith/glyph-sft-v1-data`](https://huggingface.co/datasets/JayZenith/glyph-sft-v1-data) (final + raw stages + manifest)
 
 ## Results
 
-**Held-out test loss** (110 traces, never seen in training):
+Held-out test loss (110 traces unseen in training):
 
-| metric          | base   | sft    | delta        |
-|-----------------|--------|--------|--------------|
-| mean loss       | 1.280  | 0.972  | **−0.308**   |
-| perplexity      | 3.60   | 2.64   | **36% lower** |
-| sft beats base  |        |        | **110/110**  |
+| | base | sft |
+|---|---|---|
+| mean loss | 1.280 | **0.972** |
+| perplexity | 3.60 | **2.64** |
+| sft beats base | | **110/110** |
 
-**Format quality** (5-prompt greedy generation):
+5-prompt generation eval, validator-scored:
 
-| metric                | base | sft   |
-|-----------------------|------|-------|
-| valid trace           | 0/5  | 4/5   |
-| ends with response    | 0%   | 100%  |
-| has plan              | 0%   | 100%  |
-| no repetition         | 60%  | 100%  |
-| not truncated         | 20%  | 100%  |
-| used tools when given | 0/4  | 4/4   |
-| avg score (out of 7)  | 0.2  | 6.4   |
+| | base | sft |
+|---|---|---|
+| valid trace | 0/5 | **4/5** |
+| ends with response | 0% | **100%** |
+| has plan | 0% | **100%** |
+| no repetition | 60% | **100%** |
+| not truncated | 20% | **100%** |
+| used tools when given | 0/4 | **4/4** |
 
-The single failed valid-trace was a no-tool reasoning prompt where the model wrote a 5-step plan but didn't emit `⊨ N` markers for every step. Clean target for RL.
+## Why it works
 
-## Key design decisions
+Three changes coupled:
+1. `lm_head` in `modules_to_save` — Qwen3-Base never saw `<|im_end|>`; LoRA-only can't shift its logit
+2. Assistant-only loss masking
+3. lm_head LR 2e-5 (from 5e-6 — the only cleanly isolated ablation)
 
-**Why this stack works** — three things had to land together:
-
-1. **`lm_head` in `modules_to_save`.** Default LoRA touches attention + MLP only. Qwen3-Base never saw `<|im_end|>` in pretraining, so without training the lm_head, the model never learns to emit it and never terminates.
-2. **Assistant-only loss masking.** Labels are `-100` everywhere except inside `<|im_start|>assistant\n` … `<|im_end|>`. Otherwise the model wastes capacity learning to copy system/user.
-3. **Aggressive lm_head LR (2e-5).** First run used 5e-6 for the head — termination still broke. Bumping to match trunk LR fixed it. Single change isolated; the rest of the stack was constant.
-
-LoRA-first ordering also matters: apply LoRA → `enable_input_require_grads()` → `gradient_checkpointing_enable()`. Reverse order disables grads.
-
-## Repo layout
+## Layout
 
 ```
-train.py                    SFT trainer (ParamGroupTrainer + GenEvalCallback)
-rl_train.py                 RL stage (prime-rl, WIP)
-validator.py                TASK trace validator (used as RL reward signal)
-inference.py                Inference helpers
-def.md                      Format spec
-docs/                       Design notes
-configs/                    Training configs
-synthetic_data/             Traces (gitignored)
-artifacts/                  Run outputs (gitignored)
-scripts/
-  eval_sft_formal.py        Generation eval (5 prompts, score format quality)
-  eval_test_loss.py         Forward-pass loss on held-out 10% test set
-  audit_dataset_diversity.py  Detect template collapse in synthetic data
-  patch_dataset.py          Fix recoverable bugs in synthetic traces
-  merge_adapter.py          Merge LoRA + lm_head into base for HF upload
-  build_bootstrap_dataset.py  Bootstrap initial trace set
-  build_continuation_dataset.py  Continue from base policy rollouts
-  compare_base_sft.py       Side-by-side base vs SFT generation
-  patch_prime_rl_install.py   Patches needed for prime-rl install
-  convert_prime_rl_adapter_to_peft.py   Adapter format conversion
+core/      validator (single rule book)
+data/      synthesis pipeline + prompts.yaml + build.sh
+sft/       train + eval + merge + evals/
+rl/        prime-rl stage (WIP)
+tools/     CLI utilities
 ```
 
-## Reproduce
+## Reproduce `glyph-sft-v1`
 
-### 1. Generate / patch data
-
-Synthesize traces with `generate.py`, then drop in `synthetic_data/`. Patch known bugs:
+1× A100 80GB SXM4, ~1h32m.
 
 ```bash
-python scripts/patch_dataset.py \
-    --input synthetic_data/sft_train.jsonl \
-    --output synthetic_data/sft_train_1098_official.jsonl
-```
+# on instance
+git clone https://github.com/JayZenith/glyph.git && cd glyph
+pip install -r requirements-train.txt
+hf login
+hf download JayZenith/glyph-sft-v1-data sft_train_1098_official.jsonl --local-dir synthetic_data
 
-Audit for template collapse before training:
-
-```bash
-python scripts/audit_dataset_diversity.py --data synthetic_data/sft_train_1098_official.jsonl
-```
-
-### 2. SFT
-
-Defaults match the actual run that produced `glyph-sft-v1`. On 1× A100 80GB SXM4 it runs ~1h32m.
-
-```bash
-python train.py \
+python sft/train.py \
     --model Qwen/Qwen3-4B-Base \
     --data synthetic_data/sft_train_1098_official.jsonl \
     --output runs/sft1 \
     --skip-merge
 ```
 
-The defaults that produced glyph-sft-v1:
-- LoRA rank 64, alpha 64, dropout 0.05
-- targets: `q,k,v,o,gate,up,down`
-- `modules_to_save=["lm_head"]`
-- LR 2e-5 (both trunk and lm_head, separate optimizer groups)
-- 3 epochs, effective batch 8 (per-device 1, grad-accum 8)
-- max seq length 8192
-- 80/10/10 train/val/test split, seed 42
-- assistant-only loss masking
-- eval every 50 steps incl. greedy gen-eval on 2 held prompts
-
-### 3. Merge LoRA + lm_head into the base
-
-`--skip-merge` above keeps the run light. Merge locally on CPU after pulling the adapter:
+Defaults match the actual run: LoRA r64/α64, batch 1, grad-accum 8, LR 2e-5, max-seq 8192, 3 epochs.
 
 ```bash
-python scripts/merge_adapter.py \
+# pull adapter + tokenized test_set, destroy instance
+scp -P <PORT> -r root@<HOST>:/root/glyph/runs/sft1/{final,test_set} artifacts/sft_run_v2/
+vastai destroy instance <ID>
+
+# merge locally (CPU, ~13min)
+python sft/merge_adapter.py \
     --base Qwen/Qwen3-4B-Base \
-    --adapter runs/sft1/final \
-    --output runs/sft1/merged
+    --adapter artifacts/sft_run_v2/final \
+    --output artifacts/sft_run_v2/merged
+
+# push to HF (env -u HF_TOKEN works around read-only token in env)
+env -u HF_TOKEN hf upload JayZenith/glyph-sft-v1 \
+    artifacts/sft_run_v2/merged --repo-type model
 ```
 
-### 4. Eval
-
-**Generation quality** on 5 fixed prompts (validator-scored):
+## Eval
 
 ```bash
-PYTHONPATH=. python scripts/eval_sft_formal.py \
+# format quality (5 prompts, validator-scored) — ~$0.11/hr 3090 is enough
+PYTHONPATH=. python sft/eval_formal.py \
     --base-model Qwen/Qwen3-4B-Base \
     --sft-model JayZenith/glyph-sft-v1 \
-    --output eval_formal.json \
-    --max-new-tokens 6000
-```
+    --output eval_formal.json --max-new-tokens 6000
 
-**Held-out test loss** on the 10% held-out tokenized split:
-
-```bash
-PYTHONPATH=. python scripts/eval_test_loss.py \
+# held-out test loss (forward-only) — fast on any 24GB+
+PYTHONPATH=. python sft/eval_test_loss.py \
     --base Qwen/Qwen3-4B-Base \
     --sft JayZenith/glyph-sft-v1 \
-    --test-set runs/sft1/test_set \
+    --test-set artifacts/sft_run_v2/test_set \
     --output eval_test_loss.json
 ```
 
-## Validator
+## Caveats
 
-`validator.py` enforces TASK structure. Used in two places:
-- Eval: scores generations as valid/invalid + per-rule errors
-- Future RL: shaped reward signal (validator passes + per-section credit)
-
-Errors (block valid):
-- Missing `plan { todo ↦ {...} }` block
-- Unsatisfied todos (defined but never marked with `⊨ N`)
-- References to undefined tags
-- Repetition (≥4 reps of a 20-200 char span)
-- Bad termination (output past final `」` other than `<|im_end|>` and known whitespace tokens)
-- Call/result `id` mismatch
-
-Run on a dataset:
-
-```bash
-python -c "
-import json
-from validator import validate_trace
-n = invalid = 0
-for line in open('synthetic_data/sft_train_1098_official.jsonl'):
-    n += 1
-    if not validate_trace(json.loads(line)['trace']).valid:
-        invalid += 1
-print(f'{invalid}/{n} invalid')
-"
-```
-
-## RL plan (next)
-
-- Reward = validator pass + shaped per-section credit (plan present, todos satisfied, ends correctly, tools called when given, no repetition)
-- Init from `JayZenith/glyph-sft-v1` (the merged full model, not the LoRA adapter)
-- prime-rl harness; install patches in `scripts/patch_prime_rl_install.py`
-- Held-out 200-prompt RL set, separate from SFT data and from the 5-prompt format eval
+- Dataset CLI flags weren't recorded — re-running `data/build.sh` gives a similar dataset, not byte-identical. Pull from HF for exact reproduction. See [`synthetic_data/data_manifest.json`](synthetic_data/data_manifest.json).
+- Only one ablation isolated (lm_head LR). The 2×2 over `modules_to_save` × loss-masking is pending.
+- Eval is small (5 prompts × 1 seed). Plan: 30+ prompts × 3 seeds + LM-judge semantic eval.

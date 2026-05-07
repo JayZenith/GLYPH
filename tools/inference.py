@@ -24,13 +24,22 @@ def load_model(model_path: str):
     print(f"Loading model from {model_path}...")
     
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained(
-        model_path,
-        trust_remote_code=True,
-        torch_dtype=torch.bfloat16,
-        device_map="auto",
-        attn_implementation="flash_attention_2",
-    )
+    try:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            attn_implementation="flash_attention_2",
+        )
+    except Exception:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            attn_implementation="sdpa",
+        )
     model.eval()
     
     print(f"✓ Model loaded on {model.device}")
@@ -229,4 +238,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
