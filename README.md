@@ -60,11 +60,10 @@ hf download JayZenith/glyph-sft-v1-data sft_train_1098_official.jsonl --local-di
 python sft/train.py \
     --model Qwen/Qwen3-4B-Base \
     --data synthetic_data/sft_train_1098_official.jsonl \
-    --output runs/sft1 \
-    --skip-merge
+    --output runs/sft1
 ```
 
-Defaults match the actual run: LoRA r64/α64, batch 1, grad-accum 8, LR 2e-5, max-seq 8192, 3 epochs.
+Defaults match the actual run: LoRA r64/α64, batch 1, grad-accum 8, LR 2e-5, max-seq 8192, 3 epochs. Merge and gen-eval are off by default; opt in with `--enable-merge` / `--enable-gen-eval`.
 
 ```bash
 # pull adapter + tokenized test_set, destroy instance
