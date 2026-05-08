@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""SFT training entry point. Imports config + dataset + trainer + callback from
-sibling modules. Run from repo root:
+"""SFT training entry point. Run from repo root:
 
-    python sft/train.py [flags]
+    python -m sft.train [flags]
 
 To resume from latest checkpoint: --resume
 To enable expensive greedy gen-eval at every eval step: --enable-gen-eval
@@ -10,7 +9,6 @@ To merge LoRA into base at end of training: --enable-merge (default off)
 """
 import argparse
 import os
-import sys
 from pathlib import Path
 
 import torch
@@ -23,11 +21,10 @@ from transformers import (
 )
 from peft import LoraConfig, get_peft_model
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))   # for evals, config, data, trainers
-from config import TrainConfig
-from data import load_traces, create_dataset
-from trainers import ParamGroupTrainer
-from evals import GenEvalCallback
+from sft.config import TrainConfig
+from sft.data import load_traces, create_dataset
+from sft.trainers import ParamGroupTrainer
+from sft.evals import GenEvalCallback
 
 
 def setup_model_and_tokenizer(config: TrainConfig):

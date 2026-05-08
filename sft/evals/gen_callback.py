@@ -7,7 +7,7 @@ import re
 import torch
 from transformers import TrainerCallback
 
-from evals import build_prompt, load_prompts
+from .prompt_loader import build_prompt, load_prompts
 
 
 _REP_PATTERN = re.compile(r"(.{20,200}?)\1{4,}", re.DOTALL)

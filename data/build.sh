@@ -21,7 +21,7 @@ mkdir -p "$OUT_DIR"
 echo "==> $RUN_NAME — generating $COUNT traces with $MODEL"
 
 # 1. Synthesize. Validator runs inline; bad traces are rejected.
-python data/generate.py \
+python -m data.generate \
     --count "$COUNT" \
     --model "$MODEL" \
     --output "$OUT_DIR/raw.jsonl" \
@@ -32,20 +32,20 @@ python data/generate.py \
     --retries 3
 
 # 2. Postprocess: merge sequential think/act blocks, wrap with chat-template tokens.
-python data/postprocess.py "$OUT_DIR/raw.jsonl" \
+python -m data.postprocess "$OUT_DIR/raw.jsonl" \
     --output "$OUT_DIR/processed.jsonl" \
     --token-style qwen3
 
 # 3. Patch: fix recoverable bugs (missing 🏷 tags, unclosed 」, trailing junk).
-python data/patch_dataset.py \
+python -m data.patch_dataset \
     --input "$OUT_DIR/processed.jsonl" \
     --output "$OUT_DIR/patched.jsonl"
 
 # 4. Filter: drop anything still failing the validator.
-python data/filter_dataset.py "$OUT_DIR/patched.jsonl" "$OUT_DIR/sft_train.jsonl"
+python -m data.filter_dataset "$OUT_DIR/patched.jsonl" "$OUT_DIR/sft_train.jsonl"
 
 # 5. Diversity audit (sanity check, doesn't modify).
-python data/audit_diversity.py --data "$OUT_DIR/sft_train.jsonl"
+python -m data.audit_diversity --data "$OUT_DIR/sft_train.jsonl"
 
 echo "==> done. Final dataset: $OUT_DIR/sft_train.jsonl"
 wc -l "$OUT_DIR"/*.jsonl

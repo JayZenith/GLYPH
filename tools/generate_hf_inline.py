@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
+"""Generate TASK traces with a local HF model. Run: python -m tools.generate_hf_inline"""
 import argparse
 import json
 import random
-import sys
 from pathlib import Path
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from generate import DOMAINS, EXAMPLE_TRACE, INLINE_TRACE_PROMPT, TRACE_SYSTEM_PROMPT
+from data.generate import DOMAINS, EXAMPLE_TRACE, INLINE_TRACE_PROMPT, TRACE_SYSTEM_PROMPT
 from core.validator import validate_trace
 
 

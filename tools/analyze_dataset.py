@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
+"""Dupe + validator-pass-rate audit. Run: python -m tools.analyze_dataset FILE"""
 import argparse
 import hashlib
 import json
-import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.validator import validate_trace
 
 

@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
+"""Drop traces that fail the validator. Run: python -m data.filter_dataset IN OUT"""
 import argparse
 import json
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from core.validator import validate_trace  # noqa: E402
+from core.validator import validate_trace
 
 
 def is_severe_warning(w: str) -> bool:

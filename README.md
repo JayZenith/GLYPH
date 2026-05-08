@@ -57,7 +57,7 @@ pip install -r requirements-train.txt
 hf login
 hf download JayZenith/glyph-sft-v1-data sft_train_1098_official.jsonl --local-dir synthetic_data
 
-python sft/train.py \
+python -m sft.train \
     --model Qwen/Qwen3-4B-Base \
     --data synthetic_data/sft_train_1098_official.jsonl \
     --output runs/sft1
@@ -71,7 +71,7 @@ scp -P <PORT> -r root@<HOST>:/root/glyph/runs/sft1/{final,test_set} artifacts/sf
 vastai destroy instance <ID>
 
 # merge locally (CPU, ~13min)
-python sft/merge_adapter.py \
+python -m sft.merge_adapter \
     --base Qwen/Qwen3-4B-Base \
     --adapter artifacts/sft_run_v2/final \
     --output artifacts/sft_run_v2/merged
@@ -85,13 +85,13 @@ env -u HF_TOKEN hf upload JayZenith/glyph-sft-v1 \
 
 ```bash
 # format quality (5 prompts, validator-scored) — ~$0.11/hr 3090 is enough
-PYTHONPATH=. python sft/eval_formal.py \
+python -m sft.eval_formal \
     --base-model Qwen/Qwen3-4B-Base \
     --sft-model JayZenith/glyph-sft-v1 \
     --output eval_formal.json --max-new-tokens 6000
 
 # held-out test loss (forward-only) — fast on any 24GB+
-PYTHONPATH=. python sft/eval_test_loss.py \
+python -m sft.eval_test_loss \
     --base Qwen/Qwen3-4B-Base \
     --sft JayZenith/glyph-sft-v1 \
     --test-set artifacts/sft_run_v2/test_set \

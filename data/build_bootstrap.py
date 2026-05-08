@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
+"""Bootstrap stage of the synthesis pipeline. Run: python -m data.build_bootstrap"""
 import argparse
 import json
-import sys
 from pathlib import Path
 
 from transformers import AutoTokenizer
-
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 
 from core.validator import validate_trace
 

@@ -10,16 +10,14 @@ import argparse
 import asyncio
 import json
 import random
-import sys
 import time
 from pathlib import Path
 
 import yaml
 from openai import AsyncOpenAI, OpenAI
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from schema import Scenario, ScenarioBatch  # noqa: E402  (data/schema.py via cwd, validator at root)
-from core.validator import validate_trace  # noqa: E402
+from data.schema import Scenario, ScenarioBatch
+from core.validator import validate_trace
 
 
 # ============================================================================

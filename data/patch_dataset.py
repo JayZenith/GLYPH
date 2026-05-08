@@ -13,11 +13,9 @@ Drop:
 import argparse
 import json
 import re
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from core.validator import validate_trace, TaskValidator  # noqa: E402
+from core.validator import validate_trace, TaskValidator
 
 CALL_BLOCK = re.compile(r'(act\s*\{[^{}]*?call\s*↦\s*\{[^{}]*?\bid\s*↦\s*([\w\-\"]+)[^{}]*?\}[^{}]*?\})', re.DOTALL)
 RESULT_BLOCK = re.compile(r'result\s*\{(?P<inner>[^{}]*)\}', re.DOTALL)

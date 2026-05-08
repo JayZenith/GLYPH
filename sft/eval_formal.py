@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
+"""Format-quality eval. Run: python -m sft.eval_formal [flags]"""
 import argparse
 import json
 import re
-import sys
 from pathlib import Path
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from core.validator import validate_trace  # noqa: E402
-from evals import build_prompt, load_prompts  # noqa: E402
+from core.validator import validate_trace
+from sft.evals import build_prompt, load_prompts
 
 
 REPETITION_PATTERN = re.compile(r"(.{20,200}?)\1{4,}", re.DOTALL)
