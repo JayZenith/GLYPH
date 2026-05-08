@@ -8,7 +8,6 @@ To enable expensive greedy gen-eval at every eval step: --enable-gen-eval
 To merge LoRA into base at end of training: --enable-merge (default off)
 """
 import argparse
-import os
 from pathlib import Path
 
 import torch
@@ -223,15 +222,16 @@ def main():
     trainer.train(resume_from_checkpoint=config.resume_from_checkpoint)
 
     print("\nSaving final model...")
-    trainer.save_model(os.path.join(config.output_dir, "final"))
-    tokenizer.save_pretrained(os.path.join(config.output_dir, "final"))
+    final_dir = Path(config.output_dir) / "final"
+    trainer.save_model(str(final_dir))
+    tokenizer.save_pretrained(str(final_dir))
 
     if config.use_lora and args.enable_merge:
         print("Merging LoRA adapter into base model...")
         merged_model = trainer.model.merge_and_unload()
-        merged_dir = os.path.join(config.output_dir, "merged")
-        merged_model.save_pretrained(merged_dir)
-        tokenizer.save_pretrained(merged_dir)
+        merged_dir = Path(config.output_dir) / "merged"
+        merged_model.save_pretrained(str(merged_dir))
+        tokenizer.save_pretrained(str(merged_dir))
         print(f"Merged checkpoint saved to: {merged_dir}")
     elif config.use_lora:
         print("Skipping merge (use --enable-merge to merge in-process; default is off so disk is light).")
