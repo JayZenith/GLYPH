@@ -18,10 +18,6 @@ from sft.evals import (
 )
 
 
-def run_one(model, tokenizer, prompt: str, max_new_tokens: int, max_tool_rounds: int) -> tuple[str, int]:
-    return generate(model, tokenizer, prompt, max_new_tokens, max_tool_rounds=max_tool_rounds)
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-model", required=True)
@@ -44,7 +40,7 @@ def main() -> int:
         tools = item.get("tools", [])
 
         print(f"Running {item['name']} on base...")
-        base_out, base_n = run_one(base_model, base_tok, prompt, args.max_new_tokens, args.max_tool_rounds)
+        base_out, base_n = generate(base_model, base_tok, prompt, args.max_new_tokens, max_tool_rounds=args.max_tool_rounds)
         results["base"].append({
             "name": item["name"],
             "prompt": item["user"],
@@ -53,7 +49,7 @@ def main() -> int:
         })
 
         print(f"Running {item['name']} on sft...")
-        sft_out, sft_n = run_one(sft_model, sft_tok, prompt, args.max_new_tokens, args.max_tool_rounds)
+        sft_out, sft_n = generate(sft_model, sft_tok, prompt, args.max_new_tokens, max_tool_rounds=args.max_tool_rounds)
         results["sft"].append({
             "name": item["name"],
             "prompt": item["user"],
