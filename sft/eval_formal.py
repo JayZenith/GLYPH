@@ -28,6 +28,8 @@ def main() -> int:
     parser.add_argument("--max-new-tokens", type=int, default=6000)
     parser.add_argument("--max-tool-rounds", type=int, default=4,
                         help="Max rounds of mocked-tool-result injection per prompt")
+    parser.add_argument("--limit", type=int, default=None,
+                        help="Limit to first N prompts (for smoke runs)")
     args = parser.parse_args()
 
     print("Loading base model...")
@@ -36,6 +38,8 @@ def main() -> int:
     sft_model, sft_tok = load_model(args.sft_model)
 
     prompts = load_prompts("formal_eval")
+    if args.limit is not None:
+        prompts = prompts[:args.limit]
     results = {"base": [], "sft": []}
     for item in prompts:
         prompt = build_prompt(item["user"], item.get("tools", []))
