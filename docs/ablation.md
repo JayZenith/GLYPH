@@ -23,11 +23,12 @@ Vary one of two flags per run:
 
 ## Eval
 
-Three signals collected per run:
+Four signals collected per run:
 
 1. **Validation loss** (in-loop) — Trainer evaluates on the val split every 25 steps (`load_best_model_at_end=True`, `metric=eval_loss`). Final value is the `eval_loss` at epoch 3 in the training log.
 2. **Held-out test loss** (forward-only, post-hoc) — `python -m sft.eval_test_loss --test-set runs/abl_X/test_set --output runs/abl_X/test_loss.json`.
-3. **Format quality** (greedy generation) — `python -m sft.eval_formal --sft-model runs/abl_X/merged --output runs/abl_X/eval.json --max-new-tokens 6000 --limit 5`.
+3. **Format quality** (greedy generation, validator-scored) — `python -m sft.eval_formal --sft-model runs/abl_X/merged --output runs/abl_X/eval.json --max-new-tokens 6000 --limit 5`. Measures **usability** (does the trace terminate, parse, satisfy todos).
+4. **Content quality** (LM-judge over the same 5 generations) — `python -m sft.evals.llm_judge runs/abl_X/eval.json runs/abl_X/eval_judged.json`. Default judge: `gpt-5-mini`. Scores plan_quality / response_relevance / factual_correctness / helpfulness on 1–5; reports `judge_mean` (avg of the 4). Measures **what was written**, ignores whether the trace terminates.
 
 **Splits are identical across A/B/C/D.** All four runs use the same seed=42 `train_test_split` on the same 1098 traces, so the train/val/test partition is the same. Comparisons are like-for-like.
 
@@ -63,31 +64,32 @@ python -m sft.eval_formal --sft-model runs/abl_X/merged \
 
 ## Results
 
-_(fill in after each run completes)_
+| run | val_loss | test_loss | valid_traces | ends_with_response | no_repetition | avg_score | judge_mean | judge_factual |
+|---|---|---|---|---|---|---|---|---|
+| A — lm_head + assistant_only | **0.958** | **0.972** | **4/5** | **100%** | **100%** | **6.4** | 3.65 | 3.2 |
+| B — none + assistant_only    | 0.971 | 0.986 | 0/5 | **0%** | 100% | 2.0 | **3.80** | 3.4 |
+| C — lm_head + full_trace     | 0.937† | 0.936† | 3/5 | **100%** | 100% | 5.8 | 3.55 | 2.8 |
+| D — none + full_trace        | 0.961† | 0.959† | 0/5 | 60% | **40%** | 2.6 | 3.55 | 3.0 |
 
-| run | val_loss (final) | test_loss | valid_traces | ends_with_response | no_repetition | has_plan | avg_score |
-|---|---|---|---|---|---|---|---|
-| A — lm_head + assistant_only | **0.958** | **0.972** | **4/5** | **100%** | **100%** | **100%** | **6.4** |
-| B — none + assistant_only    | 0.971 | 0.986 | 0/5 | **0%** | 100% | 100% | 2.0 |
-| C — lm_head + full_trace     | 0.937† | 0.936† | 3/5 | **100%** | 100% | 100% | 5.8 |
-| D — none + full_trace        | 0.961† | 0.959† | 0/5 | 60% | **40%** | 100% | 2.6 |
+### A vs B — isolates `lm_head` in `modules_to_save`
+Loss/perplexity barely move (0.958 → 0.971). The model still writes plans and tool calls — judge_mean is even *higher* for B (3.80 vs 3.65) — but it never emits `<|im_end|>` (0% termination, every prompt truncates at 6000 tokens). Confirms `lm_head` is what taught termination, not what taught the format.
 
-**A vs B isolates `lm_head` in `modules_to_save`.** Loss/perplexity barely move (0.958 → 0.971), the model still writes plans and tool calls, but it never emits `<|im_end|>` (0% termination, every prompt truncates at 6000 tokens). Confirms the lm_head fix is what taught termination.
+### A vs C — isolates assistant-only masking
+With `lm_head` trained, `full_trace` masking still terminates (100%). Validator quality drops slightly (3/5 vs 4/5, 5.8 vs 6.4 score). Judge slightly favors A on factual (3.2 vs 2.8). Masking is a real but marginal refinement.
 
-**A vs C isolates assistant-only masking.** With lm_head trained, full_trace masking still terminates (100%). Format quality is slightly worse (3/5 valid, 5.8 avg vs A's 4/5, 6.4) — masking is a real but marginal contribution.
+### D (no lm_head + full_trace) — different failure mode than B
+D terminates 60% (gradient on every `<|im_end|>` in the trace partially fixes termination) but introduces a new failure: **repetition jumps up (no_rep drops 100% → 40%)**. `lm_head` was also suppressing repetition.
 
-**D (no lm_head + full_trace) — different failure mode than B.** D terminates 60% (full_trace gives gradient on every `<|im_end|>` in the trace, partial fix) but exposes a new failure: **repetition jumps up (no_repetition drops 100% → 40%)**. The lm_head fix was suppressing repetition too, not just teaching termination.
+### Validator vs LM judge — they measure different things
+B's judge_mean (3.80) is the highest of all four runs even though B is **structurally unusable** (0% termination). The judge reads the trace text and scores **content quality**; it doesn't penalize the model for failing to emit `<|im_end|>`. The validator catches that. **Both signals are needed:** judge says "B writes well", validator says "B can't be used". Same conclusion: lm_head is load-bearing.
 
-**Summary:** lm_head training is the load-bearing fix. Without it (B, D), the model breaks. With it (A, C), the model works. Assistant-only masking is a small refinement on top.
+### Common signal across runs — hallucination
+`judge_factual` is the lowest dim in every run (2.8–3.4). The judge consistently caught hallucinated specifics (made-up benchmark numbers, weather data presented as real). This is a real finding for RL: the SFT'd model writes fluent traces but invents facts. Reward shaping in RL should penalize hallucination explicitly.
 
-† C and D val/test loss are computed over **all tokens** (full_trace mode), not just assistant tokens. They are not directly comparable with A and B's numbers (which average over assistant tokens only). The clean apples-to-apples signal is the formal-eval columns.
+### Summary
+**`lm_head` training is the load-bearing fix.** Without it (B, D), the model breaks structurally even when its content is fine. With it (A, C), the model works. Assistant-only masking is a small refinement on top.
 
-A is the live `JayZenith/glyph-sft-v1` re-evaluated with `--limit 5`. Reproduces the original eval exactly. val_loss from `artifacts/sft_run_v2/sft1.log` (epoch 3); test_loss from `artifacts/sft_run_v2/eval_test_loss.json`.
+† C and D val/test loss are computed over **all tokens** (full_trace mode), not just assistant tokens. They are not directly comparable with A and B's numbers (which average over assistant tokens only). The clean apples-to-apples signals are the formal-eval columns and the judge columns.
 
-## Interpretation
+A is the live `JayZenith/glyph-sft-v1` re-evaluated with `--limit 5`. Reproduces the original eval exactly. val_loss from `artifacts/sft_run_v2/sft1.log` (epoch 3); test_loss from `artifacts/sft_run_v2/eval_test_loss.json`. Judged JSONs (per-prompt judge breakdowns) live in `docs/ablation/abl_*_eval_formal_judged.json`.
 
-Fill in once data is available. Read across rows for marginal effect of each flag:
-- **A vs B** (rows differ only in modules_to_save): isolates lm_head's contribution.
-- **A vs C** (rows differ only in masking): isolates masking's contribution.
-- **A vs D**: combined effect.
-- **B vs D** and **C vs D**: each fix alone vs neither.
