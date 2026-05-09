@@ -6,6 +6,8 @@ Run: python -m sft.eval_formal --base-model ... --sft-model ... --output ...
 """
 import argparse
 import json
+import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
 from sft.evals import (
@@ -57,7 +59,18 @@ def main() -> int:
             "metrics": score_output(prompt, sft_out, tools, sft_n, args.max_new_tokens),
         })
 
+    try:
+        commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    except Exception:
+        commit = None
+
     payload = {
+        "run": {
+            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+            "git_commit": commit,
+            "args": vars(args),
+            "n_prompts": len(prompts),
+        },
         "summary": {
             "base": summarize("base", results["base"]),
             "sft": summarize("sft", results["sft"]),

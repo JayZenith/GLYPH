@@ -84,11 +84,9 @@ env -u HF_TOKEN hf upload JayZenith/glyph-sft-v1 \
 ## Eval
 
 ```bash
-# format quality (5 prompts, validator-scored) — ~$0.11/hr 3090 is enough
-python -m sft.eval_formal \
-    --base-model Qwen/Qwen3-4B-Base \
-    --sft-model JayZenith/glyph-sft-v1 \
-    --output eval_formal.json --max-new-tokens 6000
+# format quality (32 prompts in sft/evals/prompts.yaml, validator-scored)
+# defaults: --base-model Qwen/Qwen3-4B-Base, --sft-model JayZenith/glyph-sft-v1, --max-tool-rounds 4
+python -m sft.eval_formal --output eval_formal_32.json --max-new-tokens 6000
 
 # held-out test loss (forward-only) — fast on any 24GB+
 python -m sft.eval_test_loss \
