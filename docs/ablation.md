@@ -68,9 +68,11 @@ _(fill in after each run completes)_
 | run | val_loss (final) | test_loss | valid_traces | ends_with_response | no_repetition | has_plan | avg_score |
 |---|---|---|---|---|---|---|---|
 | A — lm_head + assistant_only | **0.958** | **0.972** | **4/5** | **100%** | **100%** | **100%** | **6.4** |
-| B — none + assistant_only    | _ | _ | _/5 | _% | _% | _% | _ |
+| B — none + assistant_only    | 0.971 | 0.986 | 0/5 | **0%** | 100% | 100% | 2.0 |
 | C — lm_head + full_trace     | _ | _ | _/5 | _% | _% | _% | _ |
 | D — none + full_trace        | _ | _ | _/5 | _% | _% | _% | _ |
+
+**A vs B isolates `lm_head` in `modules_to_save`.** Loss/perplexity barely move (0.958 → 0.971), the model still writes plans and tool calls, but it never emits `<|im_end|>` (0% termination, every prompt truncates at 6000 tokens). Confirms the lm_head fix is what taught termination.
 
 A is the live `JayZenith/glyph-sft-v1` re-evaluated with `--limit 5`. Reproduces the original eval exactly. val_loss from `artifacts/sft_run_v2/sft1.log` (epoch 3); test_loss from `artifacts/sft_run_v2/eval_test_loss.json`.
 
