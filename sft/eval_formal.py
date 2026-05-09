@@ -20,8 +20,8 @@ from sft.evals import (
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--base-model", required=True)
-    parser.add_argument("--sft-model", required=True)
+    parser.add_argument("--base-model", default="Qwen/Qwen3-4B-Base")
+    parser.add_argument("--sft-model", default="JayZenith/glyph-sft-v1")
     parser.add_argument("--output", required=True)
     parser.add_argument("--max-new-tokens", type=int, default=6000)
     parser.add_argument("--max-tool-rounds", type=int, default=4,
