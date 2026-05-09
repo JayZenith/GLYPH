@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Format-quality eval. Loads base + sft, generates on each prompt, scores
-with the validator, writes JSON.
+"""Format-quality eval. Loads SFT (and optionally base), generates on each
+prompt, scores with the validator, writes JSON.
 
-Run: python -m sft.eval_formal --base-model ... --sft-model ... --output ...
+Run: python -m sft.eval_formal --output ... [--include-base] [--limit N]
 """
 import argparse
 import json
@@ -30,29 +30,35 @@ def main() -> int:
                         help="Max rounds of mocked-tool-result injection per prompt")
     parser.add_argument("--limit", type=int, default=None,
                         help="Limit to first N prompts (for smoke runs)")
+    parser.add_argument("--include-base", action="store_true",
+                        help="Also evaluate the base model (default off; base output is fixed across ablations)")
     args = parser.parse_args()
 
-    print("Loading base model...")
-    base_model, base_tok = load_model(args.base_model)
+    if args.include_base:
+        print("Loading base model...")
+        base_model, base_tok = load_model(args.base_model)
     print("Loading SFT model...")
     sft_model, sft_tok = load_model(args.sft_model)
 
     prompts = load_prompts("formal_eval")
     if args.limit is not None:
         prompts = prompts[:args.limit]
-    results = {"base": [], "sft": []}
+    results = {"sft": []}
+    if args.include_base:
+        results["base"] = []
     for item in prompts:
         prompt = build_prompt(item["user"], item.get("tools", []))
         tools = item.get("tools", [])
 
-        print(f"Running {item['name']} on base...")
-        base_out, base_n = generate(base_model, base_tok, prompt, args.max_new_tokens, max_tool_rounds=args.max_tool_rounds)
-        results["base"].append({
-            "name": item["name"],
-            "prompt": item["user"],
-            "output": base_out,
-            "metrics": score_output(prompt, base_out, tools, base_n, args.max_new_tokens),
-        })
+        if args.include_base:
+            print(f"Running {item['name']} on base...")
+            base_out, base_n = generate(base_model, base_tok, prompt, args.max_new_tokens, max_tool_rounds=args.max_tool_rounds)
+            results["base"].append({
+                "name": item["name"],
+                "prompt": item["user"],
+                "output": base_out,
+                "metrics": score_output(prompt, base_out, tools, base_n, args.max_new_tokens),
+            })
 
         print(f"Running {item['name']} on sft...")
         sft_out, sft_n = generate(sft_model, sft_tok, prompt, args.max_new_tokens, max_tool_rounds=args.max_tool_rounds)
@@ -68,6 +74,10 @@ def main() -> int:
     except Exception:
         commit = None
 
+    summary = {"sft": summarize("sft", results["sft"])}
+    if args.include_base:
+        summary["base"] = summarize("base", results["base"])
+
     payload = {
         "run": {
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
@@ -75,10 +85,7 @@ def main() -> int:
             "args": vars(args),
             "n_prompts": len(prompts),
         },
-        "summary": {
-            "base": summarize("base", results["base"]),
-            "sft": summarize("sft", results["sft"]),
-        },
+        "summary": summary,
         "results": results,
     }
     Path(args.output).write_text(json.dumps(payload, indent=2))
