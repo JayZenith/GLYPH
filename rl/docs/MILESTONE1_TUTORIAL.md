@@ -140,13 +140,12 @@ HF models needed:
 
 Not needed for milestone 1:
 
-- local merged checkpoints
+- local merged checkpoints outside HF
 - local adapter copies on the instance
-- LLM judge code path
-- tool execution code path
-- human review hook
-- old GRPO trainer code
-- unrelated blog files
+- `sft/evals/llm_judge.py`
+- tool execution additions not yet wired for RL, such as future registry work around `get_weather` / `search_web` / `fetch_page` / `run_python` / `get_time`
+- human review dump/hook files, not yet added for milestone 1
+- unrelated blog files like [blog/01_sft.md](/home/jay-zenith/Desktop/TASK/blog/01_sft.md:1)
 
 ## What Broke
 
