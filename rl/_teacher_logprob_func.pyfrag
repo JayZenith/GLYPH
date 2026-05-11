@@ -1,0 +1,37 @@
+async def compute_teacher_logprobs(
+    clients: list[vf.ClientConfig],
+    model_name: str,
+    samples: list[TrainingSample],
+) -> list[list[float]]:
+    """Compute teacher model logprobs for a batch of training samples via prefill."""
+
+    async def _compute_single(client_config: vf.ClientConfig, sample: TrainingSample) -> list[float]:
+        headers = dict(getattr(client_config, "extra_headers", {}) or {})
+        api_key_var = getattr(client_config, "api_key_var", None)
+        if api_key_var:
+            api_key = os.getenv(api_key_var)
+            if api_key:
+                headers.setdefault("Authorization", f"Bearer {api_key}")
+
+        async with httpx.AsyncClient(
+            base_url=client_config.api_base_url,
+            timeout=getattr(client_config, "timeout", 1200),
+            headers=headers,
+        ) as client:
+            response = await client.post(
+                "/generate",
+                json={
+                    "model": model_name,
+                    "prompt_token_ids": sample.prompt_ids + sample.completion_ids,
+                    "max_tokens": 1,
+                    "temperature": 1.0,
+                    "top_p": 1.0,
+                    "prompt_logprobs": True,
+                },
+            )
+            response.raise_for_status()
+            payload = response.json()
+
+        return [0.0 if lp is None else float(lp) for lp in payload.get("prompt_logprobs") or []]
+
+    return await asyncio.gather(*[_compute_single(client, sample) for client, sample in zip(cycle(clients), samples)])

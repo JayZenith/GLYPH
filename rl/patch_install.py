@@ -71,6 +71,102 @@ def _maybe_load_initial_lora_adapter(model: nn.Module) -> None:
     logger.info(f"Loaded initial LoRA adapter from {adapter_dir} into {loaded} PRIME-RL tensors")
 """.strip()
 
+TEACHER_LOGPROB_PATCH_OLD = """import asyncio
+import time
+from concurrent.futures import ThreadPoolExecutor
+from itertools import cycle
+from pathlib import Path
+from typing import Any
+
+import pandas as pd
+import verifiers as vf
+from rich.console import Console
+from rich.table import Table
+from verifiers.utils.client_utils import setup_openai_client
+"""
+
+TEACHER_LOGPROB_PATCH_NEW = """import asyncio
+import os
+import time
+from concurrent.futures import ThreadPoolExecutor
+from itertools import cycle
+from pathlib import Path
+from typing import Any
+
+import httpx
+import pandas as pd
+import verifiers as vf
+from rich.console import Console
+from rich.table import Table
+"""
+
+TEACHER_LOGPROB_BLOCK_OLD = """async def compute_teacher_logprobs(
+    clients: list[vf.ClientConfig],
+    model_name: str,
+    samples: list[TrainingSample],
+) -> list[list[float]]:
+    \"\"\"Compute teacher model logprobs for a batch of training samples via prefill.\"\"\"
+    from prime_rl.inference.vllm.serving_generate import GenerateResponse
+
+    async def _compute_single(client_config: vf.ClientConfig, sample: TrainingSample) -> list[float]:
+        client = setup_openai_client(client_config)
+
+        response = await client.post(
+            \"/generate\",
+            cast_to=GenerateResponse,
+            body={
+                \"model\": model_name,
+                \"prompt_token_ids\": sample.prompt_ids + sample.completion_ids,
+                \"max_tokens\": 1,
+                \"temperature\": 1.0,
+                \"top_p\": 1.0,
+                \"prompt_logprobs\": True,
+            },
+        )
+        return [0.0 if lp is None else float(lp) for lp in response.prompt_logprobs or []]
+
+    return await asyncio.gather(*[_compute_single(client, sample) for client, sample in zip(cycle(clients), samples)])
+"""
+
+TEACHER_LOGPROB_BLOCK_NEW = """async def compute_teacher_logprobs(
+    clients: list[vf.ClientConfig],
+    model_name: str,
+    samples: list[TrainingSample],
+) -> list[list[float]]:
+    \"\"\"Compute teacher model logprobs for a batch of training samples via prefill.\"\"\"
+
+    async def _compute_single(client_config: vf.ClientConfig, sample: TrainingSample) -> list[float]:
+        headers = dict(getattr(client_config, \"extra_headers\", {}) or {})
+        api_key_var = getattr(client_config, \"api_key_var\", None)
+        if api_key_var:
+            api_key = os.getenv(api_key_var)
+            if api_key:
+                headers.setdefault(\"Authorization\", f\"Bearer {api_key}\")
+
+        async with httpx.AsyncClient(
+            base_url=client_config.api_base_url,
+            timeout=getattr(client_config, \"timeout\", 1200),
+            headers=headers,
+        ) as client:
+            response = await client.post(
+                \"/generate\",
+                json={
+                    \"model\": model_name,
+                    \"prompt_token_ids\": sample.prompt_ids + sample.completion_ids,
+                    \"max_tokens\": 1,
+                    \"temperature\": 1.0,
+                    \"top_p\": 1.0,
+                    \"prompt_logprobs\": True,
+                },
+            )
+            response.raise_for_status()
+            payload = response.json()
+
+        return [0.0 if lp is None else float(lp) for lp in payload.get(\"prompt_logprobs\") or []]
+
+    return await asyncio.gather(*[_compute_single(client, sample) for client, sample in zip(cycle(clients), samples)])
+"""
+
 
 CALL_MARKER = "        apply_lora_to_model(model, config.lora)\n"
 CALL_INSERT = CALL_MARKER + "        _maybe_load_initial_lora_adapter(model)\n"
@@ -127,6 +223,19 @@ def patch_ckpt_py(path: Path) -> None:
         path.write_text(text)
 
 
+def patch_orchestrator_utils_py(path: Path) -> None:
+    text = path.read_text()
+    if "payload.get(\"prompt_logprobs\")" in text:
+        return
+    if TEACHER_LOGPROB_PATCH_OLD not in text:
+        raise RuntimeError("Could not find orchestrator imports block to patch")
+    if TEACHER_LOGPROB_BLOCK_OLD not in text:
+        raise RuntimeError("Could not find teacher logprob block to patch")
+    text = text.replace(TEACHER_LOGPROB_PATCH_OLD, TEACHER_LOGPROB_PATCH_NEW, 1)
+    text = text.replace(TEACHER_LOGPROB_BLOCK_OLD, TEACHER_LOGPROB_BLOCK_NEW, 1)
+    path.write_text(text)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("target", type=Path, help="Path to PRIME-RL repo root or installed prime_rl package dir")
@@ -134,17 +243,26 @@ def main() -> None:
 
     target = args.target
     candidates = [
-        (target / "trainer" / "model.py", target / "trainer" / "ckpt.py"),
-        (target / "src" / "prime_rl" / "trainer" / "model.py", target / "src" / "prime_rl" / "trainer" / "ckpt.py"),
+        (
+            target / "trainer" / "model.py",
+            target / "trainer" / "ckpt.py",
+            target / "orchestrator" / "utils.py",
+        ),
+        (
+            target / "src" / "prime_rl" / "trainer" / "model.py",
+            target / "src" / "prime_rl" / "trainer" / "ckpt.py",
+            target / "src" / "prime_rl" / "orchestrator" / "utils.py",
+        ),
     ]
-    for model_py, ckpt_py in candidates:
-        if model_py.exists() and ckpt_py.exists():
+    for model_py, ckpt_py, orchestrator_utils_py in candidates:
+        if model_py.exists() and ckpt_py.exists() and orchestrator_utils_py.exists():
             break
     else:
         raise FileNotFoundError(f"Could not find PRIME-RL trainer files under {target}")
 
     patch_model_py(model_py)
     patch_ckpt_py(ckpt_py)
+    patch_orchestrator_utils_py(orchestrator_utils_py)
 
 
 if __name__ == "__main__":

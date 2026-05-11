@@ -167,6 +167,7 @@ def build_config(args: argparse.Namespace, adapter_cfg: dict) -> dict:
             "model": {
                 "name": base_model,
                 "max_model_len": args.max_model_len,
+                "enforce_eager": True,
             },
             "server": {"port": args.port},
             "gpu_memory_utilization": args.gpu_memory_utilization,
@@ -186,6 +187,7 @@ def build_config(args: argparse.Namespace, adapter_cfg: dict) -> dict:
             "model": {
                 "name": teacher_model_name,
                 "max_model_len": args.max_model_len,
+                "enforce_eager": True,
             },
             "server": {"port": args.teacher_port},
             "gpu_memory_utilization": args.gpu_memory_utilization,
@@ -231,12 +233,23 @@ def main() -> None:
 
     from prime_rl.configs.rl import RLConfig
     import prime_rl.entrypoints.rl as rl_mod
+    import torch
 
     if args.enable_teacher_inference:
         if args.share_single_gpu:
             rl_mod.get_physical_gpu_ids = lambda: [0, 0, 0]
         else:
-            rl_mod.get_physical_gpu_ids = lambda: [0, 1, 1]
+            gpu_count = torch.cuda.device_count()
+            if gpu_count >= 4:
+                rl_mod.get_physical_gpu_ids = lambda: [0, 2, 3]
+            elif gpu_count == 3:
+                rl_mod.get_physical_gpu_ids = lambda: [0, 1, 2]
+            elif gpu_count == 2:
+                rl_mod.get_physical_gpu_ids = lambda: [0, 1, 1]
+            else:
+                raise RuntimeError(
+                    "Teacher inference requires either share_single_gpu or at least 2 visible GPUs."
+                )
     elif args.share_single_gpu:
         rl_mod.get_physical_gpu_ids = lambda: [0, 0]
 
