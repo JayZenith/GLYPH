@@ -10,7 +10,7 @@ from datasets import Dataset
 
 import verifiers as vf
 from core.validator import TaskValidator
-from task_format import TaskVerifier, load_prompts
+from rl.task_format import TaskVerifier, load_prompts
 
 
 def _canonical_json(value) -> str:
