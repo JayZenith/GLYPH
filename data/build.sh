@@ -2,10 +2,11 @@
 # Full data pipeline: synthesize → postprocess → patch → filter.
 # Re-creates the shape of synthetic_data/sft_train_1098_official.jsonl.
 #
-# NOTE: the EXACT flags used to build the existing dataset are not recorded
-# (see synthetic_data/data_manifest.json). The values below are sensible
-# defaults based on TraceGenerator's class signature; rebuilding will give a
-# new dataset with similar properties, not a byte-identical copy.
+# NOTE: the EXACT flags used to build the existing dataset are not recorded.
+# The values below are sensible defaults based on TraceGenerator's class
+# signature; rebuilding will give a new dataset with similar properties, not
+# a byte-identical copy. For exact reproduction pull JayZenith/glyph-sft-v1-data
+# from HF.
 #
 # Usage (from repo root):
 #   OPENAI_API_KEY=... ./data/build.sh [run_name] [count]

@@ -27,7 +27,7 @@ wandb/
 runs/
 logs/
 *.log
-artifacts/
+sft_artifacts/
 synthetic_data/
 outputs/
 

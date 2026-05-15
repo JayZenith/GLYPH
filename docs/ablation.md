@@ -28,7 +28,7 @@ Four signals collected per run:
 1. **Validation loss** (in-loop) — Trainer evaluates on the val split every 25 steps (`load_best_model_at_end=True`, `metric=eval_loss`). Final value is the `eval_loss` at epoch 3 in the training log.
 2. **Held-out test loss** (forward-only, post-hoc) — `python -m sft.eval_test_loss --test-set runs/abl_X/test_set --output runs/abl_X/test_loss.json`.
 3. **Format quality** (greedy generation, validator-scored) — `python -m sft.eval_formal --sft-model runs/abl_X/merged --output runs/abl_X/eval.json --max-new-tokens 6000 --limit 5`. Measures **usability** (does the trace terminate, parse, satisfy todos).
-4. **Content quality** (LM-judge over the same 5 generations) — `python -m sft.evals.llm_judge runs/abl_X/eval.json runs/abl_X/eval_judged.json`. Default judge: `gpt-5-mini`. Scores plan_quality / response_relevance / factual_correctness / helpfulness on 1–5; reports `judge_mean` (avg of the 4). Measures **what was written**, ignores whether the trace terminates.
+4. **Content quality** (LLM-as-judge over the same 5 generations) — `python -m sft.evals.llm_judge runs/abl_X/eval.json runs/abl_X/eval_judged.json`. The judge is **OpenAI `gpt-5-mini`** called via the OpenAI API ([`sft/evals/llm_judge.py`](../sft/evals/llm_judge.py)); the script reads the formal-eval JSON, sends each generation to the judge with a fixed rubric prompt, and writes per-prompt + aggregate scores back to a `*_judged.json` file. Scores four dimensions on 1–5 (plan_quality, response_relevance, factual_correctness, helpfulness) and reports `judge_mean` (avg of the 4). Measures **what was written**, ignores whether the trace terminates. No human review and no Claude in the loop — `gpt-5-mini` is the sole judge for every number in the table below.
 
 **Splits are identical across A/B/C/D.** All four runs use the same seed=42 `train_test_split` on the same 1098 traces, so the train/val/test partition is the same. Comparisons are like-for-like.
 
@@ -91,5 +91,5 @@ B's judge_mean (3.80) is the highest of all four runs even though B is **structu
 
 † C and D val/test loss are computed over **all tokens** (full_trace mode), not just assistant tokens. They are not directly comparable with A and B's numbers (which average over assistant tokens only). The clean apples-to-apples signals are the formal-eval columns and the judge columns.
 
-A is the live `JayZenith/glyph-sft-v1` re-evaluated with `--limit 5`. Reproduces the original eval exactly. val_loss from `artifacts/sft_run_v2/sft1.log` (epoch 3); test_loss from `artifacts/sft_run_v2/eval_test_loss.json`. Judged JSONs (per-prompt judge breakdowns) live in `docs/ablation/abl_*_eval_formal_judged.json`.
+A is the live `JayZenith/glyph-sft-v1` re-evaluated with `--limit 5`. Reproduces the original eval exactly. val_loss from `sft_artifacts/official_glyph_sft_v1/logs/sft1.log` (epoch 3); test_loss from `sft_artifacts/official_glyph_sft_v1/eval_results/eval_test_loss.json`. Judged JSONs (per-prompt judge breakdowns) live in `docs/ablation/abl_*_eval_formal_judged.json`.
 

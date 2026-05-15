@@ -75,18 +75,18 @@ bash rl/setup_prime_rl.sh
 
 ```bash
 # pull adapter + tokenized test_set, destroy instance
-scp -P <PORT> -r root@<HOST>:/root/glyph/runs/sft1/{final,test_set} artifacts/sft_run_v2/
+scp -P <PORT> -r root@<HOST>:/root/glyph/runs/sft1/{final,test_set} sft_artifacts/official_glyph_sft_v1/
 vastai destroy instance <ID>
 
 # merge locally (CPU, ~13min)
 python -m sft.merge_adapter \
     --base Qwen/Qwen3-4B-Base \
-    --adapter artifacts/sft_run_v2/final \
-    --output artifacts/sft_run_v2/merged
+    --adapter sft_artifacts/official_glyph_sft_v1/final \
+    --output sft_artifacts/official_glyph_sft_v1/merged
 
 # push to HF (env -u HF_TOKEN works around read-only token in env)
 env -u HF_TOKEN hf upload JayZenith/glyph-sft-v1 \
-    artifacts/sft_run_v2/merged --repo-type model
+    sft_artifacts/official_glyph_sft_v1/merged --repo-type model
 ```
 
 ## Eval
@@ -100,12 +100,12 @@ python -m sft.eval_formal --output eval_formal_32.json --max-new-tokens 6000
 python -m sft.eval_test_loss \
     --base Qwen/Qwen3-4B-Base \
     --sft JayZenith/glyph-sft-v1 \
-    --test-set artifacts/sft_run_v2/test_set \
+    --test-set sft_artifacts/official_glyph_sft_v1/test_set \
     --output eval_test_loss.json
 ```
 
 ## Caveats
 
-- Dataset CLI flags weren't recorded — re-running `data/build.sh` gives a similar dataset, not byte-identical. Pull from HF for exact reproduction. See [`synthetic_data/data_manifest.json`](synthetic_data/data_manifest.json).
+- Dataset CLI flags weren't recorded — re-running `data/build.sh` gives a similar dataset, not byte-identical. For exact reproduction use [`JayZenith/glyph-sft-v1-data`](https://huggingface.co/datasets/JayZenith/glyph-sft-v1-data) directly.
 - Only one ablation isolated (lm_head LR). The 2×2 over `modules_to_save` × loss-masking is run via `python -m sft.train --modules-to-save ... --masking-mode ...`; protocol + results table in [`docs/ablation.md`](docs/ablation.md).
 - Eval is small (5 prompts × 1 seed). Plan: 30+ prompts × 3 seeds + LM-judge semantic eval.
