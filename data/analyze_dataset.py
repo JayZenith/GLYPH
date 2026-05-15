@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dupe + validator-pass-rate audit. Run: python -m tools.analyze_dataset FILE"""
+"""Dupe + validator-pass-rate audit. Run: python -m data.analyze_dataset FILE"""
 import argparse
 import hashlib
 import json

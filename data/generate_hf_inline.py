@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate TASK traces with a local HF model. Run: python -m tools.generate_hf_inline"""
+"""Generate TASK traces with a local HF model. Run: python -m data.generate_hf_inline"""
 import argparse
 import json
 import random

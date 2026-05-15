@@ -46,7 +46,7 @@ bash data/build.sh my_run 1000
 Inspect what you got:
 
 ```bash
-python -m tools.analyze_dataset --data synthetic_data/my_run/sft_train.jsonl
+python -m data.analyze_dataset --data synthetic_data/my_run/sft_train.jsonl
 python -m data.audit_diversity --data synthetic_data/my_run/sft_train.jsonl
 ```
 
