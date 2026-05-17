@@ -60,7 +60,7 @@ PY
     wheel_url="https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.11/flash_attn-2.8.3%2Bcu12torch2.11cxx11abiTRUE-cp312-cp312-linux_x86_64.whl"
   else
     echo "No pinned flash-attn wheel for torch=$torch_version cuda=$cuda_version python=$py_tag abi=$abi_flag" >&2
-    echo "Set FLASH_ATTN_WHEEL_URL to a matching wheel before rerunning rl/setup_prime_rl.sh." >&2
+    echo "Set FLASH_ATTN_WHEEL_URL to a matching wheel before rerunning setup/install_prime_rl.sh." >&2
     return 1
   fi
 
@@ -102,7 +102,7 @@ else:
     raise RuntimeError("Could not resolve prime_rl package path")
 PY
 )"
-"$PRIME_RL_DIR/.venv/bin/python" "$ROOT_DIR/rl/scripts/patch_install.py" "$SITE_PACKAGES_DIR"
+"$PRIME_RL_DIR/.venv/bin/python" "$ROOT_DIR/setup/patch_install.py" "$SITE_PACKAGES_DIR"
 
 cat <<EOF
 PRIME-RL ready at: $PRIME_RL_DIR

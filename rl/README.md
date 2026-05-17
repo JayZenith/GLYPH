@@ -6,14 +6,13 @@ Current live path:
 - [task_trace.py](/home/jay-zenith/Desktop/TASK/rl/task_trace.py:1): PRIME-RL environment + reward wiring
 - [configs/task_trace](/home/jay-zenith/Desktop/TASK/rl/configs/task_trace:1): trainer/orchestrator/inference defaults
 - [rust](/home/jay-zenith/Desktop/TASK/rl/rust:1): Rust executor, reward, tool schema, case generation
-- [scripts/patch_install.py](/home/jay-zenith/Desktop/TASK/rl/scripts/patch_install.py:1): PRIME-RL install patch
-- [setup_prime_rl.sh](/home/jay-zenith/Desktop/TASK/rl/setup_prime_rl.sh:1): PRIME-RL setup script
+- [../setup](/home/jay-zenith/Desktop/TASK/setup/setup.md:1): install + smoke + run scripts (see `setup/setup.md`)
 
 Setup:
 
 ```bash
 pip install -r requirements-train.txt
-bash rl/setup_prime_rl.sh
+bash setup/install_prime_rl.sh
 ```
 
 Prepare Rust tool-use cases (writes 8 sample Cargo projects + a prompt JSONL):

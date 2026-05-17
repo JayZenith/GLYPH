@@ -221,7 +221,6 @@ ENTRYPOINTS_IMPORT_BLOCK = """
 FORWARDED_PRIME_RL_ENV_KEYS = (
     "PRIME_RL_INIT_ADAPTER",
     "PRIME_RL_INFERENCE_FULL_WEIGHTS",
-    "PRIME_RL_INIT_INFERENCE_WEIGHTS",
 )
 
 
@@ -288,19 +287,6 @@ ENTRYPOINTS_TRAINER_ENV_NEW = """                env=_with_forwarded_prime_rl_en
                 }),
 """
 
-ORCHESTRATOR_IMPORT_OLD = """import asyncio
-import gc
-import os
-import time
-"""
-
-ORCHESTRATOR_IMPORT_NEW = """import asyncio
-import gc
-import os
-import time
-from pathlib import Path
-"""
-
 ORCHESTRATOR_RESUME_OLD = """            weights_path = get_weight_dir(
                 config.output_dir, scheduler.ckpt_step, check_exists=check_exists, wait_timeout=wait_timeout
             )
@@ -322,11 +308,6 @@ ORCHESTRATOR_RESUME_NEW = """            weights_path = get_weight_dir(
             await inference_pool.update_weights(weights_path, lora_name=lora_name, step=scheduler.ckpt_step)
     else:
         logger.info("Training from scratch")
-        if enable_policy_updates:
-            init_inference_weights = os.environ.get("PRIME_RL_INIT_INFERENCE_WEIGHTS")
-            if init_inference_weights:
-                logger.info(f"Initializing inference weights from {init_inference_weights}")
-                await inference_pool.update_weights(Path(init_inference_weights), lora_name=None, step=0)
 """
 
 FILESYSTEM_IMPORT_OLD = """import shutil
@@ -466,109 +447,157 @@ FILESYSTEM_LOOP_NEW = """            if adapter_only:
                 )
 """
 
-VLLM_WORKER_IMPORT_OLD = """from typing import TYPE_CHECKING
+VLLM_WORKER_FILE = """from pathlib import Path
+from typing import TYPE_CHECKING
 
+from safetensors import safe_open
 from torch.nn import Module
+from vllm.config import set_current_vllm_config
 from vllm.model_executor.model_loader import DefaultModelLoader, get_model_loader
-"""
 
-VLLM_WORKER_IMPORT_NEW = """from collections import defaultdict
-from typing import TYPE_CHECKING, Iterable
+if TYPE_CHECKING:
+    from vllm.v1.worker.gpu_worker import Worker
 
-import torch
-from torch.nn import Module
-from vllm.model_executor.model_loader import DefaultModelLoader, get_model_loader
-"""
+    Worker = Worker
+else:
+    Worker = object
 
-VLLM_WORKER_HELPER_ANCHOR = "\n\nclass FileSystemWeightUpdateWorker(Worker):\n"
-VLLM_WORKER_HELPER_BLOCK = """
 
-def _fuse_qwen_packed_weights(weights: Iterable[tuple[str, torch.Tensor]]) -> Iterable[tuple[str, torch.Tensor]]:
-    qkv_buf: dict[str, dict[str, torch.Tensor]] = defaultdict(dict)
-    mlp_buf: dict[str, dict[str, torch.Tensor]] = defaultdict(dict)
-    qkv_suffixes = {
-        "self_attn.q_proj.weight": "q",
-        "self_attn.k_proj.weight": "k",
-        "self_attn.v_proj.weight": "v",
-    }
-    mlp_suffixes = {
-        "mlp.gate_proj.weight": "gate",
-        "mlp.up_proj.weight": "up",
-    }
+class FileSystemWeightUpdateWorker(Worker):
+    \"\"\"vLLM worker extension for updating weights in-place using shared filesystem.\"\"\"
 
-    def _layer_prefix_and_suffix(name: str, suffix_map: dict[str, str]) -> tuple[str, str] | None:
-        for suffix, short_name in suffix_map.items():
-            token = f".{suffix}"
-            if token not in name:
-                continue
-            layer_prefix, _ = name.split(token, 1)
-            return layer_prefix, short_name
+    def init_broadcaster(self) -> None:
+        ...
+
+    def liveness_probe(self) -> None:
         return None
 
-    for name, tensor in weights:
-        qkv_match = _layer_prefix_and_suffix(name, qkv_suffixes)
-        if qkv_match is not None:
-            layer_prefix, short_name = qkv_match
-            qkv_buf[layer_prefix][short_name] = tensor
-            continue
+    @staticmethod
+    def _raw_weights(safetensors_path: Path):
+        with safe_open(str(safetensors_path), framework=\"pt\", device=\"cpu\") as f:
+            for key in f.keys():
+                yield key, f.get_tensor(key)
 
-        mlp_match = _layer_prefix_and_suffix(name, mlp_suffixes)
-        if mlp_match is not None:
-            layer_prefix, short_name = mlp_match
-            mlp_buf[layer_prefix][short_name] = tensor
-            continue
+    def update_weights_from_path(self, weight_path: str) -> None:
+        model_runner = self.model_runner
+        model = model_runner.model
+        assert isinstance(model, Module)
 
-        yield name, tensor
-
-    for layer_prefix in sorted(qkv_buf):
-        parts = qkv_buf[layer_prefix]
-        if all(part in parts for part in ("q", "k", "v")):
-            yield f"{layer_prefix}.self_attn.qkv_proj.weight", torch.cat(
-                [parts["q"], parts["k"], parts["v"]],
-                dim=0,
-            )
+        weight_dir = Path(weight_path)
+        safetensors_path = weight_dir / \"model.safetensors\"
+        if safetensors_path.exists():
+            weights_iterator = self._raw_weights(safetensors_path)
         else:
-            missing = [part for part in ("q", "k", "v") if part not in parts]
-            raise ValueError(f"Layer {layer_prefix} missing QKV parts: {missing}")
-
-    for layer_prefix in sorted(mlp_buf):
-        parts = mlp_buf[layer_prefix]
-        if all(part in parts for part in ("gate", "up")):
-            yield f"{layer_prefix}.mlp.gate_up_proj.weight", torch.cat(
-                [parts["gate"], parts["up"]],
-                dim=0,
+            model_loader = get_model_loader(self.load_config)
+            assert isinstance(model_loader, DefaultModelLoader)
+            local_source = DefaultModelLoader.Source(
+                weight_path,
+                revision=None,
+                prefix=\"\",
+                fall_back_to_pt=getattr(model, \"fall_back_to_pt_during_load\", True),
+                allow_patterns_overrides=getattr(model, \"allow_patterns_overrides\", None),
             )
-        else:
-            missing = [part for part in ("gate", "up") if part not in parts]
-            raise ValueError(f"Layer {layer_prefix} missing MLP parts: {missing}")
-
-
-def _maybe_fuse_model_weights(model: Module, weights: Iterable[tuple[str, torch.Tensor]]) -> Iterable[tuple[str, torch.Tensor]]:
-    if model.__class__.__name__ in {"Qwen2ForCausalLM", "Qwen3ForCausalLM"}:
-        return _fuse_qwen_packed_weights(weights)
-    return weights
+            weights_iterator = model_loader._get_weights_iterator(local_source)
+        device = next(model.parameters()).device
+        with set_current_vllm_config(self.vllm_config), device:
+            model.load_weights(weights_iterator)  # type: ignore[arg-type]
 """
 
-VLLM_WORKER_CLASS_CHECK_OLD = '    if model.__class__.__name__ == "Qwen2ForCausalLM":\n'
-VLLM_WORKER_CLASS_CHECK_NEW = '    if model.__class__.__name__ in {"Qwen2ForCausalLM", "Qwen3ForCausalLM"}:\n'
-
-VLLM_WORKER_UPDATE_OLD = """        weights_iterator = model_loader._get_weights_iterator(local_source)
-        load_weights_checkpoint_layerwise(
-            model,
-            weights_iterator,
-            self.model_runner.model_config,
-            self.vllm_config,
+QWEN3_LOAD_WEIGHTS_OLD = """    def load_weights(self, weights: Iterable[tuple[str, torch.Tensor]]) -> set[str]:
+        loader = AutoWeightsLoader(
+            self,
+            skip_prefixes=(["lm_head."] if self.config.tie_word_embeddings else None),
         )
+        return loader.load_weights(weights)
 """
 
-VLLM_WORKER_UPDATE_NEW = """        weights_iterator = model_loader._get_weights_iterator(local_source)
-        weights_iterator = _maybe_fuse_model_weights(model, weights_iterator)
-        load_weights_checkpoint_layerwise(
-            model,
-            weights_iterator,
-            self.model_runner.model_config,
-            self.vllm_config,
-        )
+QWEN3_LOAD_WEIGHTS_NEW = """    def load_weights(self, weights: Iterable[tuple[str, torch.Tensor]]) -> set[str]:
+        stacked_params_mapping = [
+            ("qkv_proj", "q_proj", "q"),
+            ("qkv_proj", "k_proj", "k"),
+            ("qkv_proj", "v_proj", "v"),
+            ("gate_up_proj", "gate_proj", 0),
+            ("gate_up_proj", "up_proj", 1),
+        ]
+        params_dict = dict(self.named_parameters(remove_duplicate=False))
+        loaded_params: set[str] = set()
+        for name, loaded_weight in weights:
+            if "rotary_emb.inv_freq" in name:
+                continue
+            if self.quant_config is not None and (
+                scale_name := self.quant_config.get_cache_scale(name)
+            ):
+                param = params_dict[scale_name]
+                weight_loader = getattr(param, "weight_loader", default_weight_loader)
+                loaded_weight = loaded_weight if loaded_weight.dim() == 0 else loaded_weight[0]
+                weight_loader(param, loaded_weight)
+                loaded_params.add(scale_name)
+                continue
+            for param_name, weight_name, shard_id in stacked_params_mapping:
+                if weight_name not in name:
+                    continue
+                name = name.replace(weight_name, param_name)
+                if name.endswith(".bias") and name not in params_dict:
+                    continue
+                if is_pp_missing_parameter(name, self):
+                    continue
+                if name.endswith("scale"):
+                    name = maybe_remap_kv_scale_name(name, params_dict)
+                    if name is None:
+                        continue
+                if name not in params_dict:
+                    continue
+                param = params_dict[name]
+                weight_loader = getattr(param, "weight_loader", default_weight_loader)
+                if weight_loader == default_weight_loader:
+                    weight_loader(param, loaded_weight)
+                else:
+                    weight_loader(param, loaded_weight, shard_id)
+                break
+            else:
+                if name.endswith(".bias") and name not in params_dict:
+                    continue
+                name = maybe_remap_kv_scale_name(name, params_dict)
+                if name is None:
+                    continue
+                if is_pp_missing_parameter(name, self):
+                    continue
+                if name not in params_dict:
+                    continue
+                param = params_dict[name]
+                weight_loader = getattr(param, "weight_loader", default_weight_loader)
+                weight_loader(param, loaded_weight)
+            loaded_params.add(name)
+        return loaded_params
+"""
+
+QWEN3_WEIGHT_UTILS_IMPORT_ANCHOR = "from vllm.sequence import IntermediateTensors\n"
+QWEN3_WEIGHT_UTILS_IMPORT_BLOCK = """from vllm.model_executor.model_loader.weight_utils import (
+    default_weight_loader,
+    maybe_remap_kv_scale_name,
+)
+"""
+
+QWEN3_UTILS_IMPORT_SINGLE_OLD = (
+    "from .utils import AutoWeightsLoader, PPMissingLayer, extract_layer_index, maybe_prefix\n"
+)
+QWEN3_UTILS_IMPORT_SINGLE_NEW = (
+    "from .utils import AutoWeightsLoader, PPMissingLayer, extract_layer_index, is_pp_missing_parameter, maybe_prefix\n"
+)
+QWEN3_UTILS_IMPORT_MULTI_OLD = """from .utils import (
+    AutoWeightsLoader,
+    PPMissingLayer,
+    extract_layer_index,
+    maybe_prefix,
+)
+"""
+QWEN3_UTILS_IMPORT_MULTI_NEW = """from .utils import (
+    AutoWeightsLoader,
+    PPMissingLayer,
+    extract_layer_index,
+    is_pp_missing_parameter,
+    maybe_prefix,
+)
 """
 
 
@@ -667,10 +696,7 @@ def patch_scheduler_py(path: Path) -> None:
 def patch_orchestrator_py(path: Path) -> None:
     text = path.read_text()
     changed = False
-    if "PRIME_RL_INIT_INFERENCE_WEIGHTS" not in text:
-        if ORCHESTRATOR_IMPORT_OLD in text:
-            text = text.replace(ORCHESTRATOR_IMPORT_OLD, ORCHESTRATOR_IMPORT_NEW, 1)
-            changed = True
+    if "use_full_inference_weights" not in text:
         if ORCHESTRATOR_RESUME_OLD not in text:
             raise RuntimeError("Could not find orchestrator resume/startup block to patch")
         text = text.replace(ORCHESTRATOR_RESUME_OLD, ORCHESTRATOR_RESUME_NEW, 1)
@@ -724,22 +750,36 @@ def patch_entrypoints_rl_py(path: Path) -> None:
 
 def patch_vllm_filesystem_worker_py(path: Path) -> None:
     text = path.read_text()
-    changed = False
-    if "_maybe_fuse_model_weights" not in text:
-        if VLLM_WORKER_IMPORT_OLD not in text:
-            raise RuntimeError("Could not find vLLM filesystem worker import block")
-        text = text.replace(VLLM_WORKER_IMPORT_OLD, VLLM_WORKER_IMPORT_NEW, 1)
-        if VLLM_WORKER_HELPER_ANCHOR not in text:
-            raise RuntimeError("Could not find vLLM filesystem worker helper anchor")
-        text = text.replace(VLLM_WORKER_HELPER_ANCHOR, VLLM_WORKER_HELPER_BLOCK + VLLM_WORKER_HELPER_ANCHOR, 1)
-        changed = True
-    elif VLLM_WORKER_CLASS_CHECK_OLD in text:
-        text = text.replace(VLLM_WORKER_CLASS_CHECK_OLD, VLLM_WORKER_CLASS_CHECK_NEW, 1)
-        changed = True
-    if VLLM_WORKER_UPDATE_OLD in text:
-        text = text.replace(VLLM_WORKER_UPDATE_OLD, VLLM_WORKER_UPDATE_NEW, 1)
-        changed = True
-    if changed:
+    desired = VLLM_WORKER_FILE
+    if text != desired:
+        path.write_text(desired)
+
+
+def patch_vllm_qwen3_py(path: Path) -> None:
+    text = path.read_text()
+    original = text
+
+    if "from vllm.model_executor.model_loader.weight_utils import" not in text:
+        if QWEN3_WEIGHT_UTILS_IMPORT_ANCHOR not in text:
+            raise RuntimeError("Could not find Qwen3 weight_utils import anchor")
+        text = text.replace(
+            QWEN3_WEIGHT_UTILS_IMPORT_ANCHOR,
+            QWEN3_WEIGHT_UTILS_IMPORT_BLOCK + QWEN3_WEIGHT_UTILS_IMPORT_ANCHOR,
+            1,
+        )
+
+    if QWEN3_UTILS_IMPORT_SINGLE_OLD in text:
+        text = text.replace(QWEN3_UTILS_IMPORT_SINGLE_OLD, QWEN3_UTILS_IMPORT_SINGLE_NEW, 1)
+    elif QWEN3_UTILS_IMPORT_MULTI_OLD in text:
+        text = text.replace(QWEN3_UTILS_IMPORT_MULTI_OLD, QWEN3_UTILS_IMPORT_MULTI_NEW, 1)
+    # else: already extended with is_pp_missing_parameter (idempotent no-op)
+
+    if QWEN3_LOAD_WEIGHTS_NEW not in text:
+        if QWEN3_LOAD_WEIGHTS_OLD not in text:
+            raise RuntimeError("Could not find Qwen3 load_weights block to patch")
+        text = text.replace(QWEN3_LOAD_WEIGHTS_OLD, QWEN3_LOAD_WEIGHTS_NEW, 1)
+
+    if text != original:
         path.write_text(text)
 
 
@@ -771,8 +811,9 @@ def main() -> None:
             target / "src" / "prime_rl" / "trainer" / "rl" / "broadcast" / "filesystem.py",
         ),
     ]
+    matched = False
     for entrypoints_rl_py, vllm_worker_py, model_py, ckpt_py, orchestrator_utils_py, orchestrator_py, scheduler_py, filesystem_broadcast_py in candidates:
-        if (
+        if not (
             entrypoints_rl_py.exists()
             and vllm_worker_py.exists()
             and model_py.exists()
@@ -782,18 +823,44 @@ def main() -> None:
             and scheduler_py.exists()
             and filesystem_broadcast_py.exists()
         ):
-            break
-    else:
+            continue
+        matched = True
+        patch_entrypoints_rl_py(entrypoints_rl_py)
+        patch_vllm_filesystem_worker_py(vllm_worker_py)
+        patch_model_py(model_py)
+        patch_ckpt_py(ckpt_py)
+        patch_orchestrator_utils_py(orchestrator_utils_py)
+        patch_orchestrator_py(orchestrator_py)
+        patch_scheduler_py(scheduler_py)
+        patch_filesystem_broadcast_py(filesystem_broadcast_py)
+    if not matched:
         raise FileNotFoundError(f"Could not find PRIME-RL trainer files under {target}")
 
-    patch_entrypoints_rl_py(entrypoints_rl_py)
-    patch_vllm_filesystem_worker_py(vllm_worker_py)
-    patch_model_py(model_py)
-    patch_ckpt_py(ckpt_py)
-    patch_orchestrator_utils_py(orchestrator_utils_py)
-    patch_orchestrator_py(orchestrator_py)
-    patch_scheduler_py(scheduler_py)
-    patch_filesystem_broadcast_py(filesystem_broadcast_py)
+    qwen3_py = _find_vllm_qwen3_path(target)
+    if qwen3_py is not None:
+        patch_vllm_qwen3_py(qwen3_py)
+    else:
+        raise FileNotFoundError("Could not locate installed vllm/model_executor/models/qwen3.py")
+
+
+def _find_vllm_qwen3_path(target: Path) -> Path | None:
+    # Probe layouts (prime-rl repo root, site-packages root, site-packages/prime_rl).
+    candidates = [
+        target / ".venv" / "lib" / "python3.12" / "site-packages" / "vllm" / "model_executor" / "models" / "qwen3.py",
+        target / "vllm" / "model_executor" / "models" / "qwen3.py",
+        target.parent / "vllm" / "model_executor" / "models" / "qwen3.py",
+    ]
+    for path in candidates:
+        if path.exists():
+            return path
+    try:
+        import importlib.util
+        spec = importlib.util.find_spec("vllm.model_executor.models.qwen3")
+    except Exception:
+        return None
+    if spec and spec.origin:
+        return Path(spec.origin)
+    return None
 
 
 if __name__ == "__main__":
