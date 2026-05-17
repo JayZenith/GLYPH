@@ -203,10 +203,8 @@ class RustToolEnv(vf.MultiTurnEnv):
     block, execute the tool for real and append a `result {…}` block before the
     next round. Stops when no pending calls remain or `max_tool_rounds` reached.
 
-    NOTE: this subclasses `vf.MultiTurnEnv` and assumes the canonical prime-rl
-    verifiers API (`env_response(messages, state)` + `is_completed(...)`). If
-    your installed verifiers version uses different hook names, this is the one
-    spot to adapt.
+    NOTE: this subclasses `vf.MultiTurnEnv` and follows the current async
+    verifiers API (`env_response(messages, state)` + `is_completed(state)`).
     """
 
     def __init__(
@@ -230,20 +228,23 @@ class RustToolEnv(vf.MultiTurnEnv):
             )
         return str(messages)
 
-    def is_completed(self, messages, state, **kwargs) -> bool:
+    async def is_completed(self, state, **kwargs) -> bool:
+        trajectory = state.get("trajectory") or []
+        if not trajectory:
+            return False
         if state.get("rounds_used", 0) >= self.max_tool_rounds:
             return True
-        text = self._messages_text(messages)
+        text = self._messages_text(trajectory[-1]["completion"])
         return not extract_pending_call_ids(text)
 
-    def env_response(self, messages, state, **kwargs):
+    async def env_response(self, messages, state, **kwargs):
         text = self._messages_text(messages)
         pending = extract_pending_call_ids(text)
         if not pending:
-            return messages, state
+            return []
 
         by_id = {c["id"]: c for c in parse_call_blocks(text)}
-        blocks: list[str] = []
+        responses: list[dict[str, str]] = []
         for cid in pending:
             call = by_id.get(cid)
             if call is None:
@@ -252,16 +253,16 @@ class RustToolEnv(vf.MultiTurnEnv):
                 er = ExecutionResult(False, "", f"unknown tool: {call['tool']}", -1)
             else:
                 er = _execute(self.executor, call["tool"], call["params"])
-            blocks.append(format_result_block(cid, er))
-
-        injection = "\n\n" + "\n\n".join(blocks) + "\n\n"
-        if isinstance(messages, list):
-            messages = list(messages) + [{"role": "tool", "content": injection}]
-        else:
-            messages = messages + injection
+            responses.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": cid,
+                    "content": format_result_block(cid, er),
+                }
+            )
 
         state["rounds_used"] = state.get("rounds_used", 0) + 1
-        return messages, state
+        return responses
 
 
 # ---------------------------------------------------------------------------

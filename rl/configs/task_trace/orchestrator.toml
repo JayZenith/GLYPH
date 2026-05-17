@@ -1,6 +1,6 @@
-batch_size = 64
+batch_size = 48
 rollouts_per_example = 4
-seq_len = 4096
+seq_len = 1536
 max_steps = 200
 
 [model]
@@ -8,7 +8,7 @@ name = "Qwen/Qwen3-4B-Base"
 
 [train.sampling]
 temperature = 0.8
-max_completion_tokens = 1024
+max_completion_tokens = 384
 
 [[train.env]]
 id = "task-trace"

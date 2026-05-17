@@ -1,9 +1,9 @@
-gpu_memory_utilization = 0.2
+gpu_memory_utilization = 0.7
 
 [model]
 name = "Qwen/Qwen3-4B-Base"
 dtype = "float16"
-max_model_len = 4096
+max_model_len = 1536
 enforce_eager = true
 
 [server]

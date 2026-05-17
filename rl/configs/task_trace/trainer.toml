@@ -2,14 +2,14 @@ max_steps = 200
 
 [model]
 name = "Qwen/Qwen3-4B-Base"
-seq_len = 4096
+seq_len = 1536
 attn = "sdpa"
 optimization_dtype = "bfloat16"
 reduce_dtype = "bfloat16"
 
 [buffer]
-batch_size = 64
-seq_len = 4096
+batch_size = 24
+seq_len = 1536
 
 [optim]
 type = "adamw"

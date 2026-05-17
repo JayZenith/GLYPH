@@ -22,6 +22,13 @@ export TEMP="$TMP_ROOT"
 export TMP="$TMP_ROOT"
 export UV_CACHE_DIR
 
+init_prime_rl_submodules() {
+  git -C "$PRIME_RL_DIR" submodule set-url deps/verifiers https://github.com/PrimeIntellect-ai/verifiers.git
+  git -C "$PRIME_RL_DIR" submodule set-url deps/renderers https://github.com/PrimeIntellect-ai/renderers.git
+  git -C "$PRIME_RL_DIR" submodule set-url deps/research-environments https://github.com/PrimeIntellect-ai/research-environments.git
+  git -C "$PRIME_RL_DIR" submodule update --init deps/verifiers deps/renderers deps/research-environments
+}
+
 install_flash_attn_wheel() {
   local python_bin="$1"
   local torch_version cuda_version py_tag abi_flag wheel_url
@@ -75,6 +82,7 @@ fi
 
 cd "$PRIME_RL_DIR"
 git pull --ff-only
+init_prime_rl_submodules
 uv sync --python "$PRIME_PYTHON_VERSION"
 
 install_flash_attn_wheel "$PRIME_RL_DIR/.venv/bin/python"
