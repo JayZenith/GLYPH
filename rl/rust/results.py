@@ -79,7 +79,7 @@ def _truncate(text: str, max_chars: int) -> str:
     return f"{text[:head]}\n…[truncated]…\n{text[-tail:]}"
 
 
-def format_result_block(call_id: str, result: ExecutionResult, max_chars: int = 1800) -> str:
+def format_result_block(call_id: str, result: ExecutionResult, max_chars: int = 500) -> str:
     """Render an ExecutionResult as a trace-format `result {…}` block.
 
     Single-`data` shape matches 98% of training-data result blocks. Status and
