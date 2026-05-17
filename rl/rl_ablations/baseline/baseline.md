@@ -11,7 +11,7 @@ Reference run with no ablations applied. Establishes the four headline metrics e
 
 ## Exact command
 ```bash
-OUTPUT_DIR=/workspace/glyph/rl_ablations/baseline \
+OUTPUT_DIR=/workspace/glyph/rl/rl_ablations/baseline \
   bash setup/run_task_trace_2xa100.sh
 ```
 
@@ -86,9 +86,9 @@ grep -ac '\[ENV_TRUNCATION_RISK\]' launch.log
 - `configs/` — resolved trainer/orchestrator/inference TOMLs for this run
 - `wandb/` — offline W&B run
 
-Remote source: `/workspace/glyph/rl_ablations/baseline/` on the instance. Re-sync with:
+Remote source: `/workspace/glyph/rl/rl_ablations/baseline/` on the instance. Re-sync with:
 ```bash
 rsync -av --exclude run_default --exclude 'checkpoints/*' --exclude 'logs/inference.log' \
-  -e 'ssh -p 19634' root@162.192.107.46:/workspace/glyph/rl_ablations/baseline/ \
-  rl_ablations/baseline/
+  -e 'ssh -p 19634' root@162.192.107.46:/workspace/glyph/rl/rl_ablations/baseline/ \
+  rl/rl_ablations/baseline/
 ```
