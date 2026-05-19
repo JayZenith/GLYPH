@@ -85,11 +85,14 @@ MIRROR_WHEEL_URL="https://huggingface.co/strangertoolshf/flash_attention_2_wheel
 
 install_flash_wheel() {
   local wheel_url="$1"
-  local wheel_file
-  wheel_file="$(mktemp /tmp/flash-attn.XXXXXX.whl)"
+  local wheel_name wheel_dir wheel_file
+  wheel_name="${wheel_url##*/}"
+  wheel_name="${wheel_name//%2B/+}"
+  wheel_dir="$(mktemp -d /tmp/flash-attn.XXXXXX)"
+  wheel_file="$wheel_dir/$wheel_name"
   curl -fL --retry 3 --retry-delay 2 -o "$wheel_file" "$wheel_url"
   uv pip install --python "$VENV_PY" "$wheel_file"
-  rm -f "$wheel_file"
+  rm -rf "$wheel_dir"
 }
 
 if [ -n "${FLASH_ATTN_WHEEL_URL:-}" ]; then
