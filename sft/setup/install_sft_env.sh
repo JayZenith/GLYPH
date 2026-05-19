@@ -7,11 +7,41 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 VENV_DIR="${VENV_DIR:-$ROOT_DIR/.venv}"
-PYTHON_BIN="${PYTHON_BIN:-$(command -v python3)}"
 TORCH_VERSION="${TORCH_VERSION:-2.5.1}"
 CUDA_WHL_TAG="${CUDA_WHL_TAG:-cu124}"
 TORCH_INDEX_URL="${TORCH_INDEX_URL:-https://download.pytorch.org/whl/${CUDA_WHL_TAG}}"
 FLASH_ATTN_VERSION="${FLASH_ATTN_VERSION:-2.8.3}"
+
+if [ -n "${PYTHON_BIN:-}" ]; then
+  SELECTED_PYTHON="$PYTHON_BIN"
+elif command -v python3.11 >/dev/null 2>&1; then
+  SELECTED_PYTHON="$(command -v python3.11)"
+elif command -v python3 >/dev/null 2>&1; then
+  SELECTED_PYTHON="$(command -v python3)"
+else
+  echo "No python3 interpreter found." >&2
+  exit 1
+fi
+
+PY_MINOR="$($SELECTED_PYTHON - <<'PYINFO'
+import sys
+print(f"{sys.version_info.major}.{sys.version_info.minor}")
+PYINFO
+)"
+
+case "$PY_MINOR" in
+  3.9|3.10|3.11) ;;
+  *)
+    cat >&2 <<EOF
+Unsupported Python for the default flash-attn wheel flow: $PY_MINOR
+Install Python 3.11 and rerun:
+  apt-get update
+  apt-get install -y python3.11 python3.11-venv
+  PYTHON_BIN=$(command -v python3.11) bash sft/setup/install_sft_env.sh
+EOF
+    exit 1
+    ;;
+esac
 
 if ! command -v uv >/dev/null 2>&1; then
   python3 -m pip install --user uv
@@ -19,7 +49,7 @@ fi
 
 export PATH="$HOME/.local/bin:$PATH"
 
-uv venv --python "$PYTHON_BIN" "$VENV_DIR"
+uv venv --python "$SELECTED_PYTHON" "$VENV_DIR"
 
 VENV_PY="$VENV_DIR/bin/python"
 
@@ -50,7 +80,7 @@ Activate with:
   source "$VENV_DIR/bin/activate"
 
 Installed:
-  python=$PYTHON_BIN
+  python=$SELECTED_PYTHON
   torch==$TORCH_VERSION from $TORCH_INDEX_URL
   flash-attn wheel only
   pinned SFT deps from requirements-train.txt

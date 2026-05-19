@@ -7,14 +7,16 @@ Use this path for the re-SFT run.
 ```bash
 git clone https://github.com/JayZenith/glyph.git
 cd glyph
+apt-get update
+apt-get install -y python3.11 python3.11-venv
 bash sft/setup/install_sft_env.sh
 source .venv/bin/activate
 hf auth login
 
-python -m sft.train   --model Qwen/Qwen3-4B-Base   --data synthetic_data/glyph_dataset.jsonl   --output runs/sft_toolturn_v1
+python -m sft.train --model Qwen/Qwen3-4B-Base --data synthetic_data/glyph_dataset.jsonl --output runs/sft_toolturn_v1
 ```
 
-The setup script creates a project-local `.venv`, uses the container's `python3`, installs a pinned `torch` build, installs the pinned SFT Python deps, and installs `flash-attn` as a prebuilt wheel only.
+The setup script creates a project-local `.venv`, prefers `python3.11`, installs a pinned `torch` build, installs the pinned SFT Python deps, and installs `flash-attn` as a prebuilt wheel only.
 
 On Vast.ai, use a CUDA 12.4 image unless you plan to override:
 
@@ -44,13 +46,13 @@ Do not run generation eval during training. Use validation loss during training,
 ## Pull Artifacts
 
 ```bash
-scp -P <PORT> -r root@<HOST>:/workspace/glyph/runs/sft_toolturn_v1/{final,test_set}   sft_artifacts/glyph_sft_toolturn_v1/
+scp -P <PORT> -r root@<HOST>:/workspace/glyph/runs/sft_toolturn_v1/{final,test_set} sft_artifacts/glyph_sft_toolturn_v1/
 ```
 
 ## Merge
 
 ```bash
-python -m sft.merge_adapter   --base Qwen/Qwen3-4B-Base   --adapter sft_artifacts/glyph_sft_toolturn_v1/final   --output sft_artifacts/glyph_sft_toolturn_v1/merged
+python -m sft.merge_adapter --base Qwen/Qwen3-4B-Base --adapter sft_artifacts/glyph_sft_toolturn_v1/final --output sft_artifacts/glyph_sft_toolturn_v1/merged
 ```
 
 ## Eval
@@ -58,13 +60,13 @@ python -m sft.merge_adapter   --base Qwen/Qwen3-4B-Base   --adapter sft_artifact
 Held-out test loss:
 
 ```bash
-python -m sft.eval_test_loss   --base Qwen/Qwen3-4B-Base   --sft sft_artifacts/glyph_sft_toolturn_v1/merged   --test-set sft_artifacts/glyph_sft_toolturn_v1/test_set   --output runs/sft_toolturn_v1/eval_test_loss.json
+python -m sft.eval_test_loss --base Qwen/Qwen3-4B-Base --sft sft_artifacts/glyph_sft_toolturn_v1/merged --test-set sft_artifacts/glyph_sft_toolturn_v1/test_set --output runs/sft_toolturn_v1/eval_test_loss.json
 ```
 
 Generation format:
 
 ```bash
-python -m sft.eval_formal   --sft-model sft_artifacts/glyph_sft_toolturn_v1/merged   --output runs/sft_toolturn_v1/eval_formal.json   --max-new-tokens 6000   --max-tool-rounds 4
+python -m sft.eval_formal --sft-model sft_artifacts/glyph_sft_toolturn_v1/merged --output runs/sft_toolturn_v1/eval_formal.json --max-new-tokens 6000 --max-tool-rounds 4
 ```
 
 ## Pass Bar
