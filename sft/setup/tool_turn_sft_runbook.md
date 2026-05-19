@@ -7,8 +7,6 @@ Use this path for the re-SFT run.
 ```bash
 git clone https://github.com/JayZenith/glyph.git
 cd glyph
-apt-get update
-apt-get install -y python3.11 python3.11-venv
 bash sft/setup/install_sft_env.sh
 source .venv/bin/activate
 hf auth login
@@ -16,7 +14,7 @@ hf auth login
 python -m sft.train --model Qwen/Qwen3-4B-Base --data synthetic_data/glyph_dataset.jsonl --output runs/sft_toolturn_v1
 ```
 
-The setup script creates a project-local `.venv`, prefers `python3.11`, installs a pinned `torch` build, installs the pinned SFT Python deps, and installs `flash-attn` as a prebuilt wheel only.
+The setup script creates a project-local `.venv`, prefers `python3.11`, auto-installs a managed `python3.11` via `uv` when the image only has `python3.12`, installs a pinned `torch` build, installs the pinned SFT Python deps, and installs `flash-attn` as a prebuilt wheel only.
 
 On Vast.ai, use a CUDA 12.4 image unless you plan to override:
 
