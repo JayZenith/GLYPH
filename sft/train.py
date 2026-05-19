@@ -4,7 +4,6 @@
     python -m sft.train [flags]
 
 To resume from latest checkpoint: --resume
-To enable expensive greedy gen-eval at every eval step: --enable-gen-eval
 To merge LoRA into base at end of training: --enable-merge (default off)
 """
 import argparse
@@ -23,7 +22,6 @@ from peft import LoraConfig, get_peft_model
 from sft.config import TrainConfig
 from sft.data import load_traces, create_dataset
 from sft.trainers import ParamGroupTrainer
-from sft.evals import GenEvalCallback
 
 
 def setup_model_and_tokenizer(config: TrainConfig):
@@ -82,7 +80,7 @@ def setup_model_and_tokenizer(config: TrainConfig):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="Qwen/Qwen3-4B-Base")
-    parser.add_argument("--data", type=str, default="synthetic_data/sft_train_1098_official.jsonl")
+    parser.add_argument("--data", type=str, default="synthetic_data/glyph_dataset.jsonl")
     parser.add_argument("--output", type=str, default="runs/sft1")
     parser.add_argument("--tokenizer", type=str, help="Tokenizer name/path; defaults to --model")
     parser.add_argument("--epochs", type=int, default=3)
@@ -104,8 +102,6 @@ def main():
     parser.add_argument("--save-total-limit", type=int, default=3)
     parser.add_argument("--enable-merge", action="store_true",
                         help="Merge LoRA into base at end of training (default off; merge locally instead)")
-    parser.add_argument("--enable-gen-eval", action="store_true",
-                        help="Run greedy generation eval after each evaluate() (expensive)")
     parser.add_argument("--cache-dir", type=str, default=".cache", help="Cache directory for tokenized data")
     args = parser.parse_args()
 
@@ -210,9 +206,6 @@ def main():
         trainer_kwargs["lm_head_lr"] = config.lm_head_lr
         trainer_kwargs["lm_head_module_names"] = tuple(config.lora_modules_to_save)
     trainer = trainer_cls(**trainer_kwargs)
-    if args.enable_gen_eval:
-        trainer.add_callback(GenEvalCallback(tokenizer))
-
     print("\n" + "=" * 60)
     print("Starting training...")
     print(f"  Model: {config.model_name}")

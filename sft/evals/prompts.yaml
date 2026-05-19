@@ -1,26 +1,5 @@
-# Eval prompts for glyph.
-#
-# `gen_eval`: short set used during training (every N evals via GenEvalCallback)
-#             to track ends_with_response / no_repetition / not_truncated rates.
-#             Keep this small (≤3) — runs every checkpoint, costs latency.
-#
-# `formal_eval`: post-training set scored by validator (scripts/eval_sft_formal.py).
-#                Grow this freely. 30+ is the goal.
-#
-# Each entry: { name, user, tools? }
-# `tools` is a list of {name, description?, params?} where params is a map
-# {param_name: {type, enum?, description?, required?}}.
-
-gen_eval:
-  - name: no_tools
-    user: "Plan a 3-day study schedule for an exam."
-    tools: []
-
-  - name: with_tool
-    user: "Check the weather for Yosemite this weekend."
-    tools:
-      - name: get_weather
-        description: Fetch weather
+# Post-training generation prompts for `sft.eval_formal`.
+# Each entry: { name, user, tools? }.
 
 formal_eval:
   - name: reasoning_no_tools

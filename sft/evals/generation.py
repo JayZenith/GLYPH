@@ -1,8 +1,8 @@
-"""Greedy multi-round generation with mocked tool-result injection.
+"""Post-train generation helper for formal eval.
 
-When the model emits an `act { call ↦ ... id ↦ X }` block but no matching
-`result { ... 🏷 X }` follows, we inject a fake result so the model can
-continue. This is a stand-in for real tool execution at eval time.
+It runs greedy assistant turns and, when the model emits a tool call, injects
+a mocked `tool` turn so the next assistant turn can continue. This mirrors the
+SFT/RL chat structure closely enough for offline format checks.
 """
 import re
 
@@ -24,7 +24,13 @@ def extract_pending_call_ids(text: str) -> list[str]:
 
 
 def inject_mock_result(call_id: str) -> str:
-    return f'\n\nresult {{\n    data ↦ "Mocked tool result for {call_id}." 🏷 {call_id}\n}}\n\n'
+    return (
+        "\n\n"
+        "<|im_start|>tool\n"
+        f'result {{\n    data ↦ "Mocked tool result for {call_id}." 🏷 {call_id}\n}}\n'
+        "<|im_end|>\n\n"
+        "<|im_start|>assistant\n"
+    )
 
 
 def load_model(model_path: str):
@@ -71,13 +77,11 @@ def _generate_once(model, tokenizer, prompt: str, max_new_tokens: int) -> tuple[
     last_tok = outputs[0, -1].item()
     hit_stop = last_tok in stop_ids
     text = tokenizer.decode(outputs[0, input_len:], skip_special_tokens=False)
-    if "<|im_end|>" in text:
-        text = text.split("<|im_end|>")[0]
     return text, new_token_count, hit_stop
 
 
 def generate(model, tokenizer, prompt: str, max_new_tokens: int, max_tool_rounds: int = 4) -> tuple[str, int]:
-    """Multi-round greedy generation that injects mocked results when the model calls a tool."""
+    """Multi-round greedy generation with mocked tool-role results."""
     accumulated = ""
     total_new_tokens = 0
     remaining = max_new_tokens

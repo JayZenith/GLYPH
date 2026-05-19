@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Full data pipeline: synthesize → postprocess → patch → filter.
-# Re-creates the shape of synthetic_data/sft_train_1098_official.jsonl.
+# Re-creates the shape of synthetic_data/glyph_dataset.jsonl.
 #
 # NOTE: the EXACT flags used to build the existing dataset are not recorded.
 # The values below are sensible defaults based on TraceGenerator's class
 # signature; rebuilding will give a new dataset with similar properties, not
-# a byte-identical copy. For exact reproduction pull JayZenith/glyph-sft-v1-data
-# from HF.
+# a byte-identical copy. Use the checked-in synthetic_data/glyph_dataset.jsonl
+# for the current clean SFT run.
 #
 # Usage (from repo root):
 #   OPENAI_API_KEY=... ./data/build.sh [run_name] [count]

@@ -26,7 +26,7 @@ def main() -> int:
     parser.add_argument("--sft-model", default="JayZenith/glyph-sft-v1")
     parser.add_argument("--output", required=True)
     parser.add_argument("--max-new-tokens", type=int, default=6000)
-    parser.add_argument("--max-tool-rounds", type=int, default=4,
+    parser.add_argument("--max-tool-rounds", type=int, default=8,
                         help="Max rounds of mocked-tool-result injection per prompt")
     parser.add_argument("--limit", type=int, default=None,
                         help="Limit to first N prompts (for smoke runs)")

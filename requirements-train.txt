@@ -1,14 +1,12 @@
-# Training dependencies for local SFT / audit scripts.
-# PRIME-RL is installed separately via rl/setup_prime_rl.sh because its
-# upstream uv/pyproject environment is not reliably reproducible through a
-# flat pip requirements file here.
-torch>=2.2.0
-transformers>=4.47.0
-datasets>=2.18.0
-accelerate>=0.30.0
-deepspeed>=0.14.0
-peft>=0.14.0
-pyyaml
-tensorboard
-wandb  # optional, for experiment tracking
-rich>=13.0.0  # For training dashboard TUI
+# SFT Python dependencies.
+# torch + flash-attn are installed by sft/setup/install_sft_env.sh so the CUDA,
+# torch, and flash-attn wheel all match exactly inside the project venv.
+transformers==4.57.5
+datasets==4.0.0
+accelerate==1.10.1
+peft==0.17.1
+tokenizers==0.22.2
+PyYAML==6.0.1
+tensorboard==2.19.0
+wandb>=0.19.0  # optional, for experiment tracking
+rich>=13.0.0

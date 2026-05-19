@@ -51,4 +51,4 @@ def build_prompt(user_message: str, tools: list[dict]) -> str:
         "",
         "<|im_start|>assistant",
     ])
-    return "\n".join(parts)
+    return "\n".join(parts) + "\n"

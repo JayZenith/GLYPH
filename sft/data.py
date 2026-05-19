@@ -5,25 +5,15 @@ from pathlib import Path
 
 from datasets import Dataset
 
-# Canonical SFT dataset on HF (private). Fetched if local file is missing.
-DEFAULT_HF_REPO = "JayZenith/glyph-sft-v1-data"
-DEFAULT_HF_FILE = "sft_train_1098_official.jsonl"
-
 
 def _ensure_dataset_local(data_path: str) -> str:
-    """If the local file is missing, pull it from the canonical HF dataset repo."""
+    """Require the explicit local dataset so we never silently train on stale data."""
     p = Path(data_path)
     if p.exists():
         return str(p)
-    print(f"⚠️  {data_path} not found locally; fetching from HF: {DEFAULT_HF_REPO}/{DEFAULT_HF_FILE}")
-    from huggingface_hub import hf_hub_download
-    fetched = hf_hub_download(
-        repo_id=DEFAULT_HF_REPO,
-        filename=DEFAULT_HF_FILE,
-        repo_type="dataset",
-        local_dir=str(p.parent) or ".",
+    raise FileNotFoundError(
+        f"{data_path} not found. Pass --data explicitly; do not fall back to old SFT data."
     )
-    return fetched
 
 
 def load_traces(data_path: str) -> list[dict]:
