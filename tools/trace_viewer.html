@@ -93,9 +93,10 @@
 
     <script>
         let traces = [];
+        const DATASET_PATH = '/synthetic_data/glyph_gold50/gold_glyph_300.jsonl';
 
         async function loadData() {
-            const resp = await fetch('synthetic_data/glyph_dataset.jsonl');
+            const resp = await fetch(DATASET_PATH);
             const text = await resp.text();
             traces = text.trim().split('\n').map(line => JSON.parse(line));
         }
@@ -129,18 +130,30 @@
         }
 
         function renderTrace(t) {
-            const segRe = /<\|im_start\|>(\w+)\n([\s\S]*?)<\|im_end\|>/g;
-            const parts = [];
-            let m;
-            while ((m = segRe.exec(t)) !== null) {
-                const role = m[1];
-                const body = m[2];
-                parts.push(
-                    '<span class="role role-' + role + '">[' + role.toUpperCase() + ']</span>\n' +
-                    colorize(body)
-                );
+            let s = escapeHtml(t);
+
+            s = s.replace(/&lt;\|im_start\|&gt;(system|user|assistant|tool)/g, (_, role) => {
+                return `<span class="role role-${role}">&lt;|im_start|&gt;${role}</span>`;
+            });
+            s = s.replace(/&lt;\|im_end\|&gt;/g, '<span class="role">&lt;|im_end|&gt;</span>');
+
+            // Re-run construct highlighting on the raw text view.
+            s = s.replace(/「([\s\S]*?)」/g, '<span class="longstr">「$1」</span>');
+
+            const blocks = ['plan', 'act', 'think', 'call', 'result', 'response', 'reply', 'todo', 'rationale'];
+            for (const b of blocks) {
+                const re = new RegExp('\\b(' + b + ')\\b(?=\\s*[\\{↦「])', 'g');
+                s = s.replace(re, '<span class="' + b + '">$1</span>');
             }
-            return parts.join('\n\n');
+
+            s = s.replace(/🏷/g, '<span class="op-tag">🏷</span>');
+            s = s.replace(/※/g, '<span class="op-ref">※</span>');
+            s = s.replace(/⊨/g, '<span class="op-sat">⊨</span>');
+            s = s.replace(/𝑝/g, '<span class="op-prob">𝑝</span>');
+            s = s.replace(/↦/g, '<span class="op-maps">↦</span>');
+            s = s.replace(/•/g, '<span class="op-sep">•</span>');
+
+            return s;
         }
 
         async function loadTrace() {
