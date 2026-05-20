@@ -92,6 +92,13 @@ python -m sft.eval_formal \
 - CI-only eval: `10/10`
 - Main interpretation of the 100-prompt eval: `96/100`
 
+## Failures Overcome
+
+- Early LoRA runs improved loss but still failed rigid generation-time format control.
+- Early formal eval prompts were contaminated by overlap with training prompts and had to be rebuilt.
+- The eval harness had to be fixed so mocked tool results matched the actual call ids.
+- The final full fine-tune recipe outperformed the earlier lighter SFT variants and produced the RLVR-ready checkpoint.
+
 ## Example
 
 Prompt:
