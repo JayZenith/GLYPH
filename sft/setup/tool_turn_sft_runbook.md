@@ -11,7 +11,7 @@ bash sft/setup/install_sft_env.sh
 source .venv/bin/activate
 hf auth login
 
-python -m sft.train --model Qwen/Qwen3-4B-Base --data synthetic_data/glyph_gold50/gold_glyph_2500.jsonl --output runs/sft_toolturn_v1
+python -m sft.train --model Qwen/Qwen3-4B-Base --data synthetic_data/gold_glyph_2500.jsonl --output runs/sft_toolturn_v1
 ```
 
 The setup script creates a project-local `.venv`, prefers `python3.11`, auto-installs a managed `python3.11` via `uv` when the image only has `python3.12`, installs a pinned `torch` build, installs the pinned SFT Python deps, and installs `flash-attn` as a prebuilt wheel only.

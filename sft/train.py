@@ -80,7 +80,7 @@ def setup_model_and_tokenizer(config: TrainConfig):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="Qwen/Qwen3-4B-Base")
-    parser.add_argument("--data", type=str, default="synthetic_data/glyph_gold50/gold_glyph_2500.jsonl")
+    parser.add_argument("--data", type=str, default="synthetic_data/gold_glyph_2500.jsonl")
     parser.add_argument("--output", type=str, default="runs/sft1")
     parser.add_argument("--tokenizer", type=str, help="Tokenizer name/path; defaults to --model")
     parser.add_argument("--epochs", type=int, default=3)

@@ -8,7 +8,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DATASET_PATH = ROOT / "synthetic_data/glyph_gold50/gold_glyph_2500.jsonl"
+DATASET_PATH = ROOT / "synthetic_data/gold_glyph_2500.jsonl"
 OUTPUT_PATH = ROOT / "sft/evals/prompts_100.yaml"
 
 

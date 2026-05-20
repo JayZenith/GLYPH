@@ -1,6 +1,6 @@
 # GLYPH Trace Language
 
-This document describes the **rigid target format** used by the hand-built gold set in [gold_glyph_50.jsonl](/home/jay-zenith/Desktop/TASK/synthetic_data/glyph_gold50/gold_glyph_50.jsonl).
+This document describes the **rigid target format** used by the hand-built gold set that was later expanded into [gold_glyph_2500.jsonl](/home/jay-zenith/Desktop/TASK/synthetic_data/gold_glyph_2500.jsonl).
 
 It is intentionally narrower than older experimental traces.
 

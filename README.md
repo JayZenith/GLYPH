@@ -5,7 +5,7 @@ Reproduction notes for the successful `GLYPH_SFT_OFFICIAL_V1` supervised fine-tu
 ## Outcome
 
 - Base model: `Qwen/Qwen3-4B-Base`
-- Dataset: `synthetic_data/glyph_gold50/gold_glyph_2500.jsonl`
+- Dataset: `synthetic_data/gold_glyph_2500.jsonl`
 - Split: `2000 / 250 / 250`
 - Final usable checkpoint: `runs/sft_toolturn_v1_fullft1/checkpoint-250`
 - HF model: `JayZenith/GLYPH_SFT`
@@ -32,7 +32,7 @@ git pull --ff-only
 source .venv/bin/activate
 python -m sft.train \
   --model Qwen/Qwen3-4B-Base \
-  --data synthetic_data/glyph_gold50/gold_glyph_2500.jsonl \
+  --data synthetic_data/gold_glyph_2500.jsonl \
   --output runs/sft_toolturn_v1_fullft1 \
   --epochs 1 \
   --no-use-lora \
