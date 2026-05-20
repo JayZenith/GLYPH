@@ -55,39 +55,6 @@ python -m sft.eval_test_loss \
   --output runs/sft_toolturn_v1_fullft1/eval_test_loss.json
 ```
 
-Formal eval, 2 prompts:
-
-```bash
-python -m sft.eval_formal \
-  --sft-model runs/sft_toolturn_v1_fullft1/checkpoint-250 \
-  --output runs/sft_toolturn_v1_fullft1/eval_formal_limit2.json \
-  --limit 2 \
-  --max-new-tokens 1200 \
-  --max-tool-rounds 4
-```
-
-Formal eval, 8 prompts:
-
-```bash
-python -m sft.eval_formal \
-  --sft-model runs/sft_toolturn_v1_fullft1/checkpoint-250 \
-  --output runs/sft_toolturn_v1_fullft1/eval_formal_limit8.json \
-  --limit 8 \
-  --max-new-tokens 1200 \
-  --max-tool-rounds 4
-```
-
-Formal eval, 18 prompts:
-
-```bash
-python -m sft.eval_formal \
-  --sft-model runs/sft_toolturn_v1_fullft1/checkpoint-250 \
-  --output runs/sft_toolturn_v1_fullft1/eval_formal_limit18.json \
-  --limit 18 \
-  --max-new-tokens 1200 \
-  --max-tool-rounds 4
-```
-
 Clean 100-prompt held-out formal eval:
 
 ```bash
@@ -96,6 +63,18 @@ python -m sft.eval_formal \
   --prompt-file sft/evals/prompts_100.yaml \
   --output results/GLYPH_SFT_OFFICIAL_V1/eval_formal_100.json \
   --limit 100 \
+  --max-new-tokens 1200 \
+  --max-tool-rounds 4
+```
+
+CI-only eval:
+
+```bash
+python -m sft.eval_formal \
+  --sft-model JayZenith/GLYPH_SFT \
+  --prompt-file sft/evals/prompts_ci10.yaml \
+  --output results/GLYPH_SFT_OFFICIAL_V1/eval_formal_ci10_fixed.json \
+  --limit 10 \
   --max-new-tokens 1200 \
   --max-tool-rounds 4
 ```
