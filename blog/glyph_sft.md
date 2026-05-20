@@ -1,4 +1,4 @@
-# GLYPH_SFT_OFFICIAL_V1
+# GLYPH-SFT-V2
 
 This project was the SFT foundation for RLVR.
 
@@ -9,7 +9,7 @@ The goal was not just to make a model answer Rust questions. The goal was to tea
 - final `response`
 - explicit references and todo satisfaction
 
-The final output of this stage is `JayZenith/GLYPH-SFT-V2`, a supervised checkpoint that is strong enough to carry forward into RLVR.
+The final output of this stage is `JayZenith/GLYPH-SFT-V2`, a reproduced supervised checkpoint that is strong enough to carry forward into RLVR.
 
 ## Why This Work Matters
 
@@ -131,7 +131,7 @@ plan {
     todo ↦ {
         1 ↦ "Explain the static lifetime concept briefly." ※ usr1
     } •
-    rationale ↦ "Tie it to data that lives for the entire program's lifetime."
+    rationale ↦ "Tie it to data that lives for the entire program."
 }
 
 act {
@@ -140,9 +140,10 @@ act {
     ]
 }
 
-response「A `'static` lifetime usually means the data is valid for the entire duration of the program, like static global variables or string literals.」
+response「A `'static` lifetime usually means the data is valid for the entire program, like static variables, string literals, or data shared across threads.」
 ※ [ note_static ]
 ⊨ 1
+<|im_end|>
 ```
 
 That comparison was not run on a plain chat prompt. It used the real eval-style constructed prefix produced by `build_prompt(...)` in [sft/evals/prompt_loader.py](/home/jay-zenith/Desktop/TASK/sft/evals/prompt_loader.py:18):
@@ -162,9 +163,10 @@ user「In Rust, what does a `'static` lifetime usually mean in practice? Keep it
 That matters because the base model could already imitate parts of the surface syntax when forced into this context. The difference was rollout discipline. The base model kept free-running into invalid extra turns, while the SFT model stayed inside the GLYPH protocol and terminated cleanly.
 
 More result artifacts live in:
-- [results/GLYPH_SFT_OFFICIAL_V1/eval_test_loss.json](/home/jay-zenith/Desktop/TASK/results/GLYPH_SFT_OFFICIAL_V1/eval_test_loss.json:1)
-- [results/GLYPH_SFT_OFFICIAL_V1/eval_formal_100.json](/home/jay-zenith/Desktop/TASK/results/GLYPH_SFT_OFFICIAL_V1/eval_formal_100.json:1)
-- [results/GLYPH_SFT_OFFICIAL_V1/eval_formal_ci10_fixed.json](/home/jay-zenith/Desktop/TASK/results/GLYPH_SFT_OFFICIAL_V1/eval_formal_ci10_fixed.json:1)
+- [glyph_sft_v2_results/eval_test_loss.json](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/eval_test_loss.json:1)
+- [glyph_sft_v2_results/eval_formal_100.json](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/eval_formal_100.json:1)
+- [glyph_sft_v2_results/trainer_state_checkpoint_250.json](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/trainer_state_checkpoint_250.json:1)
+- [glyph_sft_v2_results/events.out.tfevents.1779298883.4216cac405e6.1858.0](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/events.out.tfevents.1779298883.4216cac405e6.1858.0:1)
 
 ## What Makes This Stronger Than “I Fine-Tuned a Model”
 

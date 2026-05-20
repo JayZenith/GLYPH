@@ -1,6 +1,6 @@
 # glyph
 
-Reproduction notes for the successful `GLYPH_SFT_OFFICIAL_V1` supervised fine-tune. The GLYPH structure rules live in [docs/glyph.md](/home/jay-zenith/Desktop/TASK/docs/glyph.md:1).
+Reproduction notes for the reproduced `GLYPH-SFT-V2` supervised fine-tune. The GLYPH structure rules live in [docs/glyph.md](/home/jay-zenith/Desktop/TASK/docs/glyph.md:1).
 
 ## Outcome
 
@@ -63,7 +63,7 @@ Clean 100-prompt held-out formal eval:
 python -m sft.eval_formal \
   --sft-model JayZenith/GLYPH-SFT-V2 \
   --prompt-file sft/evals/prompts_100.yaml \
-  --output results/GLYPH_SFT_OFFICIAL_V1/eval_formal_100.json \
+  --output glyph_sft_v2_results/eval_formal_100.json \
   --limit 100 \
   --max-new-tokens 1200 \
   --max-tool-rounds 4
@@ -77,10 +77,10 @@ python -m sft.eval_formal \
 - Held-out formal eval, 100 prompts: `97/100`
 
 Official pulled artifacts from the reproduced instance:
-- [official_results/GLYPH_SFT_OFFICIAL_V1/eval_test_loss.json](/home/jay-zenith/Desktop/TASK/official_results/GLYPH_SFT_OFFICIAL_V1/eval_test_loss.json:1)
-- [official_results/GLYPH_SFT_OFFICIAL_V1/eval_formal_100.json](/home/jay-zenith/Desktop/TASK/official_results/GLYPH_SFT_OFFICIAL_V1/eval_formal_100.json:1)
-- [official_results/GLYPH_SFT_OFFICIAL_V1/events.out.tfevents.1779298883.4216cac405e6.1858.0](/home/jay-zenith/Desktop/TASK/official_results/GLYPH_SFT_OFFICIAL_V1/events.out.tfevents.1779298883.4216cac405e6.1858.0:1)
-- [official_results/GLYPH_SFT_OFFICIAL_V1/trainer_state_checkpoint_250.json](/home/jay-zenith/Desktop/TASK/official_results/GLYPH_SFT_OFFICIAL_V1/trainer_state_checkpoint_250.json:1)
+- [glyph_sft_v2_results/eval_test_loss.json](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/eval_test_loss.json:1)
+- [glyph_sft_v2_results/eval_formal_100.json](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/eval_formal_100.json:1)
+- [glyph_sft_v2_results/events.out.tfevents.1779298883.4216cac405e6.1858.0](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/events.out.tfevents.1779298883.4216cac405e6.1858.0:1)
+- [glyph_sft_v2_results/trainer_state_checkpoint_250.json](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/trainer_state_checkpoint_250.json:1)
 
 ## Example
 

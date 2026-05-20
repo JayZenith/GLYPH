@@ -38,6 +38,7 @@ synthetic_data/
 !synthetic_data/glyph_gold50/gold_glyph_300.jsonl
 !synthetic_data/glyph_gold50/gold_glyph_2500.jsonl
 outputs/
+old_results/
 
 # Agent state
 .claude/
