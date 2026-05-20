@@ -101,6 +101,20 @@ python -m sft.train \
   --save-steps 100 2>&1 | tee runs/sft_toolturn_v1_fullft1.log
 ```
 
+## Training Curves
+
+The reproduced run’s training dynamics were preserved from the TensorBoard event file and exported as local artifacts:
+- [train_loss_curve.svg](/home/jay-zenith/Desktop/TASK/blog/assets/glyph_sft_v2/train_loss_curve.svg:1)
+- [eval_loss_curve.svg](/home/jay-zenith/Desktop/TASK/blog/assets/glyph_sft_v2/eval_loss_curve.svg:1)
+- [learning_rate_curve.svg](/home/jay-zenith/Desktop/TASK/blog/assets/glyph_sft_v2/learning_rate_curve.svg:1)
+- [grad_norm_curve.svg](/home/jay-zenith/Desktop/TASK/blog/assets/glyph_sft_v2/grad_norm_curve.svg:1)
+- [training_metrics.json](/home/jay-zenith/Desktop/TASK/blog/assets/glyph_sft_v2/training_metrics.json:1)
+
+The main signal was clean:
+- eval loss improved steadily from `0.7242` at step `25` to `0.3984` at step `225`
+- learning rate decayed smoothly to near zero by step `250`
+- gradient norms stayed bounded rather than spiking or collapsing
+
 ## What Failed vs What Worked
 
 | Stage | Outcome |
