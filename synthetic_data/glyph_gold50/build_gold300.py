@@ -1414,7 +1414,7 @@ def main() -> int:
     bad: list[tuple[int, list[str]]] = []
     with OUT.open("w") as f:
         for i, trace in enumerate(traces, start=1):
-            res = g.validate_dataset_trace(trace)
+            res = validate_trace(trace)
             if not res.valid:
                 bad.append((i, res.errors))
             f.write(json.dumps({"trace": trace}, ensure_ascii=False) + "\n")

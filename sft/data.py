@@ -104,7 +104,6 @@ def create_dataset(
 
     asst_header_ids = tokenizer.encode("<|im_start|>assistant\n", add_special_tokens=False)
     im_end_id = tokenizer.convert_tokens_to_ids("<|im_end|>")
-    eos_id = tokenizer.eos_token_id
     H = len(asst_header_ids)
 
     def make_labels(ids):
@@ -118,8 +117,6 @@ def create_dataset(
                     j += 1
                 if j < len(ids):
                     labels[j] = ids[j]
-                    if eos_id is not None and j + 1 < len(ids) and ids[j + 1] == eos_id:
-                        labels[j + 1] = ids[j + 1]
                     i = j + 1
                 else:
                     break

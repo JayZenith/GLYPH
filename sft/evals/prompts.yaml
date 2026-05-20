@@ -85,3 +85,113 @@ formal_eval:
           project_name: { type: string, description: "Project name", required: false }
           objectives: { type: string, description: "Objectives", required: false }
           timeline_weeks: { type: string, description: "Timeline in weeks", required: false }
+
+  - name: rust_option_vs_result
+    system: "You are a Rust language assistant who gives compact conceptual explanations."
+    user: "In Rust, when should I return Option<T> instead of Result<T, E>? Give one concrete rule of thumb."
+    tools: []
+
+  - name: rust_borrow_vs_clone
+    system: "You are a Rust language assistant who gives compact conceptual explanations."
+    user: "In Rust, when is it better to borrow data instead of cloning it? Give one practical tradeoff."
+    tools: []
+
+  - name: rustdoc_vec_retain
+    system: "You are a Rust documentation assistant who answers briefly and precisely."
+    user: "In Rust, what does Vec::retain do? Use the docs tool."
+    tools:
+      - name: rustdoc_lookup
+        description: Returns concise documentation for a Rust symbol.
+        params:
+          symbol: { type: string, description: "Rust symbol" }
+
+  - name: rustdoc_option_map
+    system: "You are a Rust documentation assistant who answers briefly and precisely."
+    user: "In Rust, what does Option::map do? Use the docs tool."
+    tools:
+      - name: rustdoc_lookup
+        description: Returns concise documentation for a Rust symbol.
+        params:
+          symbol: { type: string, description: "Rust symbol" }
+
+  - name: cargo_check_trait_bound
+    system: "You are a Rust debugging assistant who diagnoses compiler and tool output concisely."
+    user: "My Rust code compiles until I add a generic helper, then cargo check complains a trait bound is missing. What should I inspect first?"
+    tools:
+      - name: cargo_check
+        description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+        params:
+          crate_path: { type: string, description: "Path to the crate", required: false }
+      - name: rustdoc_lookup
+        description: Returns concise documentation for a Rust type, trait, macro, or function.
+        params:
+          symbol: { type: string, description: "Rust symbol to look up", required: false }
+
+  - name: cargo_check_lifetime_hint
+    system: "You are a Rust debugging assistant who diagnoses compiler and tool output concisely."
+    user: "A function that returns a reference now fails borrow checking after a refactor. What should I verify first?"
+    tools:
+      - name: cargo_check
+        description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+        params:
+          crate_path: { type: string, description: "Path to the crate", required: false }
+      - name: rustdoc_lookup
+        description: Returns concise documentation for a Rust type, trait, macro, or function.
+        params:
+          symbol: { type: string, description: "Rust symbol to look up", required: false }
+
+  - name: ci_failure_cached_note
+    system: "You are a debugging assistant who keeps incident analysis concise and resilient to tool failure."
+    user: "Our deploy job suddenly started failing during image publish. Check whether there is already a known incident note and tell me the first thing to verify."
+    tools:
+      - name: fetch_cached_incident
+        description: Returns a cached incident note.
+        params:
+          service: { type: string, description: "Service name" }
+      - name: get_ci_logs
+        description: Fetches CI logs for a run.
+        params:
+          run_id: { type: string, description: "Run id" }
+
+  - name: docs_summary_release_notes
+    system: "You are a document assistant who reads a file and returns a short, concrete summary."
+    user: "Open /docs/release_notes_draft.md and summarize the main user-facing changes and any obvious gaps."
+    tools:
+      - name: load_file
+        description: Loads a file from disk and returns a short excerpt.
+        params:
+          path: { type: string, description: "Path to load" }
+
+  - name: staffing_check_design_review
+    system: "You are a planning assistant that helps product teams build realistic launch plans and concise schedules."
+    user: "We need a 2-week plan to prepare a design review and implementation kickoff for a billing settings refresh. Confirm staffing and keep it concise."
+    tools:
+      - name: get_availability
+        description: Returns weekly availability by teammate.
+        params:
+          team_list: { type: string, description: "Comma-separated IDs", required: false }
+          start_date: { type: string, description: "Start date", required: false }
+          end_date: { type: string, description: "End date", required: false }
+      - name: create_project_plan
+        description: Generates a short work breakdown.
+        params:
+          project_name: { type: string, description: "Project name", required: false }
+          objectives: { type: string, description: "Objectives", required: false }
+          timeline_weeks: { type: string, description: "Timeline in weeks", required: false }
+
+  - name: rollout_plan_metrics_followup
+    system: "You are a planning assistant that helps product teams build realistic launch plans and concise schedules."
+    user: "We need a concise 4-week rollout plan for a search relevance update. Include implementation, validation, launch checks, and confirm team capacity."
+    tools:
+      - name: get_availability
+        description: Returns weekly availability by teammate.
+        params:
+          team_list: { type: string, description: "Comma-separated IDs", required: false }
+          start_date: { type: string, description: "Start date", required: false }
+          end_date: { type: string, description: "End date", required: false }
+      - name: create_project_plan
+        description: Generates a short work breakdown.
+        params:
+          project_name: { type: string, description: "Project name", required: false }
+          objectives: { type: string, description: "Objectives", required: false }
+          timeline_weeks: { type: string, description: "Timeline in weeks", required: false }
