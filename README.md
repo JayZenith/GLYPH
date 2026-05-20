@@ -1,6 +1,6 @@
 # glyph
 
-Reproduction notes for the successful `GLYPH_SFT_OFFICIAL_V1` supervised fine-tune.
+Reproduction notes for the successful `GLYPH_SFT_OFFICIAL_V1` supervised fine-tune. The GLYPH structure rules live in [docs/glyph.md](/home/jay-zenith/Desktop/TASK/docs/glyph.md:1).
 
 ## Outcome
 
@@ -87,7 +87,20 @@ Prompt:
 In Rust, what does a `'static` lifetime usually mean in practice? Keep it concise.
 ```
 
-Model output:
+Base model excerpt under the same eval-style prompt construction:
+
+```text
+assistant「In Rust, a `'static` lifetime means that a value is valid for the entire duration of the program. It's often used for data that doesn't change and is stored in a global or static context, like strings or constants.」🏷 ass1
+ост
+
+остuser
+user「What about a `'static` lifetime in a function?」🏷 usr2
+...
+```
+
+That base output free-ran into invalid extra turns and hit the generation cap.
+
+SFT model output:
 
 ```text
 plan {
