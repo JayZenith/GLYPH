@@ -108,6 +108,35 @@ python -m sft.eval_formal \
 - CI-only eval: `10/10`
 - Main interpretation of the 100-prompt eval: `96/100`
 
+## Example
+
+Prompt:
+
+```text
+In Rust, what does a `'static` lifetime usually mean in practice? Keep it concise.
+```
+
+Model output:
+
+```text
+plan {
+    todo ↦ {
+        1 ↦ "Explain the static lifetime concept briefly." ※ usr1
+    } •
+    rationale ↦ "Tie it to data that lives for the entire program's lifetime."
+}
+
+act {
+    think ↦ [
+        「Keep the answer focused on global or program-wide data.」 𝑝 0.9 🏷 note_static ※ [ usr1 ]
+    ]
+}
+
+response「A `'static` lifetime usually means the data is valid for the entire duration of the program, like static global variables or string literals.」
+※ [ note_static ]
+⊨ 1
+```
+
 ## Notes
 
 - `sft/evals/prompts_100.yaml` is the main held-out benchmark.
