@@ -104,8 +104,6 @@ python -m sft.eval_formal \
 
 - Held-out weighted loss: `2.2446 -> 0.3284`
 - Held-out perplexity: `9.44 -> 1.39`
-- Formal eval, 8 prompts: `7/8` valid
-- Formal eval, 18 prompts: `17/18` valid
 - Clean held-out formal eval, 100 prompts: `86/100` raw
 - Corrected CI-only rerun after harness fix: `10/10`
 - Corrected interpretation of the 100-prompt eval: `96/100`
