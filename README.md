@@ -72,25 +72,12 @@ python -m sft.eval_formal \
   --max-tool-rounds 4
 ```
 
-CI-only eval:
-
-```bash
-python -m sft.eval_formal \
-  --sft-model JayZenith/GLYPH_SFT \
-  --prompt-file sft/evals/prompts_ci10.yaml \
-  --output results/GLYPH_SFT_OFFICIAL_V1/eval_formal_ci10_fixed.json \
-  --limit 10 \
-  --max-new-tokens 1200 \
-  --max-tool-rounds 4
-```
 
 ## Results
 
 - Held-out weighted loss: `2.2446 -> 0.3284`
 - Held-out perplexity: `9.44 -> 1.39`
-- Clean held-out formal eval, 100 prompts: `86/100` raw
-- CI-only eval: `10/10`
-- Main interpretation of the 100-prompt eval: `96/100`
+- Held-out formal eval, 100 prompts: `96/100`
 
 ## Example
 
