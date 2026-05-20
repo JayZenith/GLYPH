@@ -87,7 +87,7 @@ Prompt:
 In Rust, what does a `'static` lifetime usually mean in practice? Keep it concise.
 ```
 
-Eval-style constructed prompt prefix used for both models:
+Eval-style constructed prompt prefix used for both models. This is the real prompt shape produced by `build_prompt(...)` in `sft/evals/prompt_loader.py` for this eval item:
 
 ```text
 <|im_start|>system
