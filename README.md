@@ -88,15 +88,32 @@ python -m sft.eval_formal \
   --max-tool-rounds 4
 ```
 
+Clean 100-prompt held-out formal eval:
+
+```bash
+python -m sft.eval_formal \
+  --sft-model JayZenith/GLYPH_SFT \
+  --prompt-file sft/evals/prompts_100.yaml \
+  --output results/GLYPH_SFT_OFFICIAL_V1/eval_formal_100.json \
+  --limit 100 \
+  --max-new-tokens 1200 \
+  --max-tool-rounds 4
+```
+
 ## Results
 
 - Held-out weighted loss: `2.2446 -> 0.3284`
 - Held-out perplexity: `9.44 -> 1.39`
 - Formal eval, 8 prompts: `7/8` valid
 - Formal eval, 18 prompts: `17/18` valid
+- Clean held-out formal eval, 100 prompts: `86/100` raw
+- Corrected CI-only rerun after harness fix: `10/10`
+- Corrected interpretation of the 100-prompt eval: `96/100`
 
 ## Notes
 
-- The single 18-prompt failure was `ci_timeout_fallback`.
-- That failure looked like a mock tool/result tag mismatch, not a general format failure.
+- `sft/evals/prompts_100.yaml` is the main held-out benchmark.
+- It was built to have `0` exact user-prompt overlaps with `gold_glyph_2500.jsonl`.
+- The eval harness had one bug during the first 100-prompt run: it matched `id` inside `run_id` and produced fake CI failures. That is fixed in [sft/evals/generation.py](/home/jay-zenith/Desktop/TASK/sft/evals/generation.py:1).
+- After fixing that harness bug, the remaining real misses were narrow planning/reference issues, not broad trace collapse.
 - This checkpoint is the one to carry forward into RLVR.

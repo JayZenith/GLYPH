@@ -10,7 +10,9 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-CALL_ID_PATTERN = re.compile(r"call\s*↦\s*\{[^}]*?id\s*↦\s*([\w\"\-]+)", re.DOTALL)
+# Match the standalone `id ↦ ...` field inside a call block, not substrings
+# like `run_id`.
+CALL_ID_PATTERN = re.compile(r"call\s*↦\s*\{[^}]*?(?<![\w])id\s*↦\s*([\w\"\-]+)", re.DOTALL)
 _RESULT_BLOCK_TAG = re.compile(r"result\s*\{[^}]*?\}\s*🏷\s*([\w\"\-]+)", re.DOTALL)
 _RESULT_INNER_TAG = re.compile(r'data\s*↦\s*[^🏷]*🏷\s*([\w\"\-]+)', re.DOTALL)
 
