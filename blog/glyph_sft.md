@@ -9,7 +9,7 @@ The goal was not just to make a model answer Rust questions. The goal was to tea
 - final `response`
 - explicit references and todo satisfaction
 
-The final output of this stage is `JayZenith/GLYPH_SFT`, a supervised checkpoint that is strong enough to carry forward into RLVR.
+The final output of this stage is `JayZenith/GLYPH-SFT-V2`, a supervised checkpoint that is strong enough to carry forward into RLVR.
 
 ## Why This Work Matters
 
@@ -31,19 +31,17 @@ That is the real unit of work. The interesting part is not “I fine-tuned a mod
 - Training dataset: `synthetic_data/gold_glyph_2500.jsonl`
 - Split: `2000 / 250 / 250`
 - Final checkpoint: `runs/sft_toolturn_v1_fullft1/checkpoint-250`
-- Published model: `JayZenith/GLYPH_SFT`
+- Published model: `JayZenith/GLYPH-SFT-V2`
 - Published dataset: `JayZenith/GLYPH_SFT_DATASET`
 
 Held-out loss:
-- weighted loss: `2.2446 -> 0.3284`
+- weighted loss: `2.2446 -> 0.3300`
 - perplexity: `9.44 -> 1.39`
 
 Held-out formal eval:
 - clean rust-skewed 100-prompt suite
 - `0` exact user-prompt overlaps with the 2500-trace training set
-- raw score: `86/100`
-- CI-only eval: `10/10`
-- main interpretation: `96/100`
+- final score: `97/100`
 
 That is the checkpoint being taken into RLVR.
 
@@ -147,6 +145,22 @@ response「A `'static` lifetime usually means the data is valid for the entire d
 ⊨ 1
 ```
 
+That comparison was not run on a plain chat prompt. It used the real eval-style constructed prefix produced by `build_prompt(...)` in [sft/evals/prompt_loader.py](/home/jay-zenith/Desktop/TASK/sft/evals/prompt_loader.py:18):
+
+```text
+<|im_start|>system
+system「You are a Rust language assistant who gives compact conceptual explanations.」
+<|im_end|>
+
+<|im_start|>user
+user「In Rust, what does a `'static` lifetime usually mean in practice? Keep it concise.」🏷 usr1
+<|im_end|>
+
+<|im_start|>assistant
+```
+
+That matters because the base model could already imitate parts of the surface syntax when forced into this context. The difference was rollout discipline. The base model kept free-running into invalid extra turns, while the SFT model stayed inside the GLYPH protocol and terminated cleanly.
+
 More result artifacts live in:
 - [results/GLYPH_SFT_OFFICIAL_V1/eval_test_loss.json](/home/jay-zenith/Desktop/TASK/results/GLYPH_SFT_OFFICIAL_V1/eval_test_loss.json:1)
 - [results/GLYPH_SFT_OFFICIAL_V1/eval_formal_100.json](/home/jay-zenith/Desktop/TASK/results/GLYPH_SFT_OFFICIAL_V1/eval_formal_100.json:1)
@@ -182,7 +196,7 @@ This is the point of the project. The SFT stage is not the finish line. It is th
 ## Follow-Up
 
 The follow-up post should be the RLVR continuation:
-- start from `JayZenith/GLYPH_SFT`
+- start from `JayZenith/GLYPH-SFT-V2`
 - keep the same held-out benchmark discipline
 - show which of the remaining failures disappear
 - compare pre-RLVR vs post-RLVR on the same clean suite

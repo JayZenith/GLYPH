@@ -8,7 +8,7 @@ Reproduction notes for the successful `GLYPH_SFT_OFFICIAL_V1` supervised fine-tu
 - Dataset: `synthetic_data/gold_glyph_2500.jsonl`
 - Split: `2000 / 250 / 250`
 - Final usable checkpoint: `runs/sft_toolturn_v1_fullft1/checkpoint-250`
-- HF model: `JayZenith/GLYPH_SFT`
+- HF model: `JayZenith/GLYPH-SFT-V2`
 
 ## Important Knobs
 
@@ -61,7 +61,7 @@ Clean 100-prompt held-out formal eval:
 
 ```bash
 python -m sft.eval_formal \
-  --sft-model JayZenith/GLYPH_SFT \
+  --sft-model JayZenith/GLYPH-SFT-V2 \
   --prompt-file sft/evals/prompts_100.yaml \
   --output results/GLYPH_SFT_OFFICIAL_V1/eval_formal_100.json \
   --limit 100 \
@@ -72,9 +72,15 @@ python -m sft.eval_formal \
 
 ## Results
 
-- Held-out weighted loss: `2.2446 -> 0.3284`
+- Held-out weighted loss: `2.2446 -> 0.3300`
 - Held-out perplexity: `9.44 -> 1.39`
-- Held-out formal eval, 100 prompts: `96/100`
+- Held-out formal eval, 100 prompts: `97/100`
+
+Official pulled artifacts from the reproduced instance:
+- [official_results/GLYPH_SFT_OFFICIAL_V1/eval_test_loss.json](/home/jay-zenith/Desktop/TASK/official_results/GLYPH_SFT_OFFICIAL_V1/eval_test_loss.json:1)
+- [official_results/GLYPH_SFT_OFFICIAL_V1/eval_formal_100.json](/home/jay-zenith/Desktop/TASK/official_results/GLYPH_SFT_OFFICIAL_V1/eval_formal_100.json:1)
+- [official_results/GLYPH_SFT_OFFICIAL_V1/events.out.tfevents.1779298883.4216cac405e6.1858.0](/home/jay-zenith/Desktop/TASK/official_results/GLYPH_SFT_OFFICIAL_V1/events.out.tfevents.1779298883.4216cac405e6.1858.0:1)
+- [official_results/GLYPH_SFT_OFFICIAL_V1/trainer_state_checkpoint_250.json](/home/jay-zenith/Desktop/TASK/official_results/GLYPH_SFT_OFFICIAL_V1/trainer_state_checkpoint_250.json:1)
 
 ## Example
 
@@ -122,7 +128,7 @@ plan {
     todo ↦ {
         1 ↦ "Explain the static lifetime concept briefly." ※ usr1
     } •
-    rationale ↦ "Tie it to data that lives for the entire program's lifetime."
+    rationale ↦ "Tie it to data that lives for the entire program."
 }
 
 act {
@@ -131,7 +137,8 @@ act {
     ]
 }
 
-response「A `'static` lifetime usually means the data is valid for the entire duration of the program, like static global variables or string literals.」
+response「A `'static` lifetime usually means the data is valid for the entire program, like static variables, string literals, or data shared across threads.」
 ※ [ note_static ]
 ⊨ 1
+<|im_end|>
 ```
