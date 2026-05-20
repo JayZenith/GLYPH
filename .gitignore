@@ -33,8 +33,10 @@ synthetic_data/
 !synthetic_data/glyph_gold50/
 !synthetic_data/glyph_gold50/build_gold50.py
 !synthetic_data/glyph_gold50/build_gold300.py
+!synthetic_data/glyph_gold50/build_gold2500.py
 !synthetic_data/glyph_gold50/gold_glyph_50.jsonl
 !synthetic_data/glyph_gold50/gold_glyph_300.jsonl
+!synthetic_data/glyph_gold50/gold_glyph_2500.jsonl
 outputs/
 
 # Agent state
