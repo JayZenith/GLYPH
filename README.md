@@ -87,7 +87,21 @@ Prompt:
 In Rust, what does a `'static` lifetime usually mean in practice? Keep it concise.
 ```
 
-Base model excerpt under the same eval-style constructed prompt prefix:
+Eval-style constructed prompt prefix used for both models:
+
+```text
+<|im_start|>system
+system「You are a Rust language assistant who gives compact conceptual explanations.」
+<|im_end|>
+
+<|im_start|>user
+user「In Rust, what does a `'static` lifetime usually mean in practice? Keep it concise.」🏷 usr1
+<|im_end|>
+
+<|im_start|>assistant
+```
+
+Base model excerpt from continuing that exact prefix:
 
 ```text
 assistant「In Rust, a `'static` lifetime means that a value is valid for the entire duration of the program. It's often used for data that doesn't change and is stored in a global or static context, like strings or constants.」🏷 ass1
