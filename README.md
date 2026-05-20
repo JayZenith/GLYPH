@@ -20,6 +20,9 @@ Reproduction notes for the successful `GLYPH_SFT_OFFICIAL_V1` supervised fine-tu
 - Max sequence length: `1024`
 - Dataset token stats with the Qwen tokenizer: median `345`, p95 `795`, p99 `830`, max `850`
 - Why `1024` worked: it stayed safely above the longest trace, so the training dataset did not require truncation
+- Formal eval generation cap: `max_new_tokens=1200`
+- Formal eval tool-round cap: `max_tool_rounds=4`
+- Why those eval caps worked: they were high enough for full traces but low enough to surface runaway behavior early; the final clean 100-prompt run had `not_truncated_rate=1.0`
 - Batch size: `1`
 - Gradient accumulation: `8`
 - Save steps: `100`
@@ -168,6 +171,7 @@ The point of RLVR is not to teach the whole trace language from scratch. SFT alr
 ## Notes
 
 - `sft/evals/prompts_100.yaml` is the main held-out benchmark.
+- The benchmark was run from the published HF model, not just a local training directory, to verify the released artifact directly.
 - It was built to have `0` exact user-prompt overlaps with `gold_glyph_2500.jsonl`.
 - The remaining misses were narrow planning/reference issues, not broad trace collapse.
 - This checkpoint is the one to carry forward into RLVR.
