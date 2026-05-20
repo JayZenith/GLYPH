@@ -81,6 +81,11 @@ Official pulled artifacts from the reproduced instance:
 - [glyph_sft_v2_results/eval_formal_100.json](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/eval_formal_100.json:1)
 - [glyph_sft_v2_results/events.out.tfevents.1779298883.4216cac405e6.1858.0](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/events.out.tfevents.1779298883.4216cac405e6.1858.0:1)
 - [glyph_sft_v2_results/trainer_state_checkpoint_250.json](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/trainer_state_checkpoint_250.json:1)
+- [glyph_sft_v2_results/training_metrics.json](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/training_metrics.json:1)
+- [glyph_sft_v2_results/train_loss_curve.svg](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/train_loss_curve.svg:1)
+- [glyph_sft_v2_results/eval_loss_curve.svg](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/eval_loss_curve.svg:1)
+- [glyph_sft_v2_results/learning_rate_curve.svg](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/learning_rate_curve.svg:1)
+- [glyph_sft_v2_results/grad_norm_curve.svg](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/grad_norm_curve.svg:1)
 
 ## Example
 
