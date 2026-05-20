@@ -4,17 +4,17 @@
 formal_eval:
   - name: rust_enum_vs_trait_object
     system: "You are a Rust language assistant who gives compact conceptual explanations."
-    user: "In Rust, when would you choose an enum over a trait-object-based design? Give one concrete tradeoff and a simple rule of thumb."
+    user: "In Rust, when is an enum a better fit than boxing a trait object? Give one concrete tradeoff and a short rule of thumb."
     tools: []
 
   - name: async_future_send
     system: "You are a Rust async explainer who writes concise technical answers."
-    user: "In async Rust, what does Send mean for a Future, and when do I need it?"
+    user: "In async Rust, what makes a Future `Send`, and when does that requirement matter in practice?"
     tools: []
 
   - name: rustdoc_mem_take
     system: "You are a Rust documentation assistant who answers briefly and precisely."
-    user: "In Rust, what does std::mem::take do? Use the docs tool."
+    user: "Briefly explain `std::mem::take` in Rust, and use the docs tool before answering."
     tools:
       - name: rustdoc_lookup
         description: Returns concise documentation for a Rust symbol.
@@ -23,7 +23,7 @@ formal_eval:
 
   - name: rustdoc_iterator_fold
     system: "You are a Rust documentation assistant who answers briefly and precisely."
-    user: "In Rust, what does Iterator::fold do? Use the docs tool."
+    user: "Briefly explain `Iterator::fold` in Rust, and use the docs tool before answering."
     tools:
       - name: rustdoc_lookup
         description: Returns concise documentation for a Rust symbol.
@@ -32,7 +32,7 @@ formal_eval:
 
   - name: rust_debug_question_mark
     system: "You are a Rust debugging assistant who diagnoses compiler and tool output concisely."
-    user: "My Rust crate fails to compile after I changed a function to use `?` on a `Result`. I’m not sure what trait or type I need to add to make error conversion work."
+    user: "After switching a Rust function to use `?`, cargo check now says the error type cannot be converted. What should I inspect first?"
     tools:
       - name: cargo_check
         description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
@@ -45,7 +45,7 @@ formal_eval:
 
   - name: ci_timeout_fallback
     system: "You are a debugging assistant who keeps incident analysis concise and resilient to tool failure."
-    user: "Our nightly integration tests started timing out in the container startup phase. What should I check first?"
+    user: "A CI job now stalls while the test container is booting. What is the first thing you would verify?"
     tools:
       - name: get_ci_logs
         description: Fetches CI logs for a run.
@@ -62,7 +62,7 @@ formal_eval:
 
   - name: file_summary_postmortem
     system: "You are a document assistant who reads a file and returns a short, concrete summary."
-    user: "Open /docs/q3_launch_postmortem.md and summarize the main takeaways and action items."
+    user: "Open /docs/q4_latency_postmortem.md and summarize the key takeaways and follow-up actions."
     tools:
       - name: load_file
         description: Loads a file from disk and returns a short excerpt.
@@ -71,7 +71,7 @@ formal_eval:
 
   - name: onboarding_rollout_plan
     system: "You are a planning assistant that helps product teams build realistic launch plans and concise schedules."
-    user: "We need a 3-week rollout plan for an in-app onboarding checklist update. Pull major tasks, confirm the team can staff it, and keep it concise."
+    user: "We need a concise 3-week rollout plan for a first-run tips refresh. Pull the major tasks, confirm staffing, and keep it brief."
     tools:
       - name: get_availability
         description: Returns weekly availability by teammate.
@@ -98,7 +98,7 @@ formal_eval:
 
   - name: rustdoc_vec_retain
     system: "You are a Rust documentation assistant who answers briefly and precisely."
-    user: "In Rust, what does Vec::retain do? Use the docs tool."
+    user: "Briefly explain `Vec::retain` in Rust, and use the docs tool before answering."
     tools:
       - name: rustdoc_lookup
         description: Returns concise documentation for a Rust symbol.

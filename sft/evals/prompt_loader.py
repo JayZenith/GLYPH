@@ -6,19 +6,20 @@ import yaml
 _PROMPTS_FILE = Path(__file__).parent / "prompts.yaml"
 
 
-def load_prompts(section: str) -> list[dict]:
-    """Load a named section ("gen_eval" or "formal_eval") from prompts.yaml."""
-    data = yaml.safe_load(_PROMPTS_FILE.read_text())
+def load_prompts(section: str, prompt_file: str | None = None) -> list[dict]:
+    """Load a named section from a prompt yaml file."""
+    prompt_path = Path(prompt_file) if prompt_file else _PROMPTS_FILE
+    data = yaml.safe_load(prompt_path.read_text())
     if section not in data:
-        raise KeyError(f"Section {section!r} not in {_PROMPTS_FILE}; have {list(data)}")
+        raise KeyError(f"Section {section!r} not in {prompt_path}; have {list(data)}")
     return data[section]
 
 
-def build_prompt(user_message: str, tools: list[dict]) -> str:
+def build_prompt(user_message: str, tools: list[dict], system_message: str | None = None) -> str:
     """Render a TASK-format prompt up to the assistant header (greedy generation continues from here)."""
     parts = [
         "<|im_start|>system",
-        "system「You are a helpful AI assistant that completes tasks step by step.」🏷 sys1",
+        f"system「{system_message or 'You are a helpful AI assistant that completes tasks step by step.'}」",
     ]
     for tool in tools:
         parts.append("tool {")

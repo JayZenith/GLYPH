@@ -23,7 +23,10 @@ from sft.evals import (
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-model", default="Qwen/Qwen3-4B-Base")
-    parser.add_argument("--sft-model", default="JayZenith/glyph-sft-v1")
+    parser.add_argument("--sft-model", default="JayZenith/GLYPH_SFT")
+    parser.add_argument("--prompt-section", default="formal_eval")
+    parser.add_argument("--prompt-file", default=None,
+                        help="Optional yaml file to load prompts from instead of sft/evals/prompts.yaml")
     parser.add_argument("--output", required=True)
     parser.add_argument("--max-new-tokens", type=int, default=6000)
     parser.add_argument("--max-tool-rounds", type=int, default=8,
@@ -40,14 +43,14 @@ def main() -> int:
     print("Loading SFT model...")
     sft_model, sft_tok = load_model(args.sft_model)
 
-    prompts = load_prompts("formal_eval")
+    prompts = load_prompts(args.prompt_section, args.prompt_file)
     if args.limit is not None:
         prompts = prompts[:args.limit]
     results = {"sft": []}
     if args.include_base:
         results["base"] = []
     for item in prompts:
-        prompt = build_prompt(item["user"], item.get("tools", []))
+        prompt = build_prompt(item["user"], item.get("tools", []), item.get("system"))
         tools = item.get("tools", [])
 
         if args.include_base:

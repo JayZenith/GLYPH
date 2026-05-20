@@ -1,0 +1,1369 @@
+formal_eval:
+- name: rust_enum_vs_boxed_trait
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, when is an enum a better fit than storing handlers behind `Box<dyn Trait>`? Give one tradeoff and one rule
+    of thumb.
+  tools: []
+- name: rust_option_vs_result_boundary
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In a Rust API, when should a function return `Option<T>` instead of `Result<T, E>`? Give one concrete rule of thumb.
+  tools: []
+- name: rust_rc_vs_arc_choice
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, when would you pick `Rc<T>` over `Arc<T>`? Keep it concise and mention one cost.
+  tools: []
+- name: rust_borrow_vs_clone_hot_path
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, when should you borrow data instead of cloning it in a hot path? Give one practical tradeoff.
+  tools: []
+- name: rust_box_dyn_error_boundary
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust application code, when is `Box<dyn Error>` acceptable, and when is a concrete error type better?
+  tools: []
+- name: rust_impl_trait_vs_generic_arg
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, when is `impl Trait` in a function signature preferable to a named generic parameter?
+  tools: []
+- name: rust_string_vs_str_api
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust API design, when should an argument be `&str` instead of `String`? Give one clear reason.
+  tools: []
+- name: rust_vec_vs_vecdeque
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, when would you choose `VecDeque<T>` over `Vec<T>`? Mention one operation that drives the choice.
+  tools: []
+- name: rust_slice_vs_vec_param
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, when should a function take `&[T]` instead of `&Vec<T>`? Give a short rule of thumb.
+  tools: []
+- name: rust_associated_type_vs_generic
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust traits, when is an associated type a better fit than a generic type parameter?
+  tools: []
+- name: rust_send_vs_sync
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, what is the practical difference between `Send` and `Sync`? Answer briefly.
+  tools: []
+- name: rust_pin_future_concept
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In async Rust, what problem does `Pin` solve for futures? Keep it conceptual and short.
+  tools: []
+- name: rust_cow_when_useful
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, when is `Cow<'a, str>` a good fit? Mention one reason it can simplify an API.
+  tools: []
+- name: rust_phantomdata_why
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, why would a type include `PhantomData<T>` even if it stores no `T` value?
+  tools: []
+- name: rust_interior_mutability_choice
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, when is interior mutability the right tool instead of a plain `&mut` API?
+  tools: []
+- name: rust_hashmap_vs_btreemap
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, when is `BTreeMap` a better fit than `HashMap`? Give one concrete tradeoff.
+  tools: []
+- name: rust_asref_vs_borrow_trait
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust generics, when is `AsRef<str>` the right bound instead of `Borrow<str>`? Keep it brief.
+  tools: []
+- name: rust_iter_vs_iter_mut_vs_into_iter
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, what is the practical distinction between `.iter()`, `.iter_mut()`, and `.into_iter()`?
+  tools: []
+- name: rust_owned_vs_borrowed_return
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, when should a function return an owned value instead of a borrowed reference? Mention one constraint.
+  tools: []
+- name: rust_from_vs_tryfrom
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust conversions, when should you implement `From` and when should you implement `TryFrom`?
+  tools: []
+- name: rust_copy_vs_clone_derive
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, when is it appropriate to derive `Copy` instead of only `Clone`?
+  tools: []
+- name: rust_cell_vs_refcell
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, when is `Cell<T>` enough, and when do you need `RefCell<T>`?
+  tools: []
+- name: rust_static_lifetime_meaning
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, what does a `'static` lifetime usually mean in practice? Keep it concise.
+  tools: []
+- name: rust_collect_turbofish_reason
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust iterators, when do you need a turbofish on `collect()`? Give one simple example pattern.
+  tools: []
+- name: rust_async_move_capture
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In async Rust, why does adding `move` to an async block sometimes fix lifetime complaints?
+  tools: []
+- name: rust_object_safety_rule
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, what makes a trait object-safe? Give one common thing that breaks object safety.
+  tools: []
+- name: rust_error_enum_vs_anyhow
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, when should a library prefer a custom error enum over `anyhow::Error`?
+  tools: []
+- name: rust_iterators_vs_loops
+  system: You are a Rust language assistant who gives compact conceptual explanations.
+  user: In Rust, when is an explicit `for` loop clearer than chaining iterator adapters? Give one rule of thumb.
+  tools: []
+- name: rustdoc_mem_take
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `std::mem::take` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_mem_replace
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `std::mem::replace` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_mem_swap
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `std::mem::swap` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_iter_fold
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Iterator::fold` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_iter_try_fold
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Iterator::try_fold` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_iter_find_map
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Iterator::find_map` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_iter_flatten
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Iterator::flatten` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_iter_inspect
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Iterator::inspect` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_iter_collect
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Iterator::collect` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_iter_zip
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Iterator::zip` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_vec_retain
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Vec::retain` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_vec_splice
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Vec::splice` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_option_map
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Option::map` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_option_and_then
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Option::and_then` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_option_as_deref
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Option::as_deref` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_result_map_err
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Result::map_err` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_result_inspect_err
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Result::inspect_err` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_result_ok_or_else
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Option::ok_or_else` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_str_split_once
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `str::split_once` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_path_join
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `PathBuf::join` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_arc_make_mut
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Arc::make_mut` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_cow_to_mut
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Cow::to_mut` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_mem_discriminant
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `std::mem::discriminant` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_iter_peekable
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `Iterator::peekable` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: rustdoc_iter_once
+  system: You are a Rust documentation assistant who answers briefly and precisely.
+  user: Briefly explain `std::iter::once` in Rust, and use the docs tool before answering.
+  tools:
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust symbol.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol
+- name: cargo_error_convert
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: A Rust function started using `?`, and cargo check now says the error type cannot be converted. What should I inspect
+    first?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_trait_bound_missing
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: After adding a generic helper in Rust, cargo check now says a trait bound is missing. What should I verify first?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_borrow_of_moved_value
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: Cargo check says a Rust value was moved and then borrowed later. What is the first thing you would inspect?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_temporary_dropped
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: Cargo check reports that a temporary value is dropped while borrowed in Rust. What pattern usually causes this?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_mutable_borrow_twice
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: A Rust function now fails because it tries to mutably borrow the same value twice. What is the first refactor angle
+    to check?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_returned_reference_lifetime
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: A Rust helper that returns a reference now fails borrow checking after a refactor. What should I verify first?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_future_not_send
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: Spawning an async task in Rust now fails because the future is not `Send`. What should I inspect first?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_collect_type_inference
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: Cargo check cannot infer the target type of a `collect()` call in Rust. What is the most direct fix to check first?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_debug_trait_missing
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: A Rust struct now fails to compile because `Debug` is missing in a derived context. What should I inspect first?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_clone_bound_generic
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: A generic Rust helper now fails because `clone` is unavailable on `T`. What should I verify first?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_closure_outlives_stack
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: Cargo check says a closure may outlive the current function but borrows a local variable. What is the first thing
+    to inspect?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_object_safety_error
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: Turning a Rust trait into `dyn Trait` now fails object-safety checks. What should I inspect first?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_recursive_type_size
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: A recursive Rust type now fails because the compiler says it has infinite size. What is the first fix to consider?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_unpin_requirement
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: An async Rust refactor now complains that a type cannot be unpinned. What should I inspect first?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_iterator_item_mismatch
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: Cargo check says an iterator chain in Rust produces the wrong item type for the next adapter. What should I inspect
+    first?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_parse_type_annotation
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: A Rust parse call now fails because the compiler cannot infer the target type. What should I verify first?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_match_arm_type_mismatch
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: A Rust `match` expression now fails because the arms have incompatible types. What is the first thing to inspect?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_partial_move_pattern
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: Cargo check reports a partial move from a struct in Rust. What is the first pattern you would inspect?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_impl_future_lifetime
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: A Rust function returning `impl Future` now fails with a lifetime complaint after a refactor. What should I inspect
+    first?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: cargo_method_not_found_trait
+  system: You are a Rust debugging assistant who diagnoses compiler and tool output concisely.
+  user: Cargo check says a method is not found on a Rust type even though a trait impl exists. What should I verify first?
+  tools:
+  - name: cargo_check
+    description: Runs cargo check on a Rust crate and returns the main compiler diagnostics.
+    params:
+      crate_path:
+        type: string
+        description: Path to the crate
+        required: false
+  - name: rustdoc_lookup
+    description: Returns concise documentation for a Rust type, trait, macro, or function.
+    params:
+      symbol:
+        type: string
+        description: Rust symbol to look up
+        required: false
+- name: ci_container_boot_timeout
+  system: You are a debugging assistant who keeps incident analysis concise and resilient to tool failure.
+  user: A CI job now stalls while the test container is booting. What is the first thing you would verify?
+  tools:
+  - name: get_ci_logs
+    description: Fetches CI logs for a run.
+    params:
+      run_id:
+        type: string
+        description: Run id
+  - name: code_search
+    description: Searches the codebase.
+    params:
+      query:
+        type: string
+        description: Search query
+  - name: fetch_cached_incident
+    description: Returns a cached incident note.
+    params:
+      service:
+        type: string
+        description: Service name
+- name: ci_image_publish_failure
+  system: You are a debugging assistant who keeps incident analysis concise and resilient to tool failure.
+  user: A deploy pipeline started failing during image publish. What should I check first?
+  tools:
+  - name: get_ci_logs
+    description: Fetches CI logs for a run.
+    params:
+      run_id:
+        type: string
+        description: Run id
+  - name: code_search
+    description: Searches the codebase.
+    params:
+      query:
+        type: string
+        description: Search query
+  - name: fetch_cached_incident
+    description: Returns a cached incident note.
+    params:
+      service:
+        type: string
+        description: Service name
+- name: ci_cache_miss_regression
+  system: You are a debugging assistant who keeps incident analysis concise and resilient to tool failure.
+  user: A previously fast CI workflow is suddenly slow because dependencies seem to rebuild every run. What should I verify
+    first?
+  tools:
+  - name: get_ci_logs
+    description: Fetches CI logs for a run.
+    params:
+      run_id:
+        type: string
+        description: Run id
+  - name: code_search
+    description: Searches the codebase.
+    params:
+      query:
+        type: string
+        description: Search query
+  - name: fetch_cached_incident
+    description: Returns a cached incident note.
+    params:
+      service:
+        type: string
+        description: Service name
+- name: ci_dns_flake_integration
+  system: You are a debugging assistant who keeps incident analysis concise and resilient to tool failure.
+  user: Integration tests now fail intermittently because a downstream hostname cannot be resolved. What should I inspect
+    first?
+  tools:
+  - name: get_ci_logs
+    description: Fetches CI logs for a run.
+    params:
+      run_id:
+        type: string
+        description: Run id
+  - name: code_search
+    description: Searches the codebase.
+    params:
+      query:
+        type: string
+        description: Search query
+  - name: fetch_cached_incident
+    description: Returns a cached incident note.
+    params:
+      service:
+        type: string
+        description: Service name
+- name: ci_migration_lock_wait
+  system: You are a debugging assistant who keeps incident analysis concise and resilient to tool failure.
+  user: A migration step in CI now hangs waiting on a database lock. What should I check first?
+  tools:
+  - name: get_ci_logs
+    description: Fetches CI logs for a run.
+    params:
+      run_id:
+        type: string
+        description: Run id
+  - name: code_search
+    description: Searches the codebase.
+    params:
+      query:
+        type: string
+        description: Search query
+  - name: fetch_cached_incident
+    description: Returns a cached incident note.
+    params:
+      service:
+        type: string
+        description: Service name
+- name: deploy_healthcheck_timeout
+  system: You are a debugging assistant who keeps incident analysis concise and resilient to tool failure.
+  user: A new service revision deploys, but rollout stalls because health checks never go green. What should I verify first?
+  tools:
+  - name: get_ci_logs
+    description: Fetches CI logs for a run.
+    params:
+      run_id:
+        type: string
+        description: Run id
+  - name: code_search
+    description: Searches the codebase.
+    params:
+      query:
+        type: string
+        description: Search query
+  - name: fetch_cached_incident
+    description: Returns a cached incident note.
+    params:
+      service:
+        type: string
+        description: Service name
+- name: worker_backlog_after_release
+  system: You are a debugging assistant who keeps incident analysis concise and resilient to tool failure.
+  user: After a release, background jobs are backing up and queue latency is rising. What should I inspect first?
+  tools:
+  - name: get_ci_logs
+    description: Fetches CI logs for a run.
+    params:
+      run_id:
+        type: string
+        description: Run id
+  - name: code_search
+    description: Searches the codebase.
+    params:
+      query:
+        type: string
+        description: Search query
+  - name: fetch_cached_incident
+    description: Returns a cached incident note.
+    params:
+      service:
+        type: string
+        description: Service name
+- name: secret_rotation_auth_fail
+  system: You are a debugging assistant who keeps incident analysis concise and resilient to tool failure.
+  user: Right after rotating credentials, a production job starts failing authentication. What should I check first?
+  tools:
+  - name: get_ci_logs
+    description: Fetches CI logs for a run.
+    params:
+      run_id:
+        type: string
+        description: Run id
+  - name: code_search
+    description: Searches the codebase.
+    params:
+      query:
+        type: string
+        description: Search query
+  - name: fetch_cached_incident
+    description: Returns a cached incident note.
+    params:
+      service:
+        type: string
+        description: Service name
+- name: release_artifact_missing
+  system: You are a debugging assistant who keeps incident analysis concise and resilient to tool failure.
+  user: A release pipeline now fails because the publish step cannot find its build artifact. What should I inspect first?
+  tools:
+  - name: get_ci_logs
+    description: Fetches CI logs for a run.
+    params:
+      run_id:
+        type: string
+        description: Run id
+  - name: code_search
+    description: Searches the codebase.
+    params:
+      query:
+        type: string
+        description: Search query
+  - name: fetch_cached_incident
+    description: Returns a cached incident note.
+    params:
+      service:
+        type: string
+        description: Service name
+- name: startup_probe_regression
+  system: You are a debugging assistant who keeps incident analysis concise and resilient to tool failure.
+  user: A service now fails its startup probe after a base-image change. What is the first thing you would verify?
+  tools:
+  - name: get_ci_logs
+    description: Fetches CI logs for a run.
+    params:
+      run_id:
+        type: string
+        description: Run id
+  - name: code_search
+    description: Searches the codebase.
+    params:
+      query:
+        type: string
+        description: Search query
+  - name: fetch_cached_incident
+    description: Returns a cached incident note.
+    params:
+      service:
+        type: string
+        description: Service name
+- name: docs_latency_postmortem
+  system: You are a document assistant who reads a file and returns a short, concrete summary.
+  user: Open /docs/q4_latency_postmortem.md and summarize the root cause, mitigation, and open follow-ups.
+  tools:
+  - name: load_file
+    description: Loads a file from disk and returns a short excerpt.
+    params:
+      path:
+        type: string
+        description: Path to load
+- name: docs_release_notes_beta
+  system: You are a document assistant who reads a file and returns a short, concrete summary.
+  user: Open /docs/release_notes_beta.md and summarize the main user-facing changes and any obvious gaps.
+  tools:
+  - name: load_file
+    description: Loads a file from disk and returns a short excerpt.
+    params:
+      path:
+        type: string
+        description: Path to load
+- name: docs_incident_timeline
+  system: You are a document assistant who reads a file and returns a short, concrete summary.
+  user: Open /docs/incident_2026_04_17.md and summarize the timeline and the top unresolved action items.
+  tools:
+  - name: load_file
+    description: Loads a file from disk and returns a short excerpt.
+    params:
+      path:
+        type: string
+        description: Path to load
+- name: docs_oncall_handoff
+  system: You are a document assistant who reads a file and returns a short, concrete summary.
+  user: Open /docs/oncall_handoff_week32.md and summarize the most important risks and pending checks.
+  tools:
+  - name: load_file
+    description: Loads a file from disk and returns a short excerpt.
+    params:
+      path:
+        type: string
+        description: Path to load
+- name: docs_schema_migration_plan
+  system: You are a document assistant who reads a file and returns a short, concrete summary.
+  user: Open /docs/schema_migration_plan.md and summarize the rollout steps and rollback plan.
+  tools:
+  - name: load_file
+    description: Loads a file from disk and returns a short excerpt.
+    params:
+      path:
+        type: string
+        description: Path to load
+- name: docs_search_eval_report
+  system: You are a document assistant who reads a file and returns a short, concrete summary.
+  user: Open /docs/search_eval_report.md and summarize the strongest gains, regressions, and next questions.
+  tools:
+  - name: load_file
+    description: Loads a file from disk and returns a short excerpt.
+    params:
+      path:
+        type: string
+        description: Path to load
+- name: docs_mobile_launch_readiness
+  system: You are a document assistant who reads a file and returns a short, concrete summary.
+  user: Open /docs/mobile_launch_readiness.md and summarize the blockers, owners, and launch recommendation.
+  tools:
+  - name: load_file
+    description: Loads a file from disk and returns a short excerpt.
+    params:
+      path:
+        type: string
+        description: Path to load
+- name: plan_onboarding_refresh
+  system: You are a planning assistant that helps product teams build realistic launch plans and concise schedules.
+  user: We need a concise 3-week rollout plan for a first-run tips refresh. Pull the major tasks, confirm staffing, and keep
+    it brief.
+  tools:
+  - name: get_availability
+    description: Returns weekly availability by teammate.
+    params:
+      team_list:
+        type: string
+        description: Comma-separated IDs
+        required: false
+      start_date:
+        type: string
+        description: Start date
+        required: false
+      end_date:
+        type: string
+        description: End date
+        required: false
+  - name: create_project_plan
+    description: Generates a short work breakdown.
+    params:
+      project_name:
+        type: string
+        description: Project name
+        required: false
+      objectives:
+        type: string
+        description: Objectives
+        required: false
+      timeline_weeks:
+        type: string
+        description: Timeline in weeks
+        required: false
+- name: plan_billing_settings_refresh
+  system: You are a planning assistant that helps product teams build realistic launch plans and concise schedules.
+  user: We need a 2-week plan to prepare design review and implementation kickoff for a billing settings refresh. Confirm
+    staffing and keep it concise.
+  tools:
+  - name: get_availability
+    description: Returns weekly availability by teammate.
+    params:
+      team_list:
+        type: string
+        description: Comma-separated IDs
+        required: false
+      start_date:
+        type: string
+        description: Start date
+        required: false
+      end_date:
+        type: string
+        description: End date
+        required: false
+  - name: create_project_plan
+    description: Generates a short work breakdown.
+    params:
+      project_name:
+        type: string
+        description: Project name
+        required: false
+      objectives:
+        type: string
+        description: Objectives
+        required: false
+      timeline_weeks:
+        type: string
+        description: Timeline in weeks
+        required: false
+- name: plan_search_relevance_update
+  system: You are a planning assistant that helps product teams build realistic launch plans and concise schedules.
+  user: We need a concise 4-week rollout plan for a search relevance update. Include implementation, validation, launch checks,
+    and team capacity.
+  tools:
+  - name: get_availability
+    description: Returns weekly availability by teammate.
+    params:
+      team_list:
+        type: string
+        description: Comma-separated IDs
+        required: false
+      start_date:
+        type: string
+        description: Start date
+        required: false
+      end_date:
+        type: string
+        description: End date
+        required: false
+  - name: create_project_plan
+    description: Generates a short work breakdown.
+    params:
+      project_name:
+        type: string
+        description: Project name
+        required: false
+      objectives:
+        type: string
+        description: Objectives
+        required: false
+      timeline_weeks:
+        type: string
+        description: Timeline in weeks
+        required: false
+- name: plan_notification_preference_cleanup
+  system: You are a planning assistant that helps product teams build realistic launch plans and concise schedules.
+  user: We need a concise 3-week rollout plan for cleaning up notification preference settings. Pull the core tasks and confirm
+    staffing.
+  tools:
+  - name: get_availability
+    description: Returns weekly availability by teammate.
+    params:
+      team_list:
+        type: string
+        description: Comma-separated IDs
+        required: false
+      start_date:
+        type: string
+        description: Start date
+        required: false
+      end_date:
+        type: string
+        description: End date
+        required: false
+  - name: create_project_plan
+    description: Generates a short work breakdown.
+    params:
+      project_name:
+        type: string
+        description: Project name
+        required: false
+      objectives:
+        type: string
+        description: Objectives
+        required: false
+      timeline_weeks:
+        type: string
+        description: Timeline in weeks
+        required: false
+- name: plan_trial_conversion_banner
+  system: You are a planning assistant that helps product teams build realistic launch plans and concise schedules.
+  user: We need a 2-week rollout plan for a trial-conversion banner experiment. Include setup, QA, metrics checks, and staffing.
+  tools:
+  - name: get_availability
+    description: Returns weekly availability by teammate.
+    params:
+      team_list:
+        type: string
+        description: Comma-separated IDs
+        required: false
+      start_date:
+        type: string
+        description: Start date
+        required: false
+      end_date:
+        type: string
+        description: End date
+        required: false
+  - name: create_project_plan
+    description: Generates a short work breakdown.
+    params:
+      project_name:
+        type: string
+        description: Project name
+        required: false
+      objectives:
+        type: string
+        description: Objectives
+        required: false
+      timeline_weeks:
+        type: string
+        description: Timeline in weeks
+        required: false
+- name: plan_team_admin_permissions
+  system: You are a planning assistant that helps product teams build realistic launch plans and concise schedules.
+  user: We need a concise 4-week plan for shipping team-admin permission changes. Confirm staffing and include rollout safeguards.
+  tools:
+  - name: get_availability
+    description: Returns weekly availability by teammate.
+    params:
+      team_list:
+        type: string
+        description: Comma-separated IDs
+        required: false
+      start_date:
+        type: string
+        description: Start date
+        required: false
+      end_date:
+        type: string
+        description: End date
+        required: false
+  - name: create_project_plan
+    description: Generates a short work breakdown.
+    params:
+      project_name:
+        type: string
+        description: Project name
+        required: false
+      objectives:
+        type: string
+        description: Objectives
+        required: false
+      timeline_weeks:
+        type: string
+        description: Timeline in weeks
+        required: false
+- name: plan_checkout_copy_update
+  system: You are a planning assistant that helps product teams build realistic launch plans and concise schedules.
+  user: We need a concise 2-week rollout plan for a checkout copy refresh. Include implementation, QA, analytics checks, and
+    staffing.
+  tools:
+  - name: get_availability
+    description: Returns weekly availability by teammate.
+    params:
+      team_list:
+        type: string
+        description: Comma-separated IDs
+        required: false
+      start_date:
+        type: string
+        description: Start date
+        required: false
+      end_date:
+        type: string
+        description: End date
+        required: false
+  - name: create_project_plan
+    description: Generates a short work breakdown.
+    params:
+      project_name:
+        type: string
+        description: Project name
+        required: false
+      objectives:
+        type: string
+        description: Objectives
+        required: false
+      timeline_weeks:
+        type: string
+        description: Timeline in weeks
+        required: false
+- name: plan_search_filter_redesign
+  system: You are a planning assistant that helps product teams build realistic launch plans and concise schedules.
+  user: We need a concise 4-week rollout plan for a search filter redesign. Pull major workstreams, launch checks, and team
+    capacity.
+  tools:
+  - name: get_availability
+    description: Returns weekly availability by teammate.
+    params:
+      team_list:
+        type: string
+        description: Comma-separated IDs
+        required: false
+      start_date:
+        type: string
+        description: Start date
+        required: false
+      end_date:
+        type: string
+        description: End date
+        required: false
+  - name: create_project_plan
+    description: Generates a short work breakdown.
+    params:
+      project_name:
+        type: string
+        description: Project name
+        required: false
+      objectives:
+        type: string
+        description: Objectives
+        required: false
+      timeline_weeks:
+        type: string
+        description: Timeline in weeks
+        required: false
+- name: plan_mobile_error_state_update
+  system: You are a planning assistant that helps product teams build realistic launch plans and concise schedules.
+  user: We need a concise 3-week rollout plan for updating key mobile error states. Confirm staffing and keep the schedule
+    realistic.
+  tools:
+  - name: get_availability
+    description: Returns weekly availability by teammate.
+    params:
+      team_list:
+        type: string
+        description: Comma-separated IDs
+        required: false
+      start_date:
+        type: string
+        description: Start date
+        required: false
+      end_date:
+        type: string
+        description: End date
+        required: false
+  - name: create_project_plan
+    description: Generates a short work breakdown.
+    params:
+      project_name:
+        type: string
+        description: Project name
+        required: false
+      objectives:
+        type: string
+        description: Objectives
+        required: false
+      timeline_weeks:
+        type: string
+        description: Timeline in weeks
+        required: false
+- name: plan_settings_navigation_cleanup
+  system: You are a planning assistant that helps product teams build realistic launch plans and concise schedules.
+  user: We need a concise 3-week rollout plan for a settings navigation cleanup. Pull the major tasks, confirm staffing, and
+    note launch checks.
+  tools:
+  - name: get_availability
+    description: Returns weekly availability by teammate.
+    params:
+      team_list:
+        type: string
+        description: Comma-separated IDs
+        required: false
+      start_date:
+        type: string
+        description: Start date
+        required: false
+      end_date:
+        type: string
+        description: End date
+        required: false
+  - name: create_project_plan
+    description: Generates a short work breakdown.
+    params:
+      project_name:
+        type: string
+        description: Project name
+        required: false
+      objectives:
+        type: string
+        description: Objectives
+        required: false
+      timeline_weeks:
+        type: string
+        description: Timeline in weeks
+        required: false
