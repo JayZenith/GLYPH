@@ -38,6 +38,15 @@ init_prime_rl_submodules() {
   # Only init submodules that exist at the pinned commit. pydantic-config
   # became a workspace submodule after our pin; pre-pin it's pulled directly
   # from samsja/pydantic_config via tool.uv.sources git.
+  # Force HTTPS for any submodule URL — some pinned .gitmodules entries use
+  # SSH (git@github.com) which fails on fresh boxes without GitHub in
+  # known_hosts. Override before init, then sync so .git/config picks it up.
+  git -C "$PRIME_RL_DIR" submodule set-url deps/verifiers https://github.com/PrimeIntellect-ai/verifiers.git 2>/dev/null || true
+  git -C "$PRIME_RL_DIR" submodule set-url deps/renderers https://github.com/PrimeIntellect-ai/renderers.git 2>/dev/null || true
+  git -C "$PRIME_RL_DIR" submodule set-url deps/research-environments https://github.com/PrimeIntellect-ai/research-environments.git 2>/dev/null || true
+  git -C "$PRIME_RL_DIR" submodule set-url deps/pydantic-config https://github.com/PrimeIntellect-ai/pydantic-config 2>/dev/null || true
+  git -C "$PRIME_RL_DIR" submodule sync
+
   local declared
   declared="$(git -C "$PRIME_RL_DIR" config -f .gitmodules --name-only --get-regexp 'submodule\..*\.path' | sed 's/^submodule\.\(.*\)\.path$/\1/')"
   for name in $declared; do
