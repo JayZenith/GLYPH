@@ -8,7 +8,7 @@ optimization_dtype = "bfloat16"
 reduce_dtype = "bfloat16"
 
 [buffer]
-batch_size = 24
+batch_size = 12
 seq_len = 1536
 
 [optim]
