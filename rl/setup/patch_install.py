@@ -811,28 +811,19 @@ def main() -> None:
             target / "src" / "prime_rl" / "trainer" / "rl" / "broadcast" / "filesystem.py",
         ),
     ]
+    # Full-FT path: only apply patches that are bug fixes or required for the
+    # teacher-anchor / vLLM hot-reload. The LoRA bootstrap and full-inference-
+    # weights override patches are skipped (full-FT has lora=None, so vanilla
+    # prime-rl already does the right thing). The frozen LoRA patcher is at
+    # archive_adapter_setup/patch_install.py.
     matched = False
     for entrypoints_rl_py, vllm_worker_py, model_py, ckpt_py, orchestrator_utils_py, orchestrator_py, scheduler_py, filesystem_broadcast_py in candidates:
-        if not (
-            entrypoints_rl_py.exists()
-            and vllm_worker_py.exists()
-            and model_py.exists()
-            and ckpt_py.exists()
-            and orchestrator_utils_py.exists()
-            and orchestrator_py.exists()
-            and scheduler_py.exists()
-            and filesystem_broadcast_py.exists()
-        ):
+        if not (ckpt_py.exists() and orchestrator_utils_py.exists() and vllm_worker_py.exists()):
             continue
         matched = True
-        patch_entrypoints_rl_py(entrypoints_rl_py)
-        patch_vllm_filesystem_worker_py(vllm_worker_py)
-        patch_model_py(model_py)
         patch_ckpt_py(ckpt_py)
         patch_orchestrator_utils_py(orchestrator_utils_py)
-        patch_orchestrator_py(orchestrator_py)
-        patch_scheduler_py(scheduler_py)
-        patch_filesystem_broadcast_py(filesystem_broadcast_py)
+        patch_vllm_filesystem_worker_py(vllm_worker_py)
     if not matched:
         raise FileNotFoundError(f"Could not find PRIME-RL trainer files under {target}")
 
