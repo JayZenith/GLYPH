@@ -76,18 +76,63 @@ print("TRUE" if torch._C._GLIBCXX_USE_CXX11_ABI else "FALSE")
 PY
 )"
 
-  if [ -n "${FLASH_ATTN_WHEEL_URL:-}" ]; then
-    wheel_url="$FLASH_ATTN_WHEEL_URL"
-  elif [ "$torch_version" = "2.11.0" ] && [ "$cuda_version" = "128" ] && [ "$py_tag" = "cp312" ] && [ "$abi_flag" = "TRUE" ]; then
-    wheel_url="https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.11/flash_attn-2.8.3%2Bcu12torch2.11cxx11abiTRUE-cp312-cp312-linux_x86_64.whl"
-  else
-    echo "No pinned flash-attn wheel for torch=$torch_version cuda=$cuda_version python=$py_tag abi=$abi_flag" >&2
-    echo "Set FLASH_ATTN_WHEEL_URL to a matching wheel before rerunning setup/install_prime_rl.sh." >&2
-    return 1
-  fi
+  # Detect GPU compute capability so we can pick a wheel that supports it.
+  # Hopper = 9.0, Blackwell server = 10.0 / 12.0.
+  local sm_cap
+  sm_cap="$("$python_bin" - <<'PY'
+try:
+    import torch
+    if torch.cuda.is_available():
+        major, minor = torch.cuda.get_device_capability(0)
+        print(f"{major}.{minor}")
+    else:
+        print("none")
+except Exception:
+    print("none")
+PY
+)"
 
   uv pip install --python "$python_bin" peft
-  uv pip install --python "$python_bin" "$wheel_url"
+
+  # Build a candidate list — first match wins. Each candidate is a URL.
+  # Pinned wheels by (torch, cuda, py, abi, optional sm-cap requirement).
+  local -a candidates=()
+  if [ -n "${FLASH_ATTN_WHEEL_URL:-}" ]; then
+    candidates+=("$FLASH_ATTN_WHEEL_URL")
+  fi
+  if [ "$torch_version" = "2.11.0" ] && [ "$cuda_version" = "128" ] && [ "$py_tag" = "cp312" ] && [ "$abi_flag" = "TRUE" ]; then
+    # Blackwell (sm 10.0+) — needs a wheel built against newer arch list.
+    case "$sm_cap" in
+      10.*|12.*)
+        candidates+=("https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.8cxx11abiTRUE-cp312-cp312-linux_x86_64.whl")
+        ;;
+    esac
+    # Hopper / Ampere — works with the older sm list.
+    candidates+=("https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.11/flash_attn-2.8.3%2Bcu12torch2.11cxx11abiTRUE-cp312-cp312-linux_x86_64.whl")
+  fi
+
+  if [ "${#candidates[@]}" -eq 0 ]; then
+    echo "No pinned flash-attn wheel for torch=$torch_version cuda=$cuda_version python=$py_tag abi=$abi_flag sm=$sm_cap" >&2
+    echo "Trainer config defaults to attn=sdpa, so this is non-fatal. Skipping flash-attn." >&2
+    return 0
+  fi
+
+  for wheel_url in "${candidates[@]}"; do
+    echo "[flash-attn] trying wheel: $wheel_url (sm_cap=$sm_cap)"
+    if uv pip install --python "$python_bin" "$wheel_url"; then
+      # Verify import + arch match. If load fails, uninstall and try next.
+      if "$python_bin" -c "import flash_attn" 2>/dev/null; then
+        echo "[flash-attn] installed and imports OK"
+        return 0
+      else
+        echo "[flash-attn] wheel installed but failed to import on sm_$sm_cap; trying next candidate"
+        uv pip uninstall --python "$python_bin" flash-attn 2>/dev/null || true
+      fi
+    fi
+  done
+
+  echo "[flash-attn] no compatible wheel — trainer.toml uses attn=sdpa, so this is non-fatal." >&2
+  return 0
 }
 
 install_rust_toolchain() {
