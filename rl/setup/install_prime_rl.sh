@@ -2,8 +2,12 @@
 set -euo pipefail
 
 # Install PRIME-RL the way upstream expects: its own uv-managed Python 3.12 env.
-# Then patch the installed checkout so it can initialize trainer LoRA + lm_head
-# from a PEFT adapter such as JayZenith/glyph-sft-v1-adapter.
+# Then apply rl/setup/patch_install.py to the installed checkout. The patches
+# fix vLLM Qwen3 packed-weight loading, the orchestrator's teacher-logprob path
+# (used by the KL anchor), the full-weights inference broadcast, and tolerate
+# checkpoints that don't carry `revert_weight_conversion`. The legacy LoRA-
+# bootstrap patch lives in the same file and is a no-op when
+# PRIME_RL_INIT_ADAPTER is unset (which is the default in the full-FT path).
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PRIME_RL_DIR="${1:-${PRIME_RL_DIR:-/workspace/prime-rl-src}}"
@@ -31,7 +35,8 @@ init_prime_rl_submodules() {
   git -C "$PRIME_RL_DIR" submodule set-url deps/verifiers https://github.com/PrimeIntellect-ai/verifiers.git
   git -C "$PRIME_RL_DIR" submodule set-url deps/renderers https://github.com/PrimeIntellect-ai/renderers.git
   git -C "$PRIME_RL_DIR" submodule set-url deps/research-environments https://github.com/PrimeIntellect-ai/research-environments.git
-  git -C "$PRIME_RL_DIR" submodule update --init deps/verifiers deps/renderers deps/research-environments
+  git -C "$PRIME_RL_DIR" submodule set-url deps/pydantic-config https://github.com/PrimeIntellect-ai/pydantic-config
+  git -C "$PRIME_RL_DIR" submodule update --init deps/verifiers deps/renderers deps/research-environments deps/pydantic-config
 }
 
 install_flash_attn_wheel() {
