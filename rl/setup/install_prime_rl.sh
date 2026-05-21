@@ -9,7 +9,7 @@ set -euo pipefail
 # bootstrap patch lives in the same file and is a no-op when
 # PRIME_RL_INIT_ADAPTER is unset (which is the default in the full-FT path).
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PRIME_RL_DIR="${1:-${PRIME_RL_DIR:-/workspace/prime-rl-src}}"
 PRIME_PYTHON_VERSION="${PRIME_PYTHON_VERSION:-3.12}"
 # Pin to the last commit before the student/teacher inference-pool refactor
@@ -142,13 +142,13 @@ else:
     raise RuntimeError("Could not resolve prime_rl package path")
 PY
 )"
-"$PRIME_RL_DIR/.venv/bin/python" "$ROOT_DIR/setup/patch_install.py" "$SITE_PACKAGES_DIR"
+"$PRIME_RL_DIR/.venv/bin/python" "$ROOT_DIR/rl/setup/patch_install.py" "$SITE_PACKAGES_DIR"
 
 cat <<EOF
 PRIME-RL ready at: $PRIME_RL_DIR
 Activate with:
   source "$PRIME_RL_DIR/.venv/bin/activate"
 
-Run glyph RL wrappers from:
-  cd "$ROOT_DIR"
+Run glyph RL wrappers from the repo root:
+  cd "$ROOT_DIR" && bash rl/setup/run_task_trace_2xa100.sh
 EOF

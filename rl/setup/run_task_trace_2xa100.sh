@@ -3,7 +3,7 @@
 # Trainer on GPU 1, rollout vLLM + teacher anchor vLLM on GPU 0.
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PRIME_RL_DIR="${PRIME_RL_DIR:-/workspace/prime-rl-src}"
 MODEL="${MODEL:-JayZenith/GLYPH-SFT-V2}"
 TEACHER_MODEL="${TEACHER_MODEL:-$MODEL}"

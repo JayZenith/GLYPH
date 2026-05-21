@@ -2,7 +2,7 @@
 # Dry-run config validator for the full-finetune RLVR launcher.
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PRIME_RL_DIR="${PRIME_RL_DIR:-/workspace/prime-rl-src}"
 OUT_DIR="${OUT_DIR:-$ROOT_DIR/outputs/smoke_2xa100}"
 DATA_PATH="${DATA_PATH:-$ROOT_DIR/runs/rlvr1/prompts.jsonl}"
