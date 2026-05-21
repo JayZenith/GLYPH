@@ -110,13 +110,10 @@ PY
     candidates+=("$FLASH_ATTN_WHEEL_URL")
   fi
   if [ "$torch_version" = "2.11.0" ] && [ "$cuda_version" = "128" ] && [ "$py_tag" = "cp312" ] && [ "$abi_flag" = "TRUE" ]; then
-    # Blackwell (sm 10.0+) — needs a wheel built against newer arch list.
-    case "$sm_cap" in
-      10.*|12.*)
-        candidates+=("https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.8cxx11abiTRUE-cp312-cp312-linux_x86_64.whl")
-        ;;
-    esac
-    # Hopper / Ampere — works with the older sm list.
+    # Single known-good wheel for our pinned stack. CUDA wheels carry PTX
+    # for forward-arch JIT (often loads on Blackwell sm_10/12 even though
+    # the wheel was built for Hopper). If import test fails on Blackwell,
+    # we skip flash-attn entirely — trainer.toml uses attn=sdpa.
     candidates+=("https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.11/flash_attn-2.8.3%2Bcu12torch2.11cxx11abiTRUE-cp312-cp312-linux_x86_64.whl")
   fi
 
