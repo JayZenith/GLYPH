@@ -70,7 +70,10 @@ OUTPUT_DIR=/workspace/glyph/outputs/rlvr1_run1 \
 
 Defaults (override via env):
 - `MODEL=JayZenith/GLYPH-SFT-V2`
-- `SEQ_LEN=2048`, `MAX_MODEL_LEN=2048`, `MAX_COMPLETION_TOKENS=768`
+- `SEQ_LEN=4096`, `MAX_MODEL_LEN=4096`, `MAX_COMPLETION_TOKENS=1536`
+  - At 2× A100 80GB this peaks at ~73 GB on the trainer GPU (~7 GB
+    headroom). Going to 8192 OOMs the trainer; smaller seq_len causes
+    vLLM 4xx prompt-too-long rejections on the longer bug-fix rollouts.
 - `MAX_TOOL_ROUNDS=3`
 - Rollout port `8000`, GPUs `0,1`.
 - `TEACHER_ANCHOR=0` by default. The pinned prime-rl version forbids

@@ -268,10 +268,6 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
         tool_text = _trajectory_tool_text(state) or _completion_role_text(
             completion, "tool"
         )
-    text_len = len(text)
-    if text_len > 1400:
-        print(f"[TRUNCATION_RISK] len={text_len} chars ~{int(text_len*0.8)} tokens")
-
     expected_tool = kwargs.get("expected_tool")
     expected_args = _normalize_expected_args(kwargs.get("expected_args"))
     validator: TaskValidator = kwargs.get("validator")
@@ -394,9 +390,6 @@ class RustToolEnv(vf.MultiTurnEnv):
 
     async def env_response(self, messages, state, **kwargs):
         text = self._messages_text(messages)
-        msg_len = len(text)
-        if msg_len > 1200:
-            print(f"[ENV_TRUNCATION_RISK] pre-response len={msg_len} chars ~{int(msg_len*0.8)} tokens")
         executed = set(state.get("executed_call_ids") or [])
         calls = [call for call in parse_call_blocks(text) if call["id"] not in executed]
         if not calls:
