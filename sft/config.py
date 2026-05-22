@@ -11,7 +11,7 @@ class TrainConfig:
 
     # Data
     data_path: str = "synthetic_data/gold_glyph_3000.jsonl"
-    max_seq_length: int = 1024
+    max_seq_length: int = 1536
     masking_mode: str = "assistant_only"  # "assistant_only" | "full_trace"
 
     # Training

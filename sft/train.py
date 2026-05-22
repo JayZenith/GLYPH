@@ -88,7 +88,7 @@ def main():
     parser.add_argument("--grad-accum", type=int, default=8)
     parser.add_argument("--lr", type=float, default=2e-5)
     parser.add_argument("--lm-head-lr", type=float, default=3e-5)
-    parser.add_argument("--max-seq-length", type=int, default=1024)
+    parser.add_argument("--max-seq-length", type=int, default=1536)
     parser.add_argument("--use-lora", action=argparse.BooleanOptionalAction, default=True,
                         help="Use LoRA (default True). Disable with --no-use-lora for full fine-tune.")
     parser.add_argument("--lora-r", type=int, default=64)
