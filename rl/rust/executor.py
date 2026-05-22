@@ -137,6 +137,21 @@ class RustExecutor:
             cmd.append("--release")
         return self.execute(cmd, working_dir=project_path)
 
+    def read_file(self, file_path: str, max_chars: int = 4000) -> ExecutionResult:
+        """Return file contents (truncated if huge). Pure in-process, no subprocess."""
+        try:
+            p = Path(file_path)
+            if not p.exists():
+                return ExecutionResult(False, "", f"file not found: {file_path}", -1)
+            text = p.read_text(encoding="utf-8")
+            if len(text) > max_chars:
+                head = max_chars // 2 - 20
+                tail = max_chars - head - 20
+                text = f"{text[:head]}\n…[truncated]…\n{text[-tail:]}"
+            return ExecutionResult(True, text, "", 0)
+        except OSError as exc:
+            return ExecutionResult(False, "", f"OSError: {exc}", -1)
+
     def apply_patch(self, file_path: str, find: str, replace: str) -> ExecutionResult:
         """Find-and-replace edit on a single file. `find` must occur exactly once.
         Pure in-process; no subprocess sandboxing (text edit, not arbitrary code)."""

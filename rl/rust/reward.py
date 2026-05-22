@@ -81,6 +81,15 @@ def compute_tool_reward(
             components["test_pass"] = -1.0
             details["error_snippet"] = stderr[:500] if stderr else "unknown error"
 
+    elif tool_name == "read_file":
+        # Info-gathering step. Small positive shaping for successful reads,
+        # negative for missing files (helps the model preserve correct paths).
+        if success:
+            components["read_success"] = 0.2
+        else:
+            components["read_success"] = -0.3
+            details["error_snippet"] = stderr[:200] if stderr else "unknown"
+
     elif tool_name == "apply_patch":
         if success:
             components["patch_applied"] = 0.5

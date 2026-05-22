@@ -80,6 +80,11 @@ def _execute(executor: RustExecutor, tool_name: str, params: dict) -> ExecutionR
         return executor.cargo_test(params.get("project_path", "."), params.get("test_name"))
     if tool_name == "cargo_run":
         return executor.cargo_run(params.get("project_path", "."))
+    if tool_name == "read_file":
+        file_path = params.get("file_path")
+        if not file_path:
+            return ExecutionResult(False, "", "missing file_path", -1)
+        return executor.read_file(file_path)
     if tool_name == "apply_patch":
         file_path = params.get("file_path")
         find = params.get("find")
