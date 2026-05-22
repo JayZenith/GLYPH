@@ -1,0 +1,17 @@
+{
+  "topup_file": "synthetic_data/rlvr_seed_final_v1.jsonl",
+  "combined_file": "synthetic_data/gold_glyph_3141_plus_rlvr_seed_final_v1.jsonl",
+  "base_rows": 3004,
+  "topup_rows": 137,
+  "combined_rows": 3141,
+  "counts": {
+    "lib_bugfix": 61,
+    "bin_bugfix": 40,
+    "single_tool": 8,
+    "read_response": 8,
+    "cargo_diag": 8,
+    "strong_bin_bugfix": 6,
+    "strong_lib_bugfix": 6
+  },
+  "exact_prompt_overlap_count": 0
+}

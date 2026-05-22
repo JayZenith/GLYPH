@@ -1,56 +1,27 @@
 """Dataset loading + tokenization with assistant-only loss masking."""
 import hashlib
 import json
-import os
 from pathlib import Path
 
 from datasets import Dataset
-from huggingface_hub import hf_hub_download
-
-
-HF_DATASET_REPO = os.environ.get("GLYPH_SFT_DATASET_REPO", "JayZenith/glyph-sft-v1-data")
-HF_DATASET_FILE = os.environ.get("GLYPH_SFT_DATASET_FILE", "glyph_dataset.jsonl")
-
-
-def _ensure_dataset_local(data_path: str) -> str:
-    """Ensure the requested dataset exists locally, fetching the canonical HF copy if needed."""
-    p = Path(data_path)
-    if p.exists():
-        return str(p)
-    if p.name == "glyph_dataset.jsonl":
-        p.parent.mkdir(parents=True, exist_ok=True)
-        print(f"{data_path} not found; downloading {HF_DATASET_FILE} from {HF_DATASET_REPO}...")
-        downloaded = hf_hub_download(
-            repo_id=HF_DATASET_REPO,
-            repo_type="dataset",
-            filename=HF_DATASET_FILE,
-            local_dir=str(p.parent),
-        )
-        downloaded_path = Path(downloaded)
-        if downloaded_path.exists():
-            if downloaded_path.name == p.name:
-                return str(downloaded_path)
-            target = p
-            target.write_bytes(downloaded_path.read_bytes())
-            return str(target)
-    raise FileNotFoundError(
-        f"{data_path} not found and HF fallback failed. Pass --data explicitly or set "
-        "GLYPH_SFT_DATASET_REPO / GLYPH_SFT_DATASET_FILE."
-    )
 
 
 def load_traces(data_path: str) -> list[dict]:
     """Load processed traces from JSONL into [{text: ...}, ...]."""
-    data_path = _ensure_dataset_local(data_path)
+    p = Path(data_path)
+    if not p.exists():
+        raise FileNotFoundError(
+            f"{data_path} not found. Pass --data with a valid local dataset path."
+        )
     traces = []
-    with open(data_path) as f:
+    with p.open() as f:
         for line in f:
             try:
                 item = json.loads(line)
                 traces.append({"text": item["trace"]})
             except Exception:
                 pass
-    print(f"Loaded {len(traces)} traces from {data_path}")
+    print(f"Loaded {len(traces)} traces from {p}")
     return traces
 
 

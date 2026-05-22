@@ -7,8 +7,9 @@ Reproduction notes for the reproduced `GLYPH-SFT-V2` supervised fine-tune. The G
 - Base model: `Qwen/Qwen3-4B-Base`
 - Dataset: `synthetic_data/gold_glyph_3000.jsonl`
 - Split: `2000 / 250 / 250`
-- Final usable checkpoint: `runs/sft_toolturn_v1_fullft1/checkpoint-250`
-- HF model: `JayZenith/GLYPH-SFT-V2`
+- Training output dir: `runs/glyph_sft_v3`
+- Final usable checkpoint: `runs/glyph_sft_v3/checkpoint-250`
+- Optional published model alias: `JayZenith/GLYPH-SFT-V2`
 
 ## Important Knobs
 
@@ -36,7 +37,7 @@ cd /glyph
 python -m sft.train \
   --model Qwen/Qwen3-4B-Base \
   --data synthetic_data/gold_glyph_3000.jsonl \
-  --output runs/sft_toolturn_v1_fullft1 \
+  --output runs/glyph_sft_v3 \
   --epochs 1 \
   --no-use-lora \
   --lr 1e-5 \
@@ -52,22 +53,24 @@ Held-out test loss:
 cd /glyph
 python -m sft.eval_test_loss \
   --base Qwen/Qwen3-4B-Base \
-  --sft runs/sft_toolturn_v1_fullft1/checkpoint-250 \
-  --test-set runs/sft_toolturn_v1_fullft1/test_set \
-  --output runs/sft_toolturn_v1_fullft1/eval_test_loss.json
+  --sft runs/glyph_sft_v3/checkpoint-250 \
+  --test-set runs/glyph_sft_v3/test_set \
+  --output runs/glyph_sft_v3/eval_test_loss.json
 ```
 
 Clean 100-prompt held-out formal eval:
 
 ```bash
 python -m sft.eval_formal \
-  --sft-model JayZenith/GLYPH-SFT-V2 \
+  --sft-model runs/glyph_sft_v3/checkpoint-250 \
   --prompt-file sft/evals/prompts_125.yaml \
-  --output glyph_sft_v2_results/eval_formal_100.json \
+  --output runs/glyph_sft_v3/eval_formal_100.json \
   --limit 100 \
   --max-new-tokens 1200 \
   --max-tool-rounds 4
 ```
+
+If you want to run the same formal eval against the published Hugging Face copy instead of the local checkpoint, swap `--sft-model` to `JayZenith/GLYPH-SFT-V2`.
 
 
 ## Results

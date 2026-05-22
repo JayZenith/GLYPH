@@ -10,7 +10,7 @@ class TrainConfig:
     tokenizer_name: Optional[str] = None
 
     # Data
-    data_path: str = "synthetic_data/gold_glyph_3000.jsonl"
+    data_path: Optional[str] = None
     max_seq_length: int = 1536
     masking_mode: str = "assistant_only"  # "assistant_only" | "full_trace"
 

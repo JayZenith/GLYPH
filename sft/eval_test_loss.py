@@ -19,9 +19,23 @@ def _is_adapter_dir(path: str) -> bool:
     return p.is_dir() and (p / "adapter_config.json").exists()
 
 
+def _has_local_tokenizer(path: str) -> bool:
+    p = Path(path)
+    if not p.is_dir():
+        return False
+    return any((p / name).exists() for name in (
+        "tokenizer_config.json",
+        "tokenizer.json",
+        "vocab.json",
+        "merges.txt",
+    ))
+
+
 def load_model(path: str, base_model: str | None = None):
-    model_source = base_model or path
-    tok = AutoTokenizer.from_pretrained(model_source, trust_remote_code=True)
+    is_adapter = _is_adapter_dir(path)
+    model_source = base_model if is_adapter else path
+    tok_source = path if _has_local_tokenizer(path) else (base_model or path)
+    tok = AutoTokenizer.from_pretrained(tok_source, trust_remote_code=True)
     try:
         base = AutoModelForCausalLM.from_pretrained(
             model_source, trust_remote_code=True, torch_dtype=torch.bfloat16,
@@ -31,7 +45,7 @@ def load_model(path: str, base_model: str | None = None):
         base = AutoModelForCausalLM.from_pretrained(
             model_source, trust_remote_code=True, torch_dtype=torch.bfloat16, device_map="auto",
         )
-    model = PeftModel.from_pretrained(base, path) if _is_adapter_dir(path) else base
+    model = PeftModel.from_pretrained(base, path) if is_adapter else base
     model.eval()
     return model, tok
 

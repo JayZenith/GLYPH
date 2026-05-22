@@ -80,7 +80,8 @@ def setup_model_and_tokenizer(config: TrainConfig):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="Qwen/Qwen3-4B-Base")
-    parser.add_argument("--data", type=str, default="synthetic_data/gold_glyph_3000.jsonl")
+    parser.add_argument("--data", type=str, required=True,
+                        help="Path to a local JSONL dataset file")
     parser.add_argument("--output", type=str, default="runs/sft1")
     parser.add_argument("--tokenizer", type=str, help="Tokenizer name/path; defaults to --model")
     parser.add_argument("--epochs", type=int, default=3)
@@ -193,6 +194,8 @@ def main():
         remove_unused_columns=False,
         deepspeed=None,
         ddp_find_unused_parameters=False,
+        save_only_model=True,
+        save_safetensors=True,
     )
 
     trainer_cls = ParamGroupTrainer if config.use_lora and config.lora_modules_to_save else Trainer

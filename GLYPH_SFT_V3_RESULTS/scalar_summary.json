@@ -1,0 +1,50 @@
+{
+  "train/loss": {
+    "count": 31,
+    "first": 2.1335999965667725,
+    "last": 0.2782000005245209,
+    "csv": "train_loss.csv"
+  },
+  "train/grad_norm": {
+    "count": 31,
+    "first": 12.75,
+    "last": 3.953125,
+    "csv": "train_grad_norm.csv"
+  },
+  "train/learning_rate": {
+    "count": 31,
+    "first": 0.0,
+    "last": 1.1654587295240049e-09,
+    "csv": "train_learning_rate.csv"
+  },
+  "train/epoch": {
+    "count": 43,
+    "first": 0.003329171799123287,
+    "last": 0.9987515807151794,
+    "csv": "train_epoch.csv"
+  },
+  "eval/loss": {
+    "count": 12,
+    "first": 0.6762937307357788,
+    "last": 0.3057805001735687,
+    "csv": "eval_loss.csv"
+  },
+  "eval/runtime": {
+    "count": 12,
+    "first": 28.341800689697266,
+    "last": 28.4601993560791,
+    "csv": "eval_runtime.csv"
+  },
+  "eval/samples_per_second": {
+    "count": 12,
+    "first": 10.585000038146973,
+    "last": 10.541000366210938,
+    "csv": "eval_samples_per_second.csv"
+  },
+  "eval/steps_per_second": {
+    "count": 12,
+    "first": 10.585000038146973,
+    "last": 10.541000366210938,
+    "csv": "eval_steps_per_second.csv"
+  }
+}
