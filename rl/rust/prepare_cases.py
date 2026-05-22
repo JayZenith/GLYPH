@@ -7,7 +7,7 @@ and emitted as one or more prompt JSONL rows carrying `expected_tool` and
 `expected_args`. The reward path with those fields hits real `compute_tool_reward`.
 
 Structure-only rows come from gold_glyph_3000.jsonl with no `expected_tool` and
-are scored by the validator term only. They are NEVER from prompts_100.yaml.
+are scored by the validator term only. They are NEVER from prompts_125.yaml.
 """
 from __future__ import annotations
 
@@ -411,7 +411,7 @@ def main() -> None:
                         help="SFT pool for structure-only rows.")
     parser.add_argument("--gold-count", type=int, default=50,
                         help="Number of structure-only rows to include (0 to skip).")
-    parser.add_argument("--eval-yaml", type=Path, default=Path("sft/evals/prompts_100.yaml"),
+    parser.add_argument("--eval-yaml", type=Path, default=Path("sft/evals/prompts_125.yaml"),
                         help="Held-out eval prompts to EXCLUDE from gold extraction.")
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()

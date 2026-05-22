@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Build a rust-skewed held-out formal eval set with exact-overlap checks."""
+"""Build a rust-skewed held-out formal eval set with exact-overlap checks.
+
+Covers conceptual Rust, rustdoc lookups, cargo diagnostics, incident triage,
+file summarization, planning, AND the dev-tool stack the RL env exercises
+(read_file / apply_patch / cargo_check / cargo_build / cargo_run / cargo_test
+/ rustc). Eval prompts use /srv/eval/* paths so they never collide with the
+SFT pool's /workspace/glyph/runs/* paths."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -9,7 +15,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 DATASET_PATH = ROOT / "synthetic_data/gold_glyph_3000.jsonl"
-OUTPUT_PATH = ROOT / "sft/evals/prompts_100.yaml"
+OUTPUT_PATH = ROOT / "sft/evals/prompts_125.yaml"
 
 
 def rustdoc_tool() -> list[dict]:
@@ -61,6 +67,54 @@ def load_file_tool() -> list[dict]:
         "description": "Loads a file from disk and returns a short excerpt.",
         "params": {"path": {"type": "string", "description": "Path to load"}},
     }]
+
+
+def rust_dev_tools() -> list[dict]:
+    """Mirrors rl/rust/tools.py — the schema the RL env actually executes."""
+    return [
+        {
+            "name": "read_file",
+            "description": "Reads a file from disk and returns its contents.",
+            "params": {"file_path": {"type": "string", "description": "Path to the file to read"}},
+        },
+        {
+            "name": "apply_patch",
+            "description": "Applies a textual find/replace edit to a single file. 'find' must occur exactly once.",
+            "params": {
+                "file_path": {"type": "string", "description": "Path to the file to edit"},
+                "find": {"type": "string", "description": "Exact text snippet to locate"},
+                "replace": {"type": "string", "description": "Replacement text"},
+            },
+        },
+        {
+            "name": "cargo_check",
+            "description": "Runs cargo check to verify code compiles without producing a binary.",
+            "params": {"project_path": {"type": "string", "description": "Cargo project directory"}},
+        },
+        {
+            "name": "cargo_build",
+            "description": "Compiles the Cargo project into binaries.",
+            "params": {"project_path": {"type": "string", "description": "Cargo project directory"}},
+        },
+        {
+            "name": "cargo_test",
+            "description": "Runs the test suite for a Cargo project.",
+            "params": {"project_path": {"type": "string", "description": "Cargo project directory"}},
+        },
+        {
+            "name": "cargo_run",
+            "description": "Builds and runs the binary of a Cargo project, returning its stdout.",
+            "params": {"project_path": {"type": "string", "description": "Cargo project directory"}},
+        },
+        {
+            "name": "rustc",
+            "description": "Compiles a single Rust source file to an executable.",
+            "params": {
+                "source_file": {"type": "string", "description": "Source file"},
+                "output": {"type": "string", "description": "Output binary path", "required": False},
+            },
+        },
+    ]
 
 
 def planning_tools() -> list[dict]:
@@ -219,7 +273,91 @@ def main() -> None:
     ]
     prompts.extend({"name": n, "system": planning_system, "user": u, "tools": planning_tools()} for n, u in planning_rows)
 
-    assert len(prompts) == 100, len(prompts)
+    devtool_system = (
+        "You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools "
+        "to inspect, edit, and verify code. Inspect the source before patching so 'find' matches exactly."
+    )
+    # Lib bug-fix scenarios — read_file → apply_patch → cargo_test → response.
+    # Paths under /srv/eval/* to avoid collisions with the SFT pool's
+    # /workspace/glyph/runs/rlvr1/rust_cases/* paths.
+    devtool_lib_rows = [
+        ("devtool_lib_negate_sign",
+         'The library at "/srv/eval/crates/lib_negate" has a test that fails because the negation function returns its input unchanged. '
+         'Inspect "/srv/eval/crates/lib_negate/src/lib.rs", apply one find/replace edit, then verify with cargo_test.'),
+        ("devtool_lib_min_returned_max",
+         'The crate "/srv/eval/crates/lib_min" returns the slice maximum where the minimum is expected. '
+         'Read "/srv/eval/crates/lib_min/src/lib.rs", patch the iterator method, and confirm cargo_test passes.'),
+        ("devtool_lib_filter_predicate",
+         'A failing filter in "/srv/eval/crates/lib_odd_filter" keeps even numbers instead of odd. '
+         'Inspect the source under that project, flip the predicate via apply_patch, and re-run cargo_test.'),
+        ("devtool_lib_fold_init",
+         'The crate at "/srv/eval/crates/lib_product" reduces a slice with fold but starts from 0, so it always returns 0. '
+         'Open "/srv/eval/crates/lib_product/src/lib.rs", correct the init via apply_patch, then run cargo_test.'),
+        ("devtool_lib_range_off_by_one",
+         'The function under "/srv/eval/crates/lib_inclusive_sum" uses an exclusive range and is off by one. '
+         'Read its lib.rs, switch to an inclusive range with apply_patch, then verify via cargo_test.'),
+        ("devtool_lib_string_case",
+         'A helper at "/srv/eval/crates/lib_shout" returns lowercase output where the test expects uppercase. '
+         'Inspect "/srv/eval/crates/lib_shout/src/lib.rs", flip the case method, and verify cargo_test.'),
+        ("devtool_lib_byte_vs_char",
+         'The word-counter under "/srv/eval/crates/lib_wc" returns byte length, not whitespace-delimited word count. '
+         'Read the source, patch the expression with apply_patch, then re-run cargo_test.'),
+        ("devtool_lib_palindrome_reverse",
+         'A palindrome predicate at "/srv/eval/crates/lib_pal" forgot to reverse the chars iterator before comparing. '
+         'Inspect "/srv/eval/crates/lib_pal/src/lib.rs", insert the missing .rev() via apply_patch, and verify with cargo_test.'),
+    ]
+    prompts.extend({"name": n, "system": devtool_system, "user": u, "tools": rust_dev_tools()} for n, u in devtool_lib_rows)
+
+    # Bin bug-fix scenarios — read_file → apply_patch → cargo_run → response.
+    devtool_bin_rows = [
+        ("devtool_bin_greeting",
+         'The binary at "/srv/eval/bins/greet_app" prints "goodbye" but the spec expects "hello". '
+         'Inspect "/srv/eval/bins/greet_app/src/main.rs", patch the string, and verify with cargo_run.'),
+        ("devtool_bin_sum_reducer",
+         'The bin crate "/srv/eval/bins/sum_app" prints the product of the slice rather than the sum (expected stdout: "10"). '
+         'Read its main.rs, switch the reducer via apply_patch, then run cargo_run.'),
+        ("devtool_bin_squared",
+         'A loop in "/srv/eval/bins/squares_app" doubles each value where it should square them (expected stdout: "1 4 9 16"). '
+         'Inspect "/srv/eval/bins/squares_app/src/main.rs", patch the expression, and verify with cargo_run.'),
+        ("devtool_bin_reverse_string",
+         'The program at "/srv/eval/bins/rev_app" prints the unreversed string (expected stdout: "tsur"). '
+         'Read main.rs, add the missing .rev() via apply_patch, and confirm cargo_run output.'),
+        ("devtool_bin_range_inclusive",
+         'The counter at "/srv/eval/bins/count_app" stops one short of the upper bound (expected stdout: "1 2 3 4 5"). '
+         'Inspect main.rs, switch to an inclusive range, and verify cargo_run prints the full sequence.'),
+    ]
+    prompts.extend({"name": n, "system": devtool_system, "user": u, "tools": rust_dev_tools()} for n, u in devtool_bin_rows)
+
+    # Single-tool exercises — cover each tool at least once without bug fixing.
+    devtool_single_rows = [
+        ("devtool_run_print_hello",
+         'Run the Cargo binary at "/srv/eval/bins/hello_only" via cargo_run and tell me what it prints.'),
+        ("devtool_run_fizzbuzz",
+         'Use cargo_run on "/srv/eval/bins/fizzbuzz_short" and summarize the first three lines of stdout.'),
+        ("devtool_build_release_pipeline",
+         'Run cargo_build on "/srv/eval/bins/release_pipeline" and report whether it compiles cleanly.'),
+        ("devtool_build_workspace_lint",
+         'Run cargo_build on the Cargo project at "/srv/eval/bins/workspace_lint" and tell me if the build succeeds.'),
+        ("devtool_check_optionlib",
+         'Issue a cargo_check call against "/srv/eval/crates/optionlib_eval" and confirm whether it type-checks.'),
+        ("devtool_check_traits_lib",
+         'Run cargo_check on "/srv/eval/crates/traits_lib" and report any diagnostics it surfaces.'),
+        ("devtool_test_passing_suite",
+         'Use cargo_test on "/srv/eval/crates/sortlib_eval" to confirm the test suite is green.'),
+        ("devtool_test_dedup_suite",
+         'Run cargo_test on the crate at "/srv/eval/crates/dedup_lib" and report the outcome.'),
+        ("devtool_rustc_compile_hello",
+         'Compile the standalone Rust file "/srv/eval/standalone/hello_one.rs" to "/srv/eval/standalone/hello_one_bin" via rustc.'),
+        ("devtool_rustc_compile_sum",
+         'Use rustc to build "/srv/eval/standalone/sum_one.rs" into the binary "/srv/eval/standalone/sum_one_bin".'),
+        ("devtool_read_show_lib",
+         'Show me the contents of "/srv/eval/crates/showcase_lib/src/lib.rs" so I can review its public API.'),
+        ("devtool_read_inspect_main",
+         'Open "/srv/eval/bins/inspect_main_app/src/main.rs" and describe what the program does in one sentence.'),
+    ]
+    prompts.extend({"name": n, "system": devtool_system, "user": u, "tools": rust_dev_tools()} for n, u in devtool_single_rows)
+
+    assert len(prompts) == 125, len(prompts)
 
     names = [row["name"] for row in prompts]
     users = [row["user"] for row in prompts]

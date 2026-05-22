@@ -1367,3 +1367,1441 @@ formal_eval:
         type: string
         description: Timeline in weeks
         required: false
+- name: devtool_lib_negate_sign
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: The library at "/srv/eval/crates/lib_negate" has a test that fails because the negation function returns its input
+    unchanged. Inspect "/srv/eval/crates/lib_negate/src/lib.rs", apply one find/replace edit, then verify with cargo_test.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_lib_min_returned_max
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: The crate "/srv/eval/crates/lib_min" returns the slice maximum where the minimum is expected. Read "/srv/eval/crates/lib_min/src/lib.rs",
+    patch the iterator method, and confirm cargo_test passes.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_lib_filter_predicate
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: A failing filter in "/srv/eval/crates/lib_odd_filter" keeps even numbers instead of odd. Inspect the source under
+    that project, flip the predicate via apply_patch, and re-run cargo_test.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_lib_fold_init
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: The crate at "/srv/eval/crates/lib_product" reduces a slice with fold but starts from 0, so it always returns 0. Open
+    "/srv/eval/crates/lib_product/src/lib.rs", correct the init via apply_patch, then run cargo_test.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_lib_range_off_by_one
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: The function under "/srv/eval/crates/lib_inclusive_sum" uses an exclusive range and is off by one. Read its lib.rs,
+    switch to an inclusive range with apply_patch, then verify via cargo_test.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_lib_string_case
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: A helper at "/srv/eval/crates/lib_shout" returns lowercase output where the test expects uppercase. Inspect "/srv/eval/crates/lib_shout/src/lib.rs",
+    flip the case method, and verify cargo_test.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_lib_byte_vs_char
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: The word-counter under "/srv/eval/crates/lib_wc" returns byte length, not whitespace-delimited word count. Read the
+    source, patch the expression with apply_patch, then re-run cargo_test.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_lib_palindrome_reverse
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: A palindrome predicate at "/srv/eval/crates/lib_pal" forgot to reverse the chars iterator before comparing. Inspect
+    "/srv/eval/crates/lib_pal/src/lib.rs", insert the missing .rev() via apply_patch, and verify with cargo_test.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_bin_greeting
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: The binary at "/srv/eval/bins/greet_app" prints "goodbye" but the spec expects "hello". Inspect "/srv/eval/bins/greet_app/src/main.rs",
+    patch the string, and verify with cargo_run.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_bin_sum_reducer
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: 'The bin crate "/srv/eval/bins/sum_app" prints the product of the slice rather than the sum (expected stdout: "10").
+    Read its main.rs, switch the reducer via apply_patch, then run cargo_run.'
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_bin_squared
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: 'A loop in "/srv/eval/bins/squares_app" doubles each value where it should square them (expected stdout: "1 4 9 16").
+    Inspect "/srv/eval/bins/squares_app/src/main.rs", patch the expression, and verify with cargo_run.'
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_bin_reverse_string
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: 'The program at "/srv/eval/bins/rev_app" prints the unreversed string (expected stdout: "tsur"). Read main.rs, add
+    the missing .rev() via apply_patch, and confirm cargo_run output.'
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_bin_range_inclusive
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: 'The counter at "/srv/eval/bins/count_app" stops one short of the upper bound (expected stdout: "1 2 3 4 5"). Inspect
+    main.rs, switch to an inclusive range, and verify cargo_run prints the full sequence.'
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_run_print_hello
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: Run the Cargo binary at "/srv/eval/bins/hello_only" via cargo_run and tell me what it prints.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_run_fizzbuzz
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: Use cargo_run on "/srv/eval/bins/fizzbuzz_short" and summarize the first three lines of stdout.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_build_release_pipeline
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: Run cargo_build on "/srv/eval/bins/release_pipeline" and report whether it compiles cleanly.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_build_workspace_lint
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: Run cargo_build on the Cargo project at "/srv/eval/bins/workspace_lint" and tell me if the build succeeds.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_check_optionlib
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: Issue a cargo_check call against "/srv/eval/crates/optionlib_eval" and confirm whether it type-checks.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_check_traits_lib
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: Run cargo_check on "/srv/eval/crates/traits_lib" and report any diagnostics it surfaces.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_test_passing_suite
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: Use cargo_test on "/srv/eval/crates/sortlib_eval" to confirm the test suite is green.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_test_dedup_suite
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: Run cargo_test on the crate at "/srv/eval/crates/dedup_lib" and report the outcome.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_rustc_compile_hello
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: Compile the standalone Rust file "/srv/eval/standalone/hello_one.rs" to "/srv/eval/standalone/hello_one_bin" via rustc.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_rustc_compile_sum
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: Use rustc to build "/srv/eval/standalone/sum_one.rs" into the binary "/srv/eval/standalone/sum_one_bin".
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_read_show_lib
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: Show me the contents of "/srv/eval/crates/showcase_lib/src/lib.rs" so I can review its public API.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false
+- name: devtool_read_inspect_main
+  system: You are a Rust dev-tool assistant. Use read_file, apply_patch, and the cargo tools to inspect, edit, and verify
+    code. Inspect the source before patching so 'find' matches exactly.
+  user: Open "/srv/eval/bins/inspect_main_app/src/main.rs" and describe what the program does in one sentence.
+  tools:
+  - name: read_file
+    description: Reads a file from disk and returns its contents.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to read
+  - name: apply_patch
+    description: Applies a textual find/replace edit to a single file. 'find' must occur exactly once.
+    params:
+      file_path:
+        type: string
+        description: Path to the file to edit
+      find:
+        type: string
+        description: Exact text snippet to locate
+      replace:
+        type: string
+        description: Replacement text
+  - name: cargo_check
+    description: Runs cargo check to verify code compiles without producing a binary.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_build
+    description: Compiles the Cargo project into binaries.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_test
+    description: Runs the test suite for a Cargo project.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: cargo_run
+    description: Builds and runs the binary of a Cargo project, returning its stdout.
+    params:
+      project_path:
+        type: string
+        description: Cargo project directory
+  - name: rustc
+    description: Compiles a single Rust source file to an executable.
+    params:
+      source_file:
+        type: string
+        description: Source file
+      output:
+        type: string
+        description: Output binary path
+        required: false

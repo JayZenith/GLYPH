@@ -225,9 +225,9 @@ The remaining real failures were narrow and structural, not broad trace collapse
 
 ### Remaining Failed Prompts
 
-- `rust_iter_vs_iter_mut_vs_into_iter` — [prompts_100.yaml](/home/jay-zenith/Desktop/TASK/sft/evals/prompts_100.yaml:71), [eval_formal_100.json](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/eval_formal_100.json:496)
-- `plan_trial_conversion_banner` — [prompts_100.yaml](/home/jay-zenith/Desktop/TASK/sft/evals/prompts_100.yaml:1162), [eval_formal_100.json](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/eval_formal_100.json:2577)
-- `plan_search_filter_redesign` — [prompts_100.yaml](/home/jay-zenith/Desktop/TASK/sft/evals/prompts_100.yaml:1265), [eval_formal_100.json](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/eval_formal_100.json:2661)
+- `rust_iter_vs_iter_mut_vs_into_iter` — [prompts_125.yaml](/home/jay-zenith/Desktop/TASK/sft/evals/prompts_125.yaml:71), [eval_formal_100.json](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/eval_formal_100.json:496)
+- `plan_trial_conversion_banner` — [prompts_125.yaml](/home/jay-zenith/Desktop/TASK/sft/evals/prompts_125.yaml:1162), [eval_formal_100.json](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/eval_formal_100.json:2577)
+- `plan_search_filter_redesign` — [prompts_125.yaml](/home/jay-zenith/Desktop/TASK/sft/evals/prompts_125.yaml:1265), [eval_formal_100.json](/home/jay-zenith/Desktop/TASK/glyph_sft_v2_results/eval_formal_100.json:2661)
 
 1. Reference hygiene in planning traces.
 Example:
@@ -274,7 +274,7 @@ The point of RLVR is not to teach the whole trace language from scratch. SFT alr
 
 ## Notes
 
-- `sft/evals/prompts_100.yaml` is the main held-out benchmark.
+- `sft/evals/prompts_125.yaml` is the main held-out benchmark.
 - The benchmark was run from the published HF model, not just a local training directory, to verify the released artifact directly.
 - It was built to have `0` exact user-prompt overlaps with `gold_glyph_3000.jsonl`.
 - The remaining misses were narrow planning/reference issues, not broad trace collapse.

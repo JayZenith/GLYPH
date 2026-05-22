@@ -62,7 +62,7 @@ Clean 100-prompt held-out formal eval:
 ```bash
 python -m sft.eval_formal \
   --sft-model JayZenith/GLYPH-SFT-V2 \
-  --prompt-file sft/evals/prompts_100.yaml \
+  --prompt-file sft/evals/prompts_125.yaml \
   --output glyph_sft_v2_results/eval_formal_100.json \
   --limit 100 \
   --max-new-tokens 1200 \
