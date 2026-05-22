@@ -14,7 +14,7 @@ hf auth login
 python -m sft.train --model Qwen/Qwen3-4B-Base --data synthetic_data/gold_glyph_3000.jsonl --output runs/sft_toolturn_v1
 ```
 
-The setup script creates a project-local `.venv`, prefers `python3.11` for the default A100-style stack, auto-installs a managed interpreter via `uv` when needed, and falls back automatically on Blackwell-class GPUs to a `python3.12` + `torch 2.11.0` + `cu128` stack with a pinned prebuilt `flash-attn` wheel. It still installs the pinned SFT Python deps and never source-builds `flash-attn`.
+The setup script creates a project-local `.venv`, prefers `python3.11` for the default A100-style stack, auto-installs a managed interpreter via `uv` when needed, and falls back automatically on Blackwell-class GPUs to a `python3.12` + `torch 2.11.0` + `cu128` stack with a pinned prebuilt `flash-attn` wheel. The torch install now retries and explicitly includes NVIDIA's package index because the Blackwell CUDA dependencies are fetched from `pypi.nvidia.com`. It still installs the pinned SFT Python deps and never source-builds `flash-attn`.
 Training does not download datasets implicitly. `--data` must point at a real local file such as `synthetic_data/gold_glyph_3000.jsonl`, or the command will fail immediately.
 
 On Vast.ai, use a CUDA 12.4 image unless you plan to override:

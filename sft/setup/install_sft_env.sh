@@ -12,6 +12,7 @@ CUDA_WHL_TAG="${CUDA_WHL_TAG:-cu124}"
 TORCH_INDEX_URL="${TORCH_INDEX_URL:-https://download.pytorch.org/whl/${CUDA_WHL_TAG}}"
 FLASH_ATTN_VERSION="${FLASH_ATTN_VERSION:-2.8.3}"
 BLACKWELL_FLASH_ATTN_WHEEL_URL="${BLACKWELL_FLASH_ATTN_WHEEL_URL:-https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.11/flash_attn-2.8.3%2Bcu12torch2.11cxx11abiTRUE-cp312-cp312-linux_x86_64.whl}"
+NVIDIA_PYPI_INDEX="${NVIDIA_PYPI_INDEX:-https://pypi.nvidia.com}"
 
 detect_gpu_name() {
   if ! command -v nvidia-smi >/dev/null 2>&1; then
@@ -51,6 +52,22 @@ if using_default_sft_stack && is_blackwell_gpu; then
 else
   SFT_PYTHON_TARGET="3.11"
 fi
+
+retry_uv_pip_install() {
+  local attempts="$1"
+  shift
+  local try=1
+  while true; do
+    if uv pip install --system-certs "$@"; then
+      return 0
+    fi
+    if [ "$try" -ge "$attempts" ]; then
+      return 1
+    fi
+    sleep $((try * 5))
+    try=$((try + 1))
+  done
+}
 
 if ! command -v uv >/dev/null 2>&1; then
   python3 -m pip install --user uv
@@ -131,8 +148,15 @@ uv venv --clear --python "$SELECTED_PYTHON" "$VENV_DIR"
 
 VENV_PY="$VENV_DIR/bin/python"
 
-uv pip install --python "$VENV_PY" --index-url "$TORCH_INDEX_URL" "torch==${TORCH_VERSION}"
-uv pip install --python "$VENV_PY" -r "$ROOT_DIR/requirements-train.txt"
+retry_uv_pip_install 4 \
+  --python "$VENV_PY" \
+  --index-url "$TORCH_INDEX_URL" \
+  --extra-index-url "$NVIDIA_PYPI_INDEX" \
+  "torch==${TORCH_VERSION}"
+
+retry_uv_pip_install 3 \
+  --python "$VENV_PY" \
+  -r "$ROOT_DIR/requirements-train.txt"
 
 read -r FLASH_TORCH_TAG FLASH_CUDA_TAG FLASH_PY_TAG FLASH_ABI_TAG <<EOF
 $("$VENV_PY" - <<'PYINFO'
@@ -159,7 +183,7 @@ install_flash_wheel() {
   wheel_dir="$(mktemp -d /tmp/flash-attn.XXXXXX)"
   wheel_file="$wheel_dir/$wheel_name"
   curl -fL --retry 3 --retry-delay 2 -o "$wheel_file" "$wheel_url"
-  uv pip install --python "$VENV_PY" "$wheel_file"
+  uv pip install --system-certs --python "$VENV_PY" "$wheel_file"
   rm -rf "$wheel_dir"
 }
 
@@ -169,7 +193,7 @@ elif install_flash_wheel "$AUTO_WHEEL_URL"; then
   :
 elif install_flash_wheel "$MIRROR_WHEEL_URL"; then
   :
-elif uv pip install --python "$VENV_PY" --only-binary=:all: "flash-attn==${FLASH_ATTN_VERSION}"; then
+elif uv pip install --system-certs --python "$VENV_PY" --only-binary=:all: "flash-attn==${FLASH_ATTN_VERSION}"; then
   :
 else
   "$VENV_PY" - <<'PYINFO'
