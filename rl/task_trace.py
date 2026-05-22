@@ -268,8 +268,9 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
         tool_text = _trajectory_tool_text(state) or _completion_role_text(
             completion, "tool"
         )
-    expected_tool = kwargs.get("expected_tool")
-    expected_args = _normalize_expected_args(kwargs.get("expected_args"))
+    info = kwargs.get("info") or {}
+    expected_tool = info.get("expected_tool")
+    expected_args = _normalize_expected_args(info.get("expected_args"))
     validator: TaskValidator = kwargs.get("validator")
     structure = _structure_reward(text, validator)
 
@@ -287,7 +288,7 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
 
     # Sum compute_tool_reward across every executed call. Multi-step workflows
     # (apply_patch → cargo_test, apply_patch → cargo_run) are credited per call.
-    expected_output = kwargs.get("expected_output")
+    expected_output = info.get("expected_output")
     any_success = False
     real_results_seen = 0
     for call in calls:
@@ -395,8 +396,9 @@ class RustToolEnv(vf.MultiTurnEnv):
         if not calls:
             return []
 
-        is_rust_prompt = bool(kwargs.get("expected_tool"))
-        blueprint_root = kwargs.get("blueprint_root")
+        info = kwargs.get("info") or {}
+        is_rust_prompt = bool(info.get("expected_tool"))
+        blueprint_root = info.get("blueprint_root")
         sandbox_path = self._ensure_sandbox(state, blueprint_root) if blueprint_root else None
 
         responses: list[dict[str, str]] = []
@@ -450,10 +452,16 @@ def load_environment(
         max_samples=max_samples,
         max_trace_chars=max_trace_chars,
     )
+    # Verifiers at our prime-rl pin forwards a dataset row's `info` dict into
+    # env_response / reward kwargs but does NOT forward arbitrary top-level
+    # columns. Pack expected_tool / expected_args / blueprint_root /
+    # expected_output into `info` so the env can actually execute the verifier.
+    info_keys = ("expected_tool", "expected_args", "blueprint_root", "expected_output")
     dataset = Dataset.from_list(
         [
             {
-                **item,
+                "prompt": item["prompt"],
+                "info": {k: item[k] for k in info_keys if k in item},
                 "task": env_id,
             }
             for item in prompts
