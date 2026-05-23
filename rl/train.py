@@ -32,6 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rollouts-per-example", type=int)
     parser.add_argument("--seq-len", type=int)
     parser.add_argument("--max-model-len", type=int)
+    parser.add_argument("--teacher-max-model-len", type=int)
     parser.add_argument("--max-completion-tokens", type=int)
     parser.add_argument("--learning-rate", type=float)
     parser.add_argument("--weight-decay", type=float)
@@ -128,7 +129,13 @@ def build_teacher_inference_config(
     args: argparse.Namespace,
 ) -> dict[str, Any]:
     teacher_inference = deepcopy(inference)
-    teacher_inference.setdefault("model", {})["name"] = teacher_model_name
+    teacher_model = teacher_inference.setdefault("model", {})
+    teacher_model["name"] = teacher_model_name
+    if args.teacher_max_model_len is not None:
+        teacher_model["max_model_len"] = args.teacher_max_model_len
+    elif args.seq_len is not None:
+        # Teacher only needs enough context to score rollout sequences.
+        teacher_model["max_model_len"] = args.seq_len
     maybe_set(teacher_inference.setdefault("server", {}), "port", args.teacher_port)
     if args.teacher_gpu_memory_utilization is not None:
         teacher_inference["gpu_memory_utilization"] = args.teacher_gpu_memory_utilization
