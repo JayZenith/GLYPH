@@ -11,7 +11,7 @@ Generator:
 
 Source files:
 - `rl/rust/prepare_cases.py`
-- `synthetic_data/final_glyph_sft_dataset.jsonl`
+- `synthetic_data/final_glyph_sft_dataset_rlvr_term_v1.jsonl`
 - `sft/evals/prompts_125.yaml`
 
 Composition:
@@ -41,4 +41,4 @@ Held-out eval hygiene:
 
 Notes:
 - regenerate this dataset on a fresh box; `runs/` is not intended as a permanent source-of-truth artifact
-- the generator, final SFT dataset, and held-out eval prompt file are the reproducible sources
+- the generator, RL-oriented SFT dataset, and held-out eval prompt file are the reproducible sources

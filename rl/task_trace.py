@@ -45,6 +45,8 @@ DEFAULT_REWARD_CONFIG = {
     "missing_results_penalty": -0.75,
     "response_presence_bonus": 0.1,
     "exact_final_termination_bonus": 0.5,
+    "dirty_final_response_reward_cap": -5.0,
+    "require_clean_termination_for_success_reward": True,
 }
 
 REWARD_CONFIG = DEFAULT_REWARD_CONFIG.copy()
@@ -81,6 +83,37 @@ def _response_termination_reward(text: str) -> float:
     if _ended_cleanly_after_response(text):
         return REWARD_CONFIG["exact_final_termination_bonus"]
     return REWARD_CONFIG["penalty_not_ended_cleanly_after_response"]
+
+
+def _has_response(text: str) -> bool:
+    return "response「" in text
+
+
+def _apply_clean_termination_gate(
+    reward: float,
+    *,
+    assistant_trace: str,
+    any_success: bool,
+    real_results_seen: int,
+    clean_end: bool,
+) -> float:
+    if clean_end:
+        if any_success:
+            reward += REWARD_CONFIG["any_success_bonus"]
+        if real_results_seen > 0:
+            reward += REWARD_CONFIG["clean_tool_boundary_bonus"]
+        else:
+            reward += REWARD_CONFIG["missing_results_penalty"]
+        reward += REWARD_CONFIG["response_presence_bonus"]
+        return reward
+
+    if real_results_seen == 0:
+        reward += REWARD_CONFIG["missing_results_penalty"]
+
+    if _has_response(assistant_trace) and REWARD_CONFIG["require_clean_termination_for_success_reward"]:
+        reward = min(reward, REWARD_CONFIG["dirty_final_response_reward_cap"])
+
+    return reward
 
 
 def _structure_reward(trace_text: str, validator) -> float:
@@ -339,15 +372,13 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
         if bool(res.get("success", False)):
             any_success = True
 
-    if any_success:
-        reward += REWARD_CONFIG["any_success_bonus"]
-    if real_results_seen > 0:
-        reward += REWARD_CONFIG["clean_tool_boundary_bonus"]
-    else:
-        reward += REWARD_CONFIG["missing_results_penalty"]
-
-    if _ended_cleanly_after_response(assistant_trace):
-        reward += REWARD_CONFIG["response_presence_bonus"]
+    reward = _apply_clean_termination_gate(
+        reward,
+        assistant_trace=assistant_trace,
+        any_success=any_success,
+        real_results_seen=real_results_seen,
+        clean_end=_ended_cleanly_after_response(assistant_trace),
+    )
 
     return reward + structure
 
@@ -488,6 +519,8 @@ def load_environment(
     missing_results_penalty: float | None = None,
     response_presence_bonus: float | None = None,
     exact_final_termination_bonus: float | None = None,
+    dirty_final_response_reward_cap: float | None = None,
+    require_clean_termination_for_success_reward: bool | None = None,
 ) -> vf.Environment:
     """Load the Rust tool RL environment with real multi-round tool execution."""
     _set_reward_config(
@@ -510,6 +543,8 @@ def load_environment(
             "missing_results_penalty": missing_results_penalty,
             "response_presence_bonus": response_presence_bonus,
             "exact_final_termination_bonus": exact_final_termination_bonus,
+            "dirty_final_response_reward_cap": dirty_final_response_reward_cap,
+            "require_clean_termination_for_success_reward": require_clean_termination_for_success_reward,
         }
     )
 

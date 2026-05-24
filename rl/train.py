@@ -18,6 +18,16 @@ import tomli_w
 CONFIG_DIR = Path(__file__).resolve().parent / "configs" / "task_trace"
 
 
+def parse_int_list(value: str) -> list[int]:
+    items = [item.strip() for item in value.split(",") if item.strip()]
+    if not items:
+        raise argparse.ArgumentTypeError("Expected a comma-separated list of GPU ids.")
+    try:
+        return [int(item) for item in items]
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("GPU ids must be integers.") from exc
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Launch PRIME-RL. Default mode is full-finetune.")
     parser.add_argument("--model", default="JayZenith/GLYPH_SFT",
@@ -66,11 +76,27 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--missing-results-penalty", type=float)
     parser.add_argument("--response-presence-bonus", type=float)
     parser.add_argument("--exact-final-termination-bonus", type=float)
+    parser.add_argument("--dirty-final-response-reward-cap", type=float)
+    parser.add_argument(
+        "--require-clean-termination-for-success-reward",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+    )
     parser.add_argument("--port", type=int)
     parser.add_argument("--rollout-init-model", help="HF repo id for the rollout runtime model.")
     parser.add_argument("--teacher-model", default="JayZenith/GLYPH_SFT")
     parser.add_argument("--teacher-port", type=int, default=8001)
+    parser.add_argument("--teacher-device", type=int, default=0)
     parser.add_argument("--teacher-tau", type=float, default=0.01)
+    parser.add_argument("--prime-rl-gpu-ids", type=parse_int_list,
+                        help="Comma-separated physical GPU ids managed by PRIME-RL. "
+                             "Inference uses the first N infer GPUs; training uses the remaining train GPUs.")
+    parser.add_argument("--num-train-gpus", type=int,
+                        help="Number of GPUs reserved for trainer workers.")
+    parser.add_argument("--num-infer-gpus", type=int,
+                        help="Number of GPUs reserved for rollout inference.")
+    parser.add_argument("--gpus-per-node", type=int,
+                        help="Visible GPU count exposed to PRIME-RL for this run.")
     parser.add_argument("--training-mode", choices=("rl", "opd", "sft"))
     parser.add_argument("--teacher-anchor", action=argparse.BooleanOptionalAction, default=False,
                         help="Run a frozen teacher inference server with KL anchoring.")
@@ -250,6 +276,12 @@ def build_config(args: argparse.Namespace, adapter_cfg: dict[str, Any] | None) -
     maybe_set(env_args, "missing_results_penalty", args.missing_results_penalty)
     maybe_set(env_args, "response_presence_bonus", args.response_presence_bonus)
     maybe_set(env_args, "exact_final_termination_bonus", args.exact_final_termination_bonus)
+    maybe_set(env_args, "dirty_final_response_reward_cap", args.dirty_final_response_reward_cap)
+    maybe_set(
+        env_args,
+        "require_clean_termination_for_success_reward",
+        args.require_clean_termination_for_success_reward,
+    )
 
     infer_model = inference.setdefault("model", {})
     infer_server = inference.setdefault("server", {})
@@ -270,6 +302,22 @@ def build_config(args: argparse.Namespace, adapter_cfg: dict[str, Any] | None) -
     teacher_on = bool(args.teacher_anchor or args.enable_teacher_inference)
     training_mode = args.training_mode or ("opd" if teacher_on else "rl")
 
+    managed_gpu_ids = args.prime_rl_gpu_ids
+    num_train_gpus = args.num_train_gpus if args.num_train_gpus is not None else 1
+    num_infer_gpus = args.num_infer_gpus if args.num_infer_gpus is not None else 1
+    gpus_per_node = args.gpus_per_node
+    if managed_gpu_ids is not None:
+        required_gpus = num_train_gpus + num_infer_gpus
+        if len(managed_gpu_ids) != required_gpus:
+            raise ValueError(
+                f"--prime-rl-gpu-ids must provide exactly {required_gpus} GPU ids "
+                f"for {num_infer_gpus} infer + {num_train_gpus} train GPUs."
+            )
+        if gpus_per_node is None:
+            gpus_per_node = len(managed_gpu_ids)
+    elif gpus_per_node is None:
+        gpus_per_node = 2
+
     config: dict[str, Any] = {
         "trainer": trainer,
         "orchestrator": orchestrator,
@@ -279,9 +327,9 @@ def build_config(args: argparse.Namespace, adapter_cfg: dict[str, Any] | None) -
         "wandb": {"offline": True, "shared": False},
         "deployment": {
             "type": "single_node",
-            "gpus_per_node": 2,
-            "num_train_gpus": 1,
-            "num_infer_gpus": 1,
+            "gpus_per_node": gpus_per_node,
+            "num_train_gpus": num_train_gpus,
+            "num_infer_gpus": num_infer_gpus,
         },
     }
     if args.resume_step is not None:
@@ -300,22 +348,26 @@ def build_config(args: argparse.Namespace, adapter_cfg: dict[str, Any] | None) -
     return config
 
 
-def patch_gpu_mapping(enable_teacher_inference: bool) -> None:
+def patch_gpu_mapping(managed_gpu_ids: list[int] | None) -> None:
     import prime_rl.entrypoints.rl as rl_mod
     import torch
 
-    if not enable_teacher_inference:
+    if managed_gpu_ids is None:
         return
 
     gpu_count = torch.cuda.device_count()
-    if gpu_count != 2:
+    if len(set(managed_gpu_ids)) != len(managed_gpu_ids):
         raise RuntimeError(
-            f"This launcher is pinned to the 2-GPU setup, but found {gpu_count} visible GPUs."
+            f"Managed GPU ids must be unique, got {managed_gpu_ids}."
+        )
+    if any(gpu_id < 0 or gpu_id >= gpu_count for gpu_id in managed_gpu_ids):
+        raise RuntimeError(
+            f"Managed GPU ids {managed_gpu_ids} are invalid for {gpu_count} visible GPUs."
         )
 
-    # PRIME-RL allocates inference first, then trainer. Keep rollout inference
-    # on GPU 0 and trainer on GPU 1. The external teacher server also runs on GPU 0.
-    rl_mod.get_physical_gpu_ids = lambda: [0, 1]
+    # PRIME-RL allocates inference first, then trainer. This override allows
+    # explicit placement while an external teacher vLLM uses its own GPU.
+    rl_mod.get_physical_gpu_ids = lambda: list(managed_gpu_ids)
     rl_mod.check_gpus_available = lambda gpu_ids: None
 
 
@@ -341,7 +393,7 @@ def launch_teacher_inference(raw_config: dict[str, Any], args: argparse.Namespac
         [str(inference_bin), "@", str(teacher_path)],
         env={
             **os.environ,
-            "CUDA_VISIBLE_DEVICES": "0",
+            "CUDA_VISIBLE_DEVICES": str(args.teacher_device),
         },
         stdout=teacher_log,
         stderr=subprocess.STDOUT,
@@ -390,7 +442,10 @@ def main() -> None:
     import prime_rl.entrypoints.rl as rl_mod
 
     teacher_on = bool(args.teacher_anchor or args.enable_teacher_inference)
-    patch_gpu_mapping(teacher_on)
+    managed_gpu_ids = args.prime_rl_gpu_ids
+    if managed_gpu_ids is None and teacher_on:
+        managed_gpu_ids = [0, 1]
+    patch_gpu_mapping(managed_gpu_ids)
     teacher_process: subprocess.Popen[str] | None = None
     if teacher_on:
         teacher_process = launch_teacher_inference(raw_config, args)

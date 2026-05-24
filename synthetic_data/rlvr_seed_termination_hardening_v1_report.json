@@ -1,0 +1,15 @@
+{
+  "base_rows": 3039,
+  "topup_rows": 808,
+  "combined_rows": 3847,
+  "topup_patch_verify_rows": 808,
+  "combined_patch_verify_rows": 1345,
+  "topup_file": "synthetic_data/rlvr_seed_termination_hardening_v1.jsonl",
+  "combined_file": "synthetic_data/final_glyph_sft_dataset_rlvr_term_v1.jsonl",
+  "system_prompt": "You are a Rust engineering assistant. Use the available tools to inspect and verify code, then answer briefly.",
+  "notes": [
+    "This top-up aggressively reinforces patch-verify-close-stop behavior.",
+    "Every synthetic trace includes explicit stop language after the final response.",
+    "Use the combined file for the next RL-oriented SFT retrain."
+  ]
+}

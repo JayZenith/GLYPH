@@ -1,3 +1,38 @@
+formal_eval_rl:
+  include_from: formal_eval
+  names:
+  - cargo_recursive_type_size
+  - cargo_borrow_of_moved_value
+  - cargo_future_not_send
+  - cargo_object_safety_error
+  - plan_search_filter_redesign
+  - plan_mobile_error_state_update
+  - devtool_lib_negate_sign
+  - devtool_lib_min_returned_max
+  - devtool_lib_filter_predicate
+  - devtool_lib_fold_init
+  - devtool_lib_range_off_by_one
+  - devtool_lib_string_case
+  - devtool_lib_byte_vs_char
+  - devtool_lib_palindrome_reverse
+  - devtool_bin_greeting
+  - devtool_bin_sum_reducer
+  - devtool_bin_squared
+  - devtool_bin_reverse_string
+  - devtool_bin_range_inclusive
+  - devtool_run_print_hello
+  - devtool_run_fizzbuzz
+  - devtool_build_release_pipeline
+  - devtool_build_workspace_lint
+  - devtool_check_optionlib
+  - devtool_check_traits_lib
+  - devtool_test_passing_suite
+  - devtool_test_dedup_suite
+  - devtool_rustc_compile_hello
+  - devtool_rustc_compile_sum
+  - devtool_read_show_lib
+  - devtool_read_inspect_main
+
 formal_eval:
 - name: rust_enum_vs_boxed_trait
   system: You are a Rust language assistant who gives compact conceptual explanations.

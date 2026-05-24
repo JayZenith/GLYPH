@@ -34,8 +34,8 @@ cd /workspace/glyph
 source .venv/bin/activate
 python -m sft.train \
   --model Qwen/Qwen3-4B-Base \
-  --data synthetic_data/final_glyph_sft_dataset.jsonl \
-  --output runs/GLYPH_SFT_FINAL \
+  --data synthetic_data/final_glyph_sft_dataset_rlvr_term_v1.jsonl \
+  --output runs/GLYPH_SFT_RLREADY_V1 \
   --epochs 1 \
   --no-use-lora \
   --lr 1e-5 \

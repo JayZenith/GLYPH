@@ -12,7 +12,23 @@ def load_prompts(section: str, prompt_file: str | None = None) -> list[dict]:
     data = yaml.safe_load(prompt_path.read_text())
     if section not in data:
         raise KeyError(f"Section {section!r} not in {prompt_path}; have {list(data)}")
-    return data[section]
+    rows = data[section]
+    if isinstance(rows, list):
+        return rows
+    if not isinstance(rows, dict) or "include_from" not in rows or "names" not in rows:
+        raise TypeError(
+            f"Section {section!r} in {prompt_path} must be a list or an include_from/names mapping."
+        )
+    base_section = rows["include_from"]
+    if base_section not in data or not isinstance(data[base_section], list):
+        raise KeyError(f"Included section {base_section!r} is missing or not a list in {prompt_path}")
+    base_rows = {row["name"]: row for row in data[base_section]}
+    selected: list[dict] = []
+    for name in rows["names"]:
+        if name not in base_rows:
+            raise KeyError(f"Prompt {name!r} not found in included section {base_section!r}")
+        selected.append(dict(base_rows[name]))
+    return selected
 
 
 def build_prompt(user_message: str, tools: list[dict], system_message: str | None = None) -> str:

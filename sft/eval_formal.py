@@ -24,7 +24,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-model", default="Qwen/Qwen3-4B-Base")
     parser.add_argument("--sft-model", default="JayZenith/GLYPH_SFT")
-    parser.add_argument("--prompt-section", default="formal_eval")
+    parser.add_argument("--prompt-section", default="formal_eval_rl")
     parser.add_argument("--prompt-file", default=None,
                         help="Optional yaml file to load prompts from instead of sft/evals/prompts_125.yaml")
     parser.add_argument("--output", required=True)
@@ -60,7 +60,7 @@ def main() -> int:
                 "name": item["name"],
                 "prompt": item["user"],
                 "output": base_out,
-                "metrics": score_output(prompt, base_out, tools, base_n, args.max_new_tokens),
+                "metrics": score_output(prompt, base_out, item, base_n, args.max_new_tokens),
             })
 
         print(f"Running {item['name']} on sft...")
@@ -69,7 +69,7 @@ def main() -> int:
             "name": item["name"],
             "prompt": item["user"],
             "output": sft_out,
-            "metrics": score_output(prompt, sft_out, tools, sft_n, args.max_new_tokens),
+            "metrics": score_output(prompt, sft_out, item, sft_n, args.max_new_tokens),
         })
 
     try:
