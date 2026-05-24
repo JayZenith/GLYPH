@@ -6,7 +6,7 @@ Canonical broad clean training file:
 
 Recommended RL-oriented retrain file:
 
-- `final_glyph_sft_dataset_rlvr_term_v4_useruniq.jsonl`
+- `final_glyph_sft_dataset_rlvr_curated_v1.jsonl`
 
 Build chain:
 
@@ -44,6 +44,14 @@ Build chain:
    - removes duplicate user prompts from `final_glyph_sft_dataset_rlvr_term_v3.jsonl`
    - preserves one row per unique user prompt
    - produces `final_glyph_sft_dataset_rlvr_term_v4_useruniq.jsonl`
+12. `build_rlvr_curated_dataset_v1.py`
+   - discards the broad mixed corpus for RL retraining
+   - keeps only the clean RL-specific seed/top-up files:
+     - termination hardening
+     - single-tool hardening v1
+     - single-tool hardening v2
+   - exact-dedupes and user-dedupes those RL-only traces
+   - produces `final_glyph_sft_dataset_rlvr_curated_v1.jsonl`
 
 Files that matter now:
 
@@ -60,6 +68,7 @@ Files that matter now:
 - `rlvr_seed_single_tool_hardening_v2.jsonl`
 - `final_glyph_sft_dataset_rlvr_term_v3.jsonl`
 - `final_glyph_sft_dataset_rlvr_term_v4_useruniq.jsonl`
+- `final_glyph_sft_dataset_rlvr_curated_v1.jsonl`
 
 Repro facts:
 
@@ -76,7 +85,20 @@ Repro facts:
 - `final_glyph_sft_dataset_rlvr_term_v4_useruniq.jsonl` has `3963` rows
 - `final_glyph_sft_dataset_rlvr_term_v4_useruniq.jsonl` has `0` exact duplicate rows
 - `final_glyph_sft_dataset_rlvr_term_v4_useruniq.jsonl` removed `172` duplicate user-prompt rows from `v3`
+- `final_glyph_sft_dataset_rlvr_curated_v1.jsonl` has `1004` rows
+- `final_glyph_sft_dataset_rlvr_curated_v1.jsonl` has `0` exact duplicate rows
+- `final_glyph_sft_dataset_rlvr_curated_v1.jsonl` removed `92` duplicate user-prompt rows from its RL-only sources
+- `final_glyph_sft_dataset_rlvr_curated_v1.jsonl` has `0` exact user overlap with `formal_eval_rl`
+- `final_glyph_sft_dataset_rlvr_curated_v1.jsonl` tool mix:
+  - `read_file -> apply_patch -> cargo_test`: `488`
+  - `read_file -> apply_patch -> cargo_run`: `320`
+  - `read_file`: `36`
+  - `cargo_build`: `32`
+  - `cargo_check`: `32`
+  - `cargo_run`: `32`
+  - `cargo_test`: `32`
+  - `rustc`: `32`
 - all `137` seed traces are in the final `3148` file
 - all `7` micro-fix traces are in the final `3148` file
 - `final_glyph_sft_dataset.jsonl` remains the older broad clean set
-- `final_glyph_sft_dataset_rlvr_term_v4_useruniq.jsonl` is the current file to use for RL-oriented SFT retrain
+- `final_glyph_sft_dataset_rlvr_curated_v1.jsonl` is the current file to use for RL-oriented SFT retrain

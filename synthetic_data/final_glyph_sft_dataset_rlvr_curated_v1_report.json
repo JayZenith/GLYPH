@@ -1,0 +1,24 @@
+{
+  "source_files": [
+    "synthetic_data/rlvr_seed_termination_hardening_v1.jsonl",
+    "synthetic_data/rlvr_seed_single_tool_hardening_v1.jsonl",
+    "synthetic_data/rlvr_seed_single_tool_hardening_v2.jsonl"
+  ],
+  "source_rows": 1096,
+  "output_rows": 1004,
+  "removed_exact_duplicate_rows": 0,
+  "removed_duplicate_user_rows": 92,
+  "unique_users": 1004,
+  "formal_eval_rl_exact_user_overlap": 0,
+  "tool_sequences": {
+    "cargo_build": 32,
+    "cargo_check": 32,
+    "cargo_run": 32,
+    "cargo_test": 32,
+    "read_file": 36,
+    "read_file -> apply_patch -> cargo_run": 320,
+    "read_file -> apply_patch -> cargo_test": 488,
+    "rustc": 32
+  },
+  "output_file": "synthetic_data/final_glyph_sft_dataset_rlvr_curated_v1.jsonl"
+}
