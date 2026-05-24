@@ -112,6 +112,8 @@ def main():
     parser.add_argument("--eval-steps", type=int, default=25)
     parser.add_argument("--eval-batch-size", type=int, default=1)
     parser.add_argument("--load-best-model-at-end", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--no-train-split", action="store_true",
+                        help="Train on the full dataset with no internal train/val/test split.")
     parser.add_argument("--logging-steps", type=int, default=10)
     parser.add_argument("--logging-first-step", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--report-to", type=str, default="tensorboard")
@@ -171,19 +173,24 @@ def main():
         masking_mode=config.masking_mode,
     )
 
-    # 80/10/10 train/val/test split with fixed seed.
-    # val: in-loop loss tracking + early stopping
-    # test: HELD OUT — never touched during training/HP tuning. Final eval only.
-    first = full_dataset.train_test_split(test_size=0.2, seed=42)
-    dataset = first["train"]
-    holdout = first["test"].train_test_split(test_size=0.5, seed=42)
-    eval_dataset = holdout["train"]
-    test_dataset = holdout["test"]
+    if args.no_train_split:
+        dataset = full_dataset
+        eval_dataset = None
+        print(f"Train: {len(dataset)} (full dataset, no internal split)")
+    else:
+        # 80/10/10 train/val/test split with fixed seed.
+        # val: in-loop loss tracking + early stopping
+        # test: HELD OUT — never touched during training/HP tuning. Final eval only.
+        first = full_dataset.train_test_split(test_size=0.2, seed=42)
+        dataset = first["train"]
+        holdout = first["test"].train_test_split(test_size=0.5, seed=42)
+        eval_dataset = holdout["train"]
+        test_dataset = holdout["test"]
 
-    test_dir = Path(config.output_dir) / "test_set"
-    test_dir.parent.mkdir(parents=True, exist_ok=True)
-    test_dataset.save_to_disk(str(test_dir))
-    print(f"Train: {len(dataset)}, Val: {len(eval_dataset)}, Test: {len(test_dataset)} (saved to {test_dir})")
+        test_dir = Path(config.output_dir) / "test_set"
+        test_dir.parent.mkdir(parents=True, exist_ok=True)
+        test_dataset.save_to_disk(str(test_dir))
+        print(f"Train: {len(dataset)}, Val: {len(eval_dataset)}, Test: {len(test_dataset)} (saved to {test_dir})")
     print(f"Sample token lengths (train): {[len(dataset[i]['input_ids']) for i in range(min(5, len(dataset)))]}")
 
     data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, padding=True, pad_to_multiple_of=8)
@@ -203,10 +210,10 @@ def main():
         save_strategy=config.save_strategy,
         save_steps=config.save_steps,
         save_total_limit=config.save_total_limit,
-        eval_strategy="steps",
+        eval_strategy="no" if args.no_train_split else "steps",
         eval_steps=args.eval_steps,
         per_device_eval_batch_size=args.eval_batch_size,
-        load_best_model_at_end=args.load_best_model_at_end,
+        load_best_model_at_end=False if args.no_train_split else args.load_best_model_at_end,
         metric_for_best_model="eval_loss",
         greater_is_better=False,
         logging_steps=config.logging_steps,
@@ -226,10 +233,11 @@ def main():
         model=model,
         args=training_args,
         train_dataset=dataset,
-        eval_dataset=eval_dataset,
         data_collator=data_collator,
         processing_class=tokenizer,
     )
+    if eval_dataset is not None:
+        trainer_kwargs["eval_dataset"] = eval_dataset
     if trainer_cls is ParamGroupTrainer:
         trainer_kwargs["lm_head_lr"] = config.lm_head_lr
         trainer_kwargs["lm_head_module_names"] = tuple(config.lora_modules_to_save)
