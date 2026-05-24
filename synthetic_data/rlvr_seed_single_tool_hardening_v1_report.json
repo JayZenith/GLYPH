@@ -1,0 +1,19 @@
+{
+  "base_rows": 3847,
+  "topup_rows": 96,
+  "combined_rows": 3943,
+  "topup_tool_mix": {
+    "read_file": 16,
+    "cargo_run": 16,
+    "cargo_build": 16,
+    "cargo_check": 16,
+    "cargo_test": 16,
+    "rustc": 16
+  },
+  "topup_file": "synthetic_data/rlvr_seed_single_tool_hardening_v1.jsonl",
+  "combined_file": "synthetic_data/final_glyph_sft_dataset_rlvr_term_v2.jsonl",
+  "notes": [
+    "This top-up teaches exact single-tool sufficiency and clean immediate stopping.",
+    "Use the combined file for the next RL-oriented SFT retrain if the current model is overusing read/patch workflows."
+  ]
+}
