@@ -68,7 +68,7 @@ def main():
     parser.add_argument("--resume-from", type=str, help="Resume from specific checkpoint")
     parser.add_argument("--bf16", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--tf32", action=argparse.BooleanOptionalAction, default=True)
-    parser.add_argument("--gradient-checkpointing", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--gradient-checkpointing", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--save-strategy", type=str, default="steps")
     parser.add_argument("--save-steps", type=int, default=500)
     parser.add_argument("--save-total-limit", type=int, default=3)
@@ -88,6 +88,7 @@ def main():
         tokenizer_name=args.tokenizer,
         data_path=args.data,
         output_dir=args.output,
+        cache_dir=args.cache_dir,
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
         gradient_accumulation_steps=args.grad_accum,
@@ -141,7 +142,7 @@ def main():
         deduped,
         tokenizer,
         config.max_seq_length,
-        args.cache_dir,
+        config.cache_dir,
     )
 
     if args.no_train_split:

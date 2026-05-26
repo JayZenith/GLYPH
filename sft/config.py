@@ -11,10 +11,11 @@ class TrainConfig:
     # Data
     data_path: Optional[str] = None
     max_seq_length: int = 1536
-    masking_mode: str = "assistant_only"  # "assistant_only" | "full_trace"
+    masking_mode: str = "assistant_only"
 
     # Training
     output_dir: str = "runs/sft1"
+    cache_dir: str = ".cache"
     num_train_epochs: int = 3
     per_device_train_batch_size: int = 1
     gradient_accumulation_steps: int = 8  # Effective batch = 8 on a single GPU
