@@ -7,6 +7,11 @@ import yaml
 
 _PROMPTS_FILE = Path(__file__).parent / "eval_prompts.yaml"
 _USER_RE = re.compile(r"<\|im_start\|>user\n(.*?)\n<\|im_end\|>", re.DOTALL)
+_STRICT_EVAL_SUFFIX = (
+    "Respond in English only. "
+    "Use only the expected trace format with plain assistant text plus CALL/RESULT/FINAL blocks. "
+    "Do not include chain-of-thought, meta commentary, markdown fences, or any text after FINAL."
+)
 
 def load_prompts(section: str, prompt_file: str | None = None) -> list[dict]:
     """Load a named section from a prompt yaml file."""
@@ -37,7 +42,8 @@ def load_prompts(section: str, prompt_file: str | None = None) -> list[dict]:
 
 def build_prompt(user_message: str, system_message: str | None = None) -> str:
     """Render a simple CALL/RESULT prompt up to the assistant header."""
-    system = system_message or "You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately."
+    base_system = system_message or "You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately."
+    system = f"{base_system} {_STRICT_EVAL_SUFFIX}"
     parts = [
         "<|im_start|>system",
         system,
