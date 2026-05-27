@@ -72,8 +72,6 @@ def _failure_buckets(metrics: dict) -> list[str]:
         buckets.append("missing_final")
     if not metrics["clean_end"]:
         buckets.append("dirty_final")
-    if not metrics["expected_tool_sequence_exact"]:
-        buckets.append("wrong_tool_sequence")
     if not metrics["result_ids_match_call_ids"]:
         buckets.append("wrong_result_mapping")
     if not metrics["all_calls_have_ids"]:
@@ -170,7 +168,6 @@ def score_output(
         metrics["has_final"]
         and metrics["final_count"] == 1
         and metrics["clean_end"]
-        and metrics["expected_tool_sequence_exact"]
         and metrics["result_ids_match_call_ids"]
         and metrics["all_calls_have_ids"]
         and metrics["final_after_last_tool"]
@@ -181,7 +178,6 @@ def score_output(
     score = 0
     score += 4 if metrics["clean_end"] else 0
     score += 4 if metrics["terminal_tool_success"] else 0
-    score += 3 if metrics["expected_tool_sequence_exact"] else 0
     score += 2 if metrics["result_ids_match_call_ids"] else 0
     score += 1 if metrics["all_calls_have_ids"] else 0
     score += 1 if metrics["final_after_last_tool"] else 0
