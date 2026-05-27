@@ -11,25 +11,47 @@ source .venv/bin/activate
 hf auth login
 ```
 
-# Training run on 259
-
-# Eval run on 9
-
-
-## Real Training Run
+# Training run on 259 that led to results/eval_formal_post_eval_flatroots.json
 ```bash
-cd /workspace/glyph
-source .venv/bin/activate
 python -m sft.train \
     --model Qwen/Qwen3-4B-Base \
     --tokenizer Qwen/Qwen3-4B-Base \
     --data synthetic_data/signal_259.jsonl \
-    --output runs/SIGNAL_259_SFT \
+    --output runs/SIGNAL_259_SFT_E3_LR2E5 \
     --epochs 3 \
     --batch-size 1 \
     --grad-accum 8 \
-    --lr 5e-6 \
-    --max-seq-length 2048 \
+    --lr 2e-5 \
+    --max-seq-length 4096 \
+    --save-total-limit 1 \
+    --no-train-split
+
+```
+
+# Eval run on 8 creating results/eval_formal_post_eval_flatroots.json
+```bash
+python -m sft.eval_formal \
+    --sft-model runs/SIGNAL_259_SFT_E3_LR2E5/final \
+    --train-data synthetic_data/signal_259.jsonl \
+    --prompt-section post_eval \
+    --output runs/SIGNAL_259_SFT_E3_LR2E5/eval_formal_post_eval_flatroots.json \
+    --max-new-tokens 1200 \
+    --max-tool-rounds 8 \
+    --cases-root runs/rlvr1/rust_cases/eval
+```
+
+## Real Training Run
+```bash
+python -m sft.train \
+    --model Qwen/Qwen3-4B-Base \
+    --tokenizer Qwen/Qwen3-4B-Base \
+    --data synthetic_data/signal_259.jsonl \
+    --output runs/SIGNAL_259_SFT_E3_LR2E5 \
+    --epochs 3 \
+    --batch-size 1 \
+    --grad-accum 8 \
+    --lr 2e-5 \
+    --max-seq-length 4096 \
     --save-total-limit 1 \
     --no-train-split
 ```
@@ -67,14 +89,13 @@ python -m sft.eval_test_loss \
 
 ```bash
 python -m sft.eval_formal \
-    --sft-model runs/SIGNAL_259_SFT/final \
+    --sft-model runs/SIGNAL_259_SFT_E3_LR2E5/final \
     --train-data synthetic_data/signal_259.jsonl \
     --prompt-section post_eval \
-    --output runs/SIGNAL_259_SFT/eval_formal_post_eval.json \
-    --max-new-tokens 6000 \
+    --output runs/SIGNAL_259_SFT_E3_LR2E5/eval_formal_post_eval_flatroots.json \
+    --max-new-tokens 1200 \
     --max-tool-rounds 8 \
-    --cases-root runs/rlvr1/rust_cases/eval \
-    --token-stream
+    --cases-root runs/rlvr1/rust_cases/eval
 ```
 
 ## Key Results
