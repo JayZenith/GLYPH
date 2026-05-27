@@ -19,11 +19,12 @@ from sft.evals import (
 from sft.evals.real_cases import materialize_case
 
 
-_CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+_CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]")
 
 
 def _sanitize_stream_piece(piece: str) -> str:
-    return _CONTROL_CHARS_RE.sub("", piece)
+    cleaned = _CONTROL_CHARS_RE.sub("", piece).replace("\ufffd", "")
+    return "".join(ch for ch in cleaned if ch in "\n\r\t" or 32 <= ord(ch) <= 126)
 
 
 def prepare_eval_items(items: list[dict], cases_root: Path) -> list[dict]:
