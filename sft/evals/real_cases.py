@@ -21,7 +21,7 @@ def _cargo_toml(name: str) -> str:
 
 
 def _patch_test_pass(root: Path) -> RealEvalCase:
-    project = root / "sumswap_eval"
+    project = root
     _write(project / "Cargo.toml", _cargo_toml("sumswap_eval"))
     _write(
         project / "src" / "lib.rs",
@@ -41,14 +41,14 @@ def _patch_test_pass(root: Path) -> RealEvalCase:
 
 
 def _patch_run_pass(root: Path) -> RealEvalCase:
-    project = root / "welcome_eval"
+    project = root
     _write(project / "Cargo.toml", _cargo_toml("welcome_eval"))
     _write(project / "src" / "main.rs", 'fn main() { println!("Welcom, team!"); }\n')
     return RealEvalCase("patch_run_pass_welcome", str(project), "Welcome, team!")
 
 
 def _patch_test_recover_once(root: Path) -> RealEvalCase:
-    project = root / "triangle_eval"
+    project = root
     _write(project / "Cargo.toml", _cargo_toml("triangle_eval"))
     _write(
         project / "src" / "lib.rs",
@@ -68,14 +68,14 @@ def _patch_test_recover_once(root: Path) -> RealEvalCase:
 
 
 def _patch_run_recover_once(root: Path) -> RealEvalCase:
-    project = root / "banner_eval"
+    project = root
     _write(project / "Cargo.toml", _cargo_toml("banner_eval"))
     _write(project / "src" / "main.rs", 'fn main() { println!("ready"); }\n')
     return RealEvalCase("patch_run_recover_once_banner", str(project), "Ready!")
 
 
 def _patch_test_recover_twice(root: Path) -> RealEvalCase:
-    project = root / "signed_parse_eval"
+    project = root
     _write(project / "Cargo.toml", _cargo_toml("signed_parse_eval"))
     _write(
         project / "src" / "lib.rs",
@@ -97,14 +97,14 @@ def _patch_test_recover_twice(root: Path) -> RealEvalCase:
 
 
 def _patch_run_recover_twice(root: Path) -> RealEvalCase:
-    project = root / "counter_eval"
+    project = root
     _write(project / "Cargo.toml", _cargo_toml("counter_eval"))
     _write(project / "src" / "main.rs", 'fn main() { for n in 1..4 { print!("count {n} "); } }\n')
     return RealEvalCase("patch_run_recover_twice_counter", str(project), "Count: 1\nCount: 2\nCount: 3\nCount: 4")
 
 
 def _test_only(root: Path) -> RealEvalCase:
-    project = root / "passing_eval_suite"
+    project = root
     _write(project / "Cargo.toml", _cargo_toml("passing_eval_suite"))
     _write(
         project / "src" / "lib.rs",
@@ -125,14 +125,14 @@ def _test_only(root: Path) -> RealEvalCase:
 
 
 def _run_only(root: Path) -> RealEvalCase:
-    project = root / "run_eval"
+    project = root
     _write(project / "Cargo.toml", _cargo_toml("run_eval"))
     _write(project / "src" / "main.rs", 'fn main() { println!("total={}", 4 + 5); }\n')
     return RealEvalCase("run_only_total", str(project), "total=9")
 
 
 def _read_only(root: Path) -> RealEvalCase:
-    project = root / "read_eval_lib"
+    project = root
     _write(project / "Cargo.toml", _cargo_toml("read_eval_lib"))
     _write(
         project / "src" / "lib.rs",
