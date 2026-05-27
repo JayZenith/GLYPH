@@ -11,15 +11,20 @@ source .venv/bin/activate
 hf auth login
 ```
 
-## Train
+# Training run on 259
+
+# Eval run on 9
+
+
+## Real Training Run
 ```bash
 cd /workspace/glyph
 source .venv/bin/activate
 python -m sft.train \
     --model Qwen/Qwen3-4B-Base \
     --tokenizer Qwen/Qwen3-4B-Base \
-    --data synthetic_data/sft_dataset.jsonl \
-    --output runs/SFT_V1 \
+    --data synthetic_data/signal_259.jsonl \
+    --output runs/SIGNAL_259_SFT \
     --epochs 3 \
     --batch-size 1 \
     --grad-accum 8 \
@@ -50,11 +55,7 @@ report_to: str = "tensorboard"
 ```
 
 
-
-
-With Defaults 
-
-## Eval
+## Real Eval Runs
 <!--
 ```bash
 python -m sft.eval_test_loss \
@@ -66,11 +67,13 @@ python -m sft.eval_test_loss \
 
 ```bash
 python -m sft.eval_formal \
-    --sft-model runs/SFT_V1/final \
-    --prompt-section formal_eval_rl \
-    --output runs/GLYPH_SFT_RLREADY_V1/eval_formal_rl.json \
+    --sft-model runs/SIGNAL_259_SFT/final \
+    --train-data synthetic_data/signal_259.jsonl \
+    --prompt-section post_eval \
+    --output runs/SIGNAL_259_SFT/eval_formal_post_eval.json \
     --max-new-tokens 6000 \
     --max-tool-rounds 8 \
+    --cases-root runs/rlvr1/rust_cases/eval \
     --token-stream
 ```
 
@@ -82,4 +85,4 @@ Remaining failure's:
 ## Notes
 
 - reported repo commit: ``
-- dataset hf: ``
+- dataset hf: `synthetic_data/signal_259.jsonl`

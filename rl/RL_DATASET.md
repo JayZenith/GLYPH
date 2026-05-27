@@ -11,7 +11,7 @@ Generator:
 
 Scope:
 - tools: `read_file`, `apply_patch`, `cargo_test`, `cargo_run`
-- exactly 8 rows, one per active family
+- exactly 9 rows, one per active family
 
 Families:
 - `patch_test_pass`
@@ -21,6 +21,7 @@ Families:
 - `patch_test_recover_twice`
 - `patch_run_recover_twice`
 - `test_only`
+- `run_only`
 - `read_only`
 
 Notes:

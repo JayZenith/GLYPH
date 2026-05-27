@@ -1,0 +1,7 @@
+{
+  "patch_test_pass": 18,
+  "patch_run_pass": 10,
+  "patch_test_recover": 20,
+  "test_only": 1,
+  "run_only": 1
+}

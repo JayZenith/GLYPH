@@ -1,22 +1,21 @@
 from __future__ import annotations
 
 import re
-import shutil
-import uuid
 from pathlib import Path
 
 from datasets import Dataset
 
 import verifiers as vf
-from rl.protocol import SimpleTraceValidator, ended_cleanly_after_final, has_final
+from agent_runtime.protocol import SimpleTraceValidator, ended_cleanly_after_final, has_final
 from rl.task_format import load_prompts
-from rl.rust.executor import ExecutionResult, RustExecutor, create_executor
-from rl.rust.results import (
+from agent_runtime.rust.executor import ExecutionResult, RustExecutor, create_executor
+from agent_runtime.rust.runtime import ensure_sandbox_copy, execute_rust_tool, rewrite_params_for_sandbox
+from agent_runtime.rust.results import (
     format_result_block,
     parse_call_blocks,
 )
-from rl.rust.reward import compute_tool_reward
-from rl.rust.tools import RUST_TOOLS
+from agent_runtime.rust.reward import compute_tool_reward
+from agent_runtime.rust.tools import RUST_TOOLS
 
 # Tool names allowed by the Rust RL environment.
 RUST_TOOL_NAMES = {
@@ -116,44 +115,6 @@ def _structure_reward(assistant_text: str, result_text: str, validator: SimpleTr
                 break
     score += _response_termination_reward(assistant_text)
     return score
-
-
-# ---------------------------------------------------------------------------
-# Real tool execution dispatch (moved off the reward path; lives in the env)
-# ---------------------------------------------------------------------------
-
-def _execute(executor: RustExecutor, tool_name: str, params: dict) -> ExecutionResult:
-    if tool_name == "cargo_test":
-        return executor.cargo_test(params.get("project_path", "."))
-    if tool_name == "cargo_run":
-        return executor.cargo_run(params.get("project_path", "."))
-    if tool_name == "read_file":
-        file_path = params.get("file_path")
-        if not file_path:
-            return ExecutionResult(False, "", "missing file_path", -1)
-        return executor.read_file(file_path)
-    if tool_name == "apply_patch":
-        file_path = params.get("file_path")
-        find = params.get("find")
-        replace = params.get("replace")
-        if not file_path or find is None or replace is None:
-            return ExecutionResult(False, "", "apply_patch needs file_path, find, replace", -1)
-        return executor.apply_patch(file_path, find, replace)
-    return ExecutionResult(False, "", f"unknown tool: {tool_name}", -1)
-
-
-# Per-rollout sandboxing for code-edit cases. Each rollout gets its own copy
-# of the blueprint project so concurrent rollouts cannot stomp on each other.
-
-def _rewrite_path(value: str, blueprint: str, sandbox: str) -> str:
-    if isinstance(value, str) and value.startswith(blueprint):
-        return sandbox + value[len(blueprint):]
-    return value
-
-
-def _rewrite_params(params: dict, blueprint: str, sandbox: str) -> dict:
-    return {k: _rewrite_path(v, blueprint, sandbox) if isinstance(v, str) else v
-            for k, v in params.items()}
 
 
 # ---------------------------------------------------------------------------
@@ -411,18 +372,14 @@ class RustToolEnv(vf.MultiTurnEnv):
         """Per-rollout copy of a blueprint project. Idempotent within a rollout."""
         if state.get("sandbox_path"):
             return state["sandbox_path"]
-        rollout_id = state.get("rollout_id") or uuid.uuid4().hex[:12]
-        blueprint = Path(blueprint_root)
-        sandbox = self.sandbox_root / rollout_id / blueprint.name
-        sandbox.parent.mkdir(parents=True, exist_ok=True)
-        if blueprint.is_dir():
-            shutil.copytree(blueprint, sandbox, dirs_exist_ok=True)
-        else:
-            sandbox.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(blueprint, sandbox)
+        rollout_id, sandbox = ensure_sandbox_copy(
+            blueprint_root=blueprint_root,
+            sandbox_root=self.sandbox_root,
+            run_id=state.get("rollout_id"),
+        )
         state["rollout_id"] = rollout_id
-        state["sandbox_path"] = str(sandbox)
-        state["blueprint_root"] = str(blueprint)
+        state["sandbox_path"] = sandbox
+        state["blueprint_root"] = blueprint_root
         return state["sandbox_path"]
 
     @staticmethod
@@ -461,7 +418,7 @@ class RustToolEnv(vf.MultiTurnEnv):
             cid = call["id"]
             params = call["params"]
             if blueprint_root and sandbox_path:
-                params = _rewrite_params(params, blueprint_root, sandbox_path)
+                params = rewrite_params_for_sandbox(params, blueprint_root, sandbox_path)
             if not is_rust_prompt:
                 # Non-Rust prompt: mock the tool result so the assistant→tool
                 # boundary structure stays intact for the structure reward.
@@ -469,7 +426,12 @@ class RustToolEnv(vf.MultiTurnEnv):
             elif call["tool"] not in RUST_TOOL_NAMES:
                 er = ExecutionResult(False, "", f"unknown tool: {call['tool']}", -1)
             else:
-                er = _execute(self.executor, call["tool"], params)
+                er = execute_rust_tool(
+                    self.executor,
+                    call["tool"],
+                    params,
+                    expected_output=info.get("expected_output") if call["tool"] == "cargo_run" else None,
+                )
             executed.add(cid)
             result_block = format_result_block(cid, er)
             state.setdefault("executed_tool_calls", []).append(call)

@@ -219,6 +219,23 @@ def materialize_test_only(root: Path) -> dict:
     }
 
 
+def materialize_run_only(root: Path) -> dict:
+    project = root / "run_eval"
+    write(project / "Cargo.toml", cargo_toml("run_eval"))
+    write(project / "src" / "main.rs", 'fn main() { println!("total={}", 4 + 5); }\n')
+    return {
+        "kind": "run_only",
+        "prompt": build_prompt(
+            f"Run cargo_run on {project} and report the result in one final answer.",
+            SYSTEM_PROMPT,
+        ),
+        "expected_tool": "cargo_run",
+        "expected_args": {"project_path": str(project)},
+        "expected_tool_sequence": ["cargo_run"],
+        "expected_output": "total=9",
+    }
+
+
 def materialize_read_only(root: Path) -> dict:
     project = root / "showcase_lib"
     write(project / "Cargo.toml", cargo_toml("showcase_lib"))
@@ -247,6 +264,7 @@ def build_cases(root: Path) -> list[dict]:
         materialize_patch_test_recover_twice(root),
         materialize_patch_run_recover_twice(root),
         materialize_test_only(root),
+        materialize_run_only(root),
         materialize_read_only(root),
     ]
 

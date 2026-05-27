@@ -4,6 +4,8 @@ from __future__ import annotations
 import re
 from collections import Counter, defaultdict
 
+from agent_runtime.rust.results import parse_call_blocks
+
 
 REPETITION_PATTERN = re.compile(r"(.{20,200}?)\1{4,}", re.DOTALL)
 SEG_RE = re.compile(r"<\|im_start\|>(\w+)\n(.*?)<\|im_end\|>", re.DOTALL)
@@ -42,6 +44,28 @@ def _extract_result_ids(tool_bodies: list[str]) -> list[str]:
     return result_ids
 
 
+def _extract_result_body(tool_bodies: list[str], call_id: str) -> str | None:
+    merged = "\n".join(tool_bodies)
+    match = re.search(
+        r"RESULT\s+" + re.escape(call_id) + r":\n(.*?)(?=\nRESULT\s+[A-Za-z0-9_\-]+:|\Z)",
+        merged,
+        re.DOTALL,
+    )
+    return match.group(1).strip() if match else None
+
+
+def _tool_succeeded(tool_name: str, result_body: str | None, expected_output: str | None) -> bool:
+    if not result_body:
+        return False
+    if re.search(r"^status:\s*success\b", result_body, re.MULTILINE) is None:
+        return False
+    if tool_name == "cargo_run" and expected_output is not None:
+        stdout_match = re.search(r"stdout:\n(.*?)(?:\nstderr:|\Z)", result_body, re.DOTALL)
+        stdout = stdout_match.group(1).strip() if stdout_match else ""
+        return stdout == expected_output.strip()
+    return True
+
+
 def _failure_buckets(metrics: dict) -> list[str]:
     buckets: list[str] = []
     if not metrics["has_final"]:
@@ -62,6 +86,8 @@ def _failure_buckets(metrics: dict) -> list[str]:
         buckets.append("truncated")
     if not metrics["final_after_last_tool"]:
         buckets.append("final_before_tool_completion")
+    if not metrics["terminal_tool_success"]:
+        buckets.append("task_failure")
     return buckets
 
 
@@ -80,9 +106,17 @@ def score_output(
     call_sequence = [tool for tool, _ in calls]
     call_ids = [call_id for _, call_id in calls]
     result_ids = _extract_result_ids(tool_bodies)
+    parsed_calls = parse_call_blocks(assistant_text)
     expected_tool_sequence = item.get("expected_tool_sequence", [])
     final_blocks = [body for body in assistant_bodies if body.strip().startswith("FINAL:")]
     last_assistant = assistant_bodies[-1].strip() if assistant_bodies else ""
+    last_call = parsed_calls[-1] if parsed_calls else None
+    expected_output = item.get("expected_output")
+    terminal_result_body = _extract_result_body(tool_bodies, last_call["id"]) if last_call else None
+    terminal_tool_success = (
+        _tool_succeeded(last_call["tool"], terminal_result_body, expected_output)
+        if last_call else False
+    )
 
     metrics = {
         "kind": item.get("kind", "other"),
@@ -99,6 +133,7 @@ def score_output(
         "role_marker_leakage": bool(ROLE_LEAK_RE.search(assistant_text)),
         "no_repetition": REPETITION_PATTERN.search(assistant_text) is None,
         "not_truncated": new_token_count < max_new_tokens - 10,
+        "terminal_tool_success": terminal_tool_success,
         "new_token_count": new_token_count,
         "assistant_block_count": len(assistant_bodies),
         "tool_block_count": len(tool_bodies),
@@ -120,11 +155,13 @@ def score_output(
         and metrics["result_ids_match_call_ids"]
         and metrics["all_calls_have_ids"]
         and metrics["final_after_last_tool"]
+        and metrics["terminal_tool_success"]
         and not metrics["role_marker_leakage"]
     )
 
     score = 0
     score += 4 if metrics["clean_end"] else 0
+    score += 4 if metrics["terminal_tool_success"] else 0
     score += 3 if metrics["expected_tool_sequence_exact"] else 0
     score += 2 if metrics["result_ids_match_call_ids"] else 0
     score += 1 if metrics["all_calls_have_ids"] else 0
@@ -155,6 +192,7 @@ def summarize(name: str, rows: list[dict]) -> dict:
             "expected_tool_sequence_rate": sum(r["metrics"]["expected_tool_sequence_exact"] for r in kind_rows) / n,
             "result_id_match_rate": sum(r["metrics"]["result_ids_match_call_ids"] for r in kind_rows) / n,
             "final_after_last_tool_rate": sum(r["metrics"]["final_after_last_tool"] for r in kind_rows) / n,
+            "terminal_tool_success_rate": sum(r["metrics"]["terminal_tool_success"] for r in kind_rows) / n,
         }
 
     return {
@@ -166,6 +204,7 @@ def summarize(name: str, rows: list[dict]) -> dict:
         "expected_tool_sequence_rate": sum(1 for row in rows if row["metrics"]["expected_tool_sequence_exact"]) / total,
         "result_id_match_rate": sum(1 for row in rows if row["metrics"]["result_ids_match_call_ids"]) / total,
         "final_after_last_tool_rate": sum(1 for row in rows if row["metrics"]["final_after_last_tool"]) / total,
+        "terminal_tool_success_rate": sum(1 for row in rows if row["metrics"]["terminal_tool_success"]) / total,
         "no_repetition_rate": sum(1 for row in rows if row["metrics"]["no_repetition"]) / total,
         "not_truncated_rate": sum(1 for row in rows if row["metrics"]["not_truncated"]) / total,
         "failure_buckets": dict(sorted(failure_counts.items())),

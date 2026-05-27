@@ -15,6 +15,24 @@ from sft.evals import (
     score_output,
     summarize,
 )
+from sft.evals.real_cases import materialize_case
+
+
+def prepare_eval_items(items: list[dict], cases_root: Path) -> list[dict]:
+    prepared: list[dict] = []
+    for item in items:
+        row = dict(item)
+        real_case_name = row.get("real_case_name")
+        user_template = row.pop("user_template", None)
+        if real_case_name:
+            case = materialize_case(real_case_name, cases_root / row["name"])
+            row["blueprint_root"] = case.blueprint_root
+            if case.expected_output is not None:
+                row["expected_output"] = case.expected_output
+            if user_template:
+                row["user"] = user_template.format(project_root=case.blueprint_root)
+        prepared.append(row)
+    return prepared
 
 
 def main() -> int:
@@ -23,14 +41,18 @@ def main() -> int:
     parser.add_argument("--prompt-section", default="post_eval")
     parser.add_argument("--prompt-file", default=None,
                         help="Optional yaml file to load prompts from instead of sft/evals/eval_prompts.yaml")
-    parser.add_argument("--train-data", default=None,
-                        help="Optional train dataset JSONL to check for exact prompt overlap against the eval set")
+    parser.add_argument("--train-data", required=True,
+                        help="Train dataset JSONL used to reject exact eval prompt overlap")
     parser.add_argument("--output", required=True)
     parser.add_argument("--max-new-tokens", type=int, default=6000)
     parser.add_argument("--max-tool-rounds", type=int, default=8,
-                        help="Max rounds of mocked-tool-result injection per prompt")
+                        help="Max rounds of real tool execution/result injection per prompt")
     parser.add_argument("--limit", type=int, default=None,
                         help="Limit to first N prompts (for smoke runs)")
+    parser.add_argument("--cases-root", default="runs/rlvr1/rust_cases/eval",
+                        help="Root directory where held-out eval Rust cases are materialized")
+    parser.add_argument("--tool-timeout", type=int, default=30)
+    parser.add_argument("--nsjail-path", default=None)
     parser.add_argument("--stream-output", action="store_true",
                         help="Print each completed model output as soon as that prompt finishes")
     parser.add_argument("--stream-output-chars", type=int, default=0,
@@ -43,6 +65,7 @@ def main() -> int:
     sft_model, sft_tok = load_model(args.sft_model)
 
     prompts = load_prompts(args.prompt_section, args.prompt_file)
+    prompts = prepare_eval_items(prompts, Path(args.cases_root))
     if args.train_data:
         assert_no_prompt_overlap(prompts, args.train_data)
     if args.limit is not None:
@@ -73,7 +96,13 @@ def main() -> int:
             args.max_new_tokens,
             max_tool_rounds=args.max_tool_rounds,
             token_callback=make_token_callback(),
-            mock_results=item.get("mock_results"),
+            execution={
+                "blueprint_root": item.get("blueprint_root"),
+                "sandbox_root": Path(args.cases_root) / "_sandboxes",
+                "timeout": args.tool_timeout,
+                "nsjail_path": args.nsjail_path,
+                "expected_output": item.get("expected_output"),
+            },
         )
         if args.token_stream:
             print("\n", flush=True)

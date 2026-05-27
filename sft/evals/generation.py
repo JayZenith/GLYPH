@@ -1,53 +1,16 @@
 """Post-train generation helper for the simplified CALL/RESULT/FINAL eval."""
 from __future__ import annotations
 
-import re
+from pathlib import Path
 from threading import Thread
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 
-
-SEG_RE = re.compile(r"<\|im_start\|>(\w+)\n(.*?)<\|im_end\|>", re.DOTALL)
-CALL_BLOCK_RE = re.compile(r"^\s*CALL\s+([A-Za-z_]\w*)\((.*?)\)\s*$", re.MULTILINE | re.DOTALL)
-CALL_ID_RE = re.compile(r'\bid\s*=\s*"([^"]+)"')
-RESULT_ID_RE = re.compile(r"^\s*RESULT\s+([A-Za-z0-9_\-]+):", re.MULTILINE)
-
-
-def _segments(text: str) -> list[tuple[str, str]]:
-    return [(m.group(1), m.group(2)) for m in SEG_RE.finditer(text)]
-
-
-def _extract_calls(text: str) -> list[tuple[str, str]]:
-    assistant = "\n".join(body for role, body in _segments(text) if role == "assistant")
-    calls: list[tuple[str, str]] = []
-    for tool_name, arg_blob in CALL_BLOCK_RE.findall(assistant):
-        match = CALL_ID_RE.search(arg_blob)
-        if match:
-            calls.append((tool_name, match.group(1)))
-    return calls
-
-
-def _extract_result_ids(text: str) -> list[str]:
-    tool_text = "\n".join(body for role, body in _segments(text) if role == "tool")
-    return RESULT_ID_RE.findall(tool_text)
-
-
-def extract_pending_calls(text: str) -> list[tuple[str, str]]:
-    calls = _extract_calls(text)
-    result_ids = set(_extract_result_ids(text))
-    return [(tool_name, call_id) for tool_name, call_id in calls if call_id not in result_ids]
-
-
-def inject_mock_result(call_id: str, content: str) -> str:
-    return (
-        "\n\n"
-        "<|im_start|>tool\n"
-        f"RESULT {call_id}:\n"
-        f"{content}\n"
-        "<|im_end|>\n\n"
-        "<|im_start|>assistant\n"
-    )
+from agent_runtime.protocol import assistant_text, extract_pending_call_ids, tool_text
+from agent_runtime.rust.executor import create_executor
+from agent_runtime.rust.results import format_result_block, parse_call_blocks
+from agent_runtime.rust.runtime import ensure_sandbox_copy, execute_rust_tool, rewrite_params_for_sandbox
 
 
 def load_model(model_path: str):
@@ -124,14 +87,22 @@ def generate(
     max_new_tokens: int,
     max_tool_rounds: int = 5,
     token_callback=None,
-    mock_results: list[dict] | None = None,
+    execution: dict | None = None,
 ) -> tuple[str, int]:
     accumulated = ""
     total_new_tokens = 0
     remaining = max_new_tokens
     cur_prompt = prompt
-    mock_results = list(mock_results or [])
-    next_result_idx = 0
+    execution = execution or {}
+    executor = create_executor(
+        nsjail_path=execution.get("nsjail_path"),
+        timeout=execution.get("timeout", 30),
+    )
+    blueprint_root = execution.get("blueprint_root")
+    sandbox_root = execution.get("sandbox_root")
+    sandbox_path = None
+    if blueprint_root and sandbox_root:
+        _, sandbox_path = ensure_sandbox_copy(blueprint_root, Path(sandbox_root))
 
     for _ in range(max_tool_rounds + 1):
         if remaining <= 0:
@@ -146,25 +117,40 @@ def generate(
         accumulated += chunk
         total_new_tokens += n_tok
         remaining -= n_tok
-        pending = extract_pending_calls(accumulated)
-        if hit_stop and not pending:
+
+        full_trace = prompt + accumulated
+        assistant = assistant_text(full_trace)
+        tools = tool_text(full_trace)
+        pending_ids = extract_pending_call_ids(assistant, tools)
+        if hit_stop and not pending_ids:
             break
-        if not pending:
+        if not pending_ids:
             break
 
         injections = []
-        for tool_name, call_id in pending:
-            if next_result_idx < len(mock_results):
-                scripted = mock_results[next_result_idx]
-                content = scripted["content"]
-                scripted_tool = scripted.get("tool")
-                if scripted_tool and scripted_tool != tool_name:
-                    content = f"status: mocked mismatch\nexpected_tool: {scripted_tool}\nactual_tool: {tool_name}"
-                next_result_idx += 1
-            else:
-                content = "status: success"
-            injections.append(inject_mock_result(call_id, content))
+        for call in parse_call_blocks(assistant):
+            if call["id"] not in pending_ids:
+                continue
+            params = call["params"]
+            if blueprint_root and sandbox_path:
+                params = rewrite_params_for_sandbox(params, blueprint_root, sandbox_path)
+            result = execute_rust_tool(
+                executor,
+                call["tool"],
+                params,
+                expected_output=execution.get("expected_output") if call["tool"] == "cargo_run" else None,
+            )
+            result_block = format_result_block(call["id"], result)
+            injections.append(
+                "\n\n"
+                "<|im_start|>tool\n"
+                f"{result_block}\n"
+                "<|im_end|>\n\n"
+                "<|im_start|>assistant\n"
+            )
 
+        if not injections:
+            break
         accumulated += "".join(injections)
         cur_prompt = prompt + accumulated
 
