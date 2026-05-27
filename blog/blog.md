@@ -55,36 +55,29 @@ Keep the tool set narrow to avoid tool-choice confusion:
 Preferred 1200 trace dataset mix and train on only these families:
 320 patch_test_pass- `read_file -> apply_patch -> cargo_test -> FINAL`
 180 patch_run_pass- `read_file -> apply_patch -> cargo_run -> FINAL`
-220 patch_test_recover_once- `read_file -> apply_patch -> cargo_test_fail -> read_file -> apply_patch -> cargo_test_pass -> FINAL`
-150 patch_run_recover_once- `read_file -> apply_patch -> cargo_run_fail -> read_file -> apply_patch -> cargo_run_pass -> FINAL`
-120 patch_test_recover_twice- `read_file -> apply_patch -> cargo_test_fail -> read_file -> apply_patch -> cargo_test_fail -> read_file -> apply_patch -> cargo_test_pass -> FINAL`
-80 patch_run_recover_twice- `read_file -> apply_patch -> cargo_run_fail -> read_file -> apply_patch -> cargo_run_fail -> read_file -> apply_patch -> cargo_run_pass -> FINAL`
+340 patch_test_recover- `read_file -> apply_patch -> cargo_test_fail -> ... -> cargo_test_pass -> FINAL`
+260 patch_run_recover- `read_file -> apply_patch -> cargo_run_fail -> ... -> cargo_run_pass -> FINAL`
 60 test_only- `cargo_test -> FINAL`
 30 run_only- `cargo_run -> FINAL`
-40 read_only- `read_file -> FINAL`
 
 
 * Preferred percentage mix:
-  * 1-turn repair families = `500 / 1200 = 41.7%`
-  * 2-turn recovery families = `370 / 1200 = 30.8%`
-  * 3-turn recovery families = `200 / 1200 = 16.7%`
-  * single-tool families = `130 / 1200 = 10.8%`
+  * pass families = `500 / 1200 = 41.7%`
+  * recover families = `600 / 1200 = 50.0%`
+  * single-tool families = `90 / 1200 = 7.5%`
 * REMINDER: NEED TO MAKE SURE I GENERATE HARDER CASES WITHIN THE FAMILIES TO ENCOURAGE MULTI TURN USE. 
 
 *This complete set includes multi turn chat capabilities along with recovery behavior. We don't teach the model "failing answers are okay" but that failed tool results are feedback, and it should continue instead of giving up or hallucinating success. 
 
 * This is preferred over a more pass-heavy mix because it reduces dominance of easy one-shot repair and gives the model much more recovery practice before RL.
 
-* For scaling, i will keep one source file per family and merge into one train file at end. This allows me to scale easier as i can raise one family without touching others while auditing quality per family. 
+ * For scaling, i will keep one source file per family and merge into one train file at end. This allows me to scale easier as i can raise one family without touching others while auditing quality per family. 
  - synthetic_data/families/patch_test_pass.jsonl
  - synthetic_data/families/patch_run_pass.jsonl
- - synthetic_data/families/patch_test_recover_once.jsonl
- - synthetic_data/families/patch_run_recover_once.jsonl
- - synthetic_data/families/patch_test_recover_twice.jsonl
- - synthetic_data/families/patch_run_recover_twice.jsonl
+ - synthetic_data/families/patch_test_recover.jsonl
+ - synthetic_data/families/patch_run_recover.jsonl
  - synthetic_data/families/test_only.jsonl
  - synthetic_data/families/run_only.jsonl
- - synthetic_data/families/read_only.jsonl
 
  The model should invent:
  
@@ -108,22 +101,19 @@ Preferred 1200 trace dataset mix and train on only these families:
 
 
 4. Evals
-I wont include a random train/val/test split for this current run due to compute limits in generating a larger dataset, thus I will train on all curated traces but then will use a held-out post-eval that checks exact schemas, clean stopping, tool order, recovery behavior, and no extra tokens. 
+I wont include a random train/val/test split for this current run due to compute limits in generating a larger dataset, thus I will train on all curated traces but then will use a held-out post-eval that checks exact schemas, clean stopping, real tool success, and no extra tokens. 
 
 With scaling up, validation loss is useful for generalization/overfit monitorinng but here its weak as it does not mean "stops corectly" or "uses tool correctly"
 
-The post-eval test will overweight the hard cases. 200 prompts shall give enough hard recovery cases to trust the result before wasting RL money!
+The post-eval test will overweight the hard cases. I started with 8 held-out real tool-executed prompts to prove the loop works, and with scaling should push this much higher before wasting RL money.
 
-Post-eval will follow this 9-family curation mix:
+Post-eval will follow this held-out curation mix:
 40 `patch_test_pass` - `read_file -> apply_patch -> cargo_test -> FINAL`
 30 `patch_run_pass` - `read_file -> apply_patch -> cargo_run -> FINAL`
-40 `patch_test_recover_once` - `read_file -> apply_patch -> cargo_test_fail -> read_file -> apply_patch -> cargo_test_pass -> FINAL`
-30 `patch_run_recover_once` - `read_file -> apply_patch -> cargo_run_fail -> read_file -> apply_patch -> cargo_run_pass -> FINAL`
-25 `patch_test_recover_twice` - `read_file -> apply_patch -> cargo_test_fail -> read_file -> apply_patch -> cargo_test_fail -> read_file -> apply_patch -> cargo_test_pass -> FINAL`
-20 `patch_run_recover_twice` - `read_file -> apply_patch -> cargo_run_fail -> read_file -> apply_patch -> cargo_run_fail -> read_file -> apply_patch -> cargo_run_pass -> FINAL`
+60 `patch_test_recover` - `read_file -> apply_patch -> cargo_test_fail -> ... -> cargo_test_pass -> FINAL`
+45 `patch_run_recover` - `read_file -> apply_patch -> cargo_run_fail -> ... -> cargo_run_pass -> FINAL`
 10 `test_only` - `cargo_test -> FINAL`
 5 `run_only` - `cargo_run -> FINAL`
-5 `read_only` - `read_file -> FINAL`
 
 
 # Prevoiusly i used mock tool calling, thats a cheap format gate. I will be implementing real tool calling in the post-sft eval to care about real patching, real recovery, and real verifier success. 
@@ -179,109 +169,85 @@ FINAL: Fixed the bug by changing subtraction to addition and verified it with ca
 * My concern here is choosing a correct max_tool_rounds cap. 
 
 
-# So setting tool execution for sft plan
-1. Replace SFT's mock injection with real call parsing, execution, result formatting, and sandbox path-rewriting RL already uses
-2. Make eval prompts materialize real held-out cases from names/blueprints instead of carrying fake mock_results
-3. Tighten scoring so eval_formal.py checks actual verifier success for cargo_test/cargo_run and not just tool order 
-  * Before scoring was structured gate + expected-sequence check. 
-    * Did not verify real success as sft/evals/generation.py was injecting `mock_results`, a model could pass format/sequence checks w/o fixing code or surviving real recovery loops. 
-    * Real execution in post-SFT eval is standard serious practice to decide if RL is worth it. 
+# OK THE STORY NOW
 
-# SFT eval tool execution now wired via RL runtime pieces
-- `eval_formal.py` creates held out rust projects on disk via `--cases-root` before running eval, materializing cases like `runs/sft_eval_cases/<prompt_name>/<cache_dir>` and writes prompt with this real prompt. 
-  * SO MUST CREATE THE `synthetic_data` dataset to use similar file paths. 
-- `sft/evals/generation.py` runs the loop:
-  - model emites `CALL ...`, parse pending call, execute tool for real, inject real `RESULT ...`, continue generation until `FINAL` or round limit. 
-- `scoring.py` not declares success by requiring both protocol correctness and `real termial tool success`. Concretely
-  - exact expected tool sequence
-  - matching `CALL`/`RESULT` ids
-  - one clean `FINAL`
-  - final comes after last tool
-  - last tool result has `status: success`
-  - if last tool is `cargo_run`, its `stdout` must exactly match `expecgted output`
-- Moved into `rl/rust/runtime.py` in which `sft/evals/generation.py` which is passed config from `eval_formal.py` now imports from the following
-  - execute_rust_tool(...)
-  - ensure_sandbox_copy(..) 
-    - makes private copied workspace for one rollout/eval case so edits/tests don't touch original blueprint files
-  - rewrite_path(..)
-    - if a path points at original blueprint case, swap that prefix to the sandbox copy path
-  - rewrite_params_for_sandbox(...) 
-    - apply path rewrite across all string params in a tool call, like file_path or project_path. 
+I started by simplifying the trace format down to the only behavior I actually care about:
+- assistant emits `CALL ...`
+- tool emits `RESULT ...`
+- assistant emits exactly one `FINAL: ...`
 
+Then I narrowed tool scope to:
+- `read_file`
+- `apply_patch`
+- `cargo_test`
+- `cargo_run`
 
+The next big step was making synthetic data real instead of fake. GPT only generates compact case specs, while local code owns:
+- Rust file creation
+- tool execution
+- real `RESULT` blocks
+- pass/fail truth
+- final JSONL assembly
+- rejection of bad generations
 
+That gave me a real data pipeline instead of hallucinated tool traces.
 
-6. SFT & RL & Evals sharing the same world
-* Some key notes here on SFT/RL/Eval alignment 
-  * I will be using the same file path's that the RL env will provide such as `runs/rlvr1/rust_cases/...` as this is curcial so model sees same style in: 
-    * SFT seed traces
-    * RL prompts
-    * eval prompts 
-  * Also will make sure all three surfaces use the same trace families so we dont have SFT teaching one behavior while RL/eval test another.
-    * Here are the 9 families:
-      * patch_test_pass
-      * patch_run_pass
-      * patch_test_recover_once
-      * patch_run_recover_once
-      * patch_test_recover_twice
-      * patch_run_recover_twice
-      * test_only
-      * run_only
-      * read_only
-  * Same protocol everywhere so all teach same trace format:
-    * CALL tool(id="cN", ..,)
-    * RESULT cN:
-    * FINAL: ... 
-  * Same tool invventory everywhere so model is not trained/eval'd on tools RL does not want.
+I also aligned the runtime across synthetic data, SFT evals, and RL-facing code by using the same path style, same tool protocol, and shared runtime helpers. The eval loop is now real:
+- model emits `CALL`
+- tool executes for real
+- real `RESULT` is injected
+- model continues until `FINAL` or a hard cap
 
-* Key notes on data contamination
-  * Training traces and eval prompts (`sft/evals/eval_prompts.yaml`) should not match overlap or else your eval will be contaminated as you will be testing the model's memorization. Rewording the prompts for eval is a way to avoid exact copies. 
-    * `eval_formal.py` supports `--train-data` which calls the overlap check.
+Validation became a required part of the workflow too. `synthetic_data/validate_dataset.py` now does both:
+- static protocol checks
+- replay execution against disposable copied Rust cases
 
+On the data side I started with many brittle family splits, but simplified them into the ones that matter:
+- `patch_test_pass`
+- `patch_run_pass`
+- `patch_test_recover`
+- `patch_run_recover`
+- `test_only`
+- `run_only`
 
-# SFT grading 
-- exact protocol validity 
-- valid `CALL` syntax
-- valid `RESULT` linkage by id 
-- clean stopping after `FINAL`
-- tool sequence appropriateness
-- whether patch cases actually end in passing `cargo_test` / correct `cargo_run`
-- whether recovery cases improve after failures
-- whether model avoids useless extra calls
+That simplification mattered a lot because exact recovery-count bookkeeping was creating noise without teaching the behavior I actually care about.
 
+For dataset generation, I ran small pilot batches first, rejected bad generations, and only kept traces that survived real execution. From that process I assembled the current signal dataset:
+- `synthetic_data/signal_259.jsonl`
 
-# Lastly before data generation
-One-off check read each trace, executed its CALLs for real, compared real tool results to the trace shape, and confirms recover cases fail first and pass at end
-* Before generating more traces, should make this into a saved script so after generation, can run a command and know dataset is executable and not poisoned.
+Current signal dataset counts:
+- `patch_test_pass`: `105`
+- `patch_run_pass`: `49`
+- `patch_test_recover`: `95`
+- `test_only`: `5`
+- `run_only`: `5`
 
-Extended synthetic_data/validate_dataset.py:1.
+Then I built a held-out formal eval with real Rust cases and real tool execution. I also added contamination guards:
+- exact prompt overlap hard fail via `--train-data`
+- prompt similarity hard fail via `--max-prompt-similarity`
 
-  It now always does both:
+The first train/eval runs exposed real issues:
+- old mock-eval assumptions
+- missing Rust toolchain on the eval machine
+- stale eval naming and scoring around `recover_once` / `recover_twice`
+- some held-out case path bugs
 
-  - static validation: protocol, ids, family sequence, metadata, fail/pass
-    recovery shape
-  - replay validation: copies each Rust case into --cases-root, rewrites tool
-    paths there, executes every CALL, and checks the trace result statuses/
-    stdout are semantically right
+Those are now fixed.
 
-  Important mental model:
+The best current SFT run on the 259 dataset is:
+- `3` epochs
+- `lr=2e-5`
+- `max_seq_length=4096`
 
-  - --source-root: clean blueprint Rust cases, read-only during validation
-  - --cases-root: disposable workspace where validation mutates files and runs
-    cargo
-  Do not mutate --source-root. Delete --cases-root whenever.
+That run now gets real held-out passes on the formal eval with actual tool execution. It is not finished, but it is enough proof that:
+- the runtime works
+- the dataset is teaching something real
+- the eval is testing something real
+- RLVR is now a credible next step rather than a random gamble
 
-  I would run validate_dataset.py before every training run, but not inside sft/
-   train.py by default. Better pattern:
- 
-   python3 synthetic_data/validate_dataset.py synthetic_data/train.jsonl \
-     --source-root runs/rlvr1/rust_cases \
-     --cases-root runs/validate_dataset_cases \
-     --require-metadata \
-     --summary
- 
-   python3 -m sft.train --data synthetic_data/train.jsonl ...
- 
-   Reason: replay validation can be slow for 1200 traces because it runs cargo
-   many times. Make it a required preflight step in your run script, not hidden
-   inside training.
+So the story at this point is pretty simple:
+- the pipeline is real now
+- the eval loop is real now
+- the current dataset is enough to prove signal
+
+Now it is time to scale the dataset and eval set up properly, because we have proof that the loop is working.
