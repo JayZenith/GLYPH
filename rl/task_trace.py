@@ -33,6 +33,7 @@ DEFAULT_REWARD_CONFIG = {
     "missing_final_after_success_penalty": -1.0,
     "failed_terminal_penalty": -2.0,
     "tool_budget_exhausted_penalty": -2.0,
+    "role_leak_penalty": -2.0,
 }
 
 REWARD_CONFIG = DEFAULT_REWARD_CONFIG.copy()
@@ -47,6 +48,18 @@ def _set_reward_config(overrides: dict[str, float]) -> None:
 
 def _ended_cleanly_after_response(text: str) -> bool:
     return ended_cleanly_after_final(text)
+
+
+def _has_role_leakage(text: str) -> bool:
+    return any(
+        marker in text
+        for marker in (
+            "<|im_start|>user",
+            "<|im_end|>user",
+            "<|im_start|>assistant",
+            "<|im_end|>assistant",
+        )
+    )
 
 # gives bonus if validator passes
 def _structure_reward(assistant_text: str, result_text: str, validator: SimpleTraceValidator | None) -> float:
@@ -273,6 +286,8 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
 
     if state.get("tool_budget_exhausted"):
         reward += REWARD_CONFIG["tool_budget_exhausted_penalty"]
+    if _has_role_leakage(assistant_trace):
+        reward += REWARD_CONFIG["role_leak_penalty"]
 
     return reward + structure
 
@@ -298,12 +313,14 @@ class RustToolEnv(vf.MultiTurnEnv):
         executor: RustExecutor,
         max_tool_rounds: int = 5,
         sandbox_root: Path | None = None,
+        trace_infos: dict[str, dict] | None = None,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.executor = executor
         self.max_tool_rounds = max_tool_rounds
         self.sandbox_root = Path(sandbox_root) if sandbox_root else Path("runs/rlvr1/sandboxes")
+        self.trace_infos = trace_infos or {}
 
     def _ensure_sandbox(self, state: dict, blueprint_root: str) -> str:
         """Per-rollout copy of a blueprint project. Idempotent within a rollout."""
@@ -365,6 +382,8 @@ class RustToolEnv(vf.MultiTurnEnv):
             return []
 
         info = kwargs.get("info") or {}
+        if not info:
+            info = self._infer_info_from_calls(calls)
         is_rust_prompt = bool(info.get("expected_tool"))
         blueprint_root = info.get("blueprint_root")
         trace_prefix = info.get("trace_prefix") or blueprint_root
@@ -412,6 +431,17 @@ class RustToolEnv(vf.MultiTurnEnv):
         state["executed_call_ids"] = sorted(executed)
         return responses
 
+    def _infer_info_from_calls(self, calls: list[dict]) -> dict:
+        for call in calls:
+            params = call.get("params") or {}
+            for value in params.values():
+                if not isinstance(value, str):
+                    continue
+                for trace_prefix, info in self.trace_infos.items():
+                    if value == trace_prefix or value.startswith(trace_prefix + "/"):
+                        return info
+        return {}
+
 
 # ---------------------------------------------------------------------------
 # PRIME-RL environment entrypoint
@@ -432,6 +462,7 @@ def load_environment(
     missing_final_after_success_penalty: float | None = None,
     failed_terminal_penalty: float | None = None,
     tool_budget_exhausted_penalty: float | None = None,
+    role_leak_penalty: float | None = None,
 ) -> vf.Environment:
     """Load the Rust tool RL environment with real multi-round tool execution."""
     _set_reward_config(
@@ -443,6 +474,7 @@ def load_environment(
             "missing_final_after_success_penalty": missing_final_after_success_penalty,
             "failed_terminal_penalty": failed_terminal_penalty,
             "tool_budget_exhausted_penalty": tool_budget_exhausted_penalty,
+            "role_leak_penalty": role_leak_penalty,
         }
     )
 
@@ -462,16 +494,15 @@ def load_environment(
         "expected_output",
         "kind",
     )
-    dataset = Dataset.from_list(
-        [
-            {
-                "prompt": item["prompt"],
-                "info": {k: item[k] for k in info_keys if k in item},
-                "task": env_id,
-            }
-            for item in prompts
-        ]
-    )
+    rows = []
+    trace_infos: dict[str, dict] = {}
+    for item in prompts:
+        info = {k: item[k] for k in info_keys if k in item}
+        rows.append({"prompt": item["prompt"], "info": info, "task": env_id})
+        trace_prefix = info.get("trace_prefix")
+        if trace_prefix:
+            trace_infos[str(trace_prefix)] = info
+    dataset = Dataset.from_list(rows)
 
     parser = vf.Parser()
     validator = SimpleTraceValidator()
@@ -488,5 +519,6 @@ def load_environment(
         env_id=env_id,
         executor=executor,
         max_tool_rounds=max_tool_rounds,
+        trace_infos=trace_infos,
     )
     return env
