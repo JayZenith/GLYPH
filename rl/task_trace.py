@@ -179,8 +179,9 @@ def _strip_role_leak_tail(text: str) -> str:
     markers = [
         match.start()
         for match in re.finditer(
-            r"<\|im_start\|>|<\|im_end\|>|(?m)^(?:user|tool|assistant)\s*$",
+            r"<\|im_start\|>|<\|im_end\|>|^(?:user|tool|assistant)\s*$",
             text,
+            re.MULTILINE,
         )
     ]
     return text[: min(markers)].rstrip() if markers else text
