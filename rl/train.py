@@ -120,6 +120,7 @@ def add_chat_boundary_stop_tokens(sampling: dict[str, Any], model_name: str) -> 
     extra_body = sampling.setdefault("extra_body", {})
     existing = extra_body.setdefault("stop_token_ids", [])
     extra_body["stop_token_ids"] = sorted({*existing, *stop_ids})
+    extra_body["stop"] = ["<|im_end|>", "<|im_start|>"]
 
 # clone inference config, swap in teacher model, sets teacher context length, sets teacher port,
 # and lowers taecher GPU mem usage if I did not override it

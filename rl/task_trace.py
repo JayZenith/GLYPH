@@ -34,6 +34,7 @@ DEFAULT_REWARD_CONFIG = {
     "failed_terminal_penalty": -2.0,
     "tool_budget_exhausted_penalty": -2.0,
     "role_leakage_penalty": -0.75,
+    "post_boundary_penalty": -2.0,
 }
 
 REWARD_CONFIG = DEFAULT_REWARD_CONFIG.copy()
@@ -187,6 +188,10 @@ def _strip_role_leak_tail(text: str) -> str:
     return text[: min(markers)].rstrip() if markers else text
 
 
+def _has_post_boundary_text(text: str) -> bool:
+    return _strip_role_leak_tail(text) != text.rstrip()
+
+
 def _latest_assistant_segment(text: str) -> str:
     marker = "<|im_start|>assistant\n"
     if marker not in text:
@@ -272,13 +277,18 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
     if not expected_tool:
         return structure
 
-    calls = executed_calls or parse_call_blocks(assistant_text or text)
+    # Only actual env-executed calls can earn tool/verifier reward. If state is
+    # unavailable, fall back to pre-boundary text only so fake transcript tails
+    # do not count.
+    calls = executed_calls or parse_call_blocks(assistant_trace)
     if not calls:
         return REWARD_CONFIG["no_call_penalty"] + structure
 
     first_call = calls[0]
     reward = _score_tool_alignment(first_call, expected_tool, expected_args)
     reward += min(_role_leak_count(raw_assistant_trace), 4) * REWARD_CONFIG["role_leakage_penalty"]
+    if _has_post_boundary_text(raw_assistant_trace):
+        reward += REWARD_CONFIG["post_boundary_penalty"]
 
     # Sum compute_tool_reward across every executed call. Multi-step workflows
     # (apply_patch → cargo_test, apply_patch → cargo_run) are credited per call.
@@ -482,6 +492,7 @@ def load_environment(
     failed_terminal_penalty: float | None = None,
     tool_budget_exhausted_penalty: float | None = None,
     role_leakage_penalty: float | None = None,
+    post_boundary_penalty: float | None = None,
 ) -> vf.Environment:
     """Load the Rust tool RL environment with real multi-round tool execution."""
     _set_reward_config(
@@ -494,6 +505,7 @@ def load_environment(
             "failed_terminal_penalty": failed_terminal_penalty,
             "tool_budget_exhausted_penalty": tool_budget_exhausted_penalty,
             "role_leakage_penalty": role_leakage_penalty,
+            "post_boundary_penalty": post_boundary_penalty,
         }
     )
 
