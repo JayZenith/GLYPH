@@ -244,7 +244,7 @@
     let currentRows = [];
     let activeIndex = -1;
     function esc(text) {
-      return text
+      return String(text ?? "")
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;");
@@ -321,7 +321,7 @@
     }
 
     function compactWhitespace(text) {
-      return text
+      return String(text ?? "")
         .replace(/<\|im_start\|>\w+\n?/g, "")
         .replace(/<\|im_end\|>/g, "")
         .replace(/\r\n/g, "\n")
