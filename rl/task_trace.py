@@ -33,6 +33,7 @@ DEFAULT_REWARD_CONFIG = {
     "missing_final_after_success_penalty": -1.0,
     "failed_terminal_penalty": -2.0,
     "tool_budget_exhausted_penalty": -2.0,
+    "role_leakage_penalty": -0.75,
 }
 
 REWARD_CONFIG = DEFAULT_REWARD_CONFIG.copy()
@@ -163,6 +164,16 @@ def _completion_role_text(completion, role: str) -> str:
     return "" if role == "tool" else _completion_text(completion)
 
 
+def _role_leak_count(text: str) -> int:
+    """Count assistant text that tries to continue as chat/template roles."""
+    patterns = (
+        r"<\|im_start\|>",
+        r"<\|im_end\|>\s*(?:user|tool|assistant)\b",
+        r"(?m)^(?:user|tool|assistant)\s*$",
+    )
+    return sum(len(re.findall(pattern, text)) for pattern in patterns)
+
+
 def _trajectory_generated_text(state: dict) -> str:
     parts: list[str] = []
     for step in state.get("trajectory") or []:
@@ -246,6 +257,7 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
 
     first_call = calls[0]
     reward = _score_tool_alignment(first_call, expected_tool, expected_args)
+    reward += min(_role_leak_count(assistant_trace), 4) * REWARD_CONFIG["role_leakage_penalty"]
 
     # Sum compute_tool_reward across every executed call. Multi-step workflows
     # (apply_patch → cargo_test, apply_patch → cargo_run) are credited per call.
@@ -445,6 +457,7 @@ def load_environment(
     missing_final_after_success_penalty: float | None = None,
     failed_terminal_penalty: float | None = None,
     tool_budget_exhausted_penalty: float | None = None,
+    role_leakage_penalty: float | None = None,
 ) -> vf.Environment:
     """Load the Rust tool RL environment with real multi-round tool execution."""
     _set_reward_config(
@@ -456,6 +469,7 @@ def load_environment(
             "missing_final_after_success_penalty": missing_final_after_success_penalty,
             "failed_terminal_penalty": failed_terminal_penalty,
             "tool_budget_exhausted_penalty": tool_budget_exhausted_penalty,
+            "role_leakage_penalty": role_leakage_penalty,
         }
     )
 
