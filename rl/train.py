@@ -235,7 +235,7 @@ def build_config(args: argparse.Namespace) -> dict[str, Any]:
     orchestrator["teacher"] = {
         "model": {"name": teacher_model_name},
         "client": {
-            "base_url": [f"http://127.0.0.1:{args.teacher_port}/v1"],
+            "base_url": [f"http://127.0.0.1:{args.teacher_port}"],
         },
     }
 

@@ -72,7 +72,27 @@ TEACHER_LOGPROB_BLOCK_NEW = """async def compute_teacher_logprobs(
 ) -> list[list[float]]:
     \"\"\"Compute teacher model logprobs for a batch of training samples via prefill.\"\"\"
 
+    def _extract_token_logprobs(token_ids: list[int], prompt_logprobs: list[Any] | None) -> list[float]:
+        values: list[float] = []
+        for idx, entry in enumerate(prompt_logprobs or []):
+            if entry is None:
+                values.append(0.0)
+                continue
+            if isinstance(entry, (int, float)):
+                values.append(float(entry))
+                continue
+            token_id = token_ids[idx] if idx < len(token_ids) else None
+            token_entry = entry.get(str(token_id), entry.get(token_id)) if isinstance(entry, dict) else None
+            if isinstance(token_entry, dict):
+                values.append(float(token_entry.get(\"logprob\", 0.0)))
+            elif token_entry is not None and hasattr(token_entry, \"logprob\"):
+                values.append(float(token_entry.logprob))
+            else:
+                values.append(0.0)
+        return values
+
     async def _compute_single(client_config: vf.ClientConfig, sample: TrainingSample) -> list[float]:
+        token_ids = sample.prompt_ids + sample.completion_ids
         headers = dict(getattr(client_config, \"extra_headers\", {}) or {})
         api_key_var = getattr(client_config, \"api_key_var\", None)
         if api_key_var:
@@ -86,20 +106,23 @@ TEACHER_LOGPROB_BLOCK_NEW = """async def compute_teacher_logprobs(
             headers=headers,
         ) as client:
             response = await client.post(
-                \"/generate\",
+                \"/inference/v1/generate\",
                 json={
+                    \"request_id\": f\"teacher-{id(sample)}\",
                     \"model\": model_name,
-                    \"prompt_token_ids\": sample.prompt_ids + sample.completion_ids,
-                    \"max_tokens\": 1,
-                    \"temperature\": 1.0,
-                    \"top_p\": 1.0,
-                    \"prompt_logprobs\": True,
+                    \"token_ids\": token_ids,
+                    \"sampling_params\": {
+                        \"max_tokens\": 1,
+                        \"temperature\": 1.0,
+                        \"top_p\": 1.0,
+                        \"prompt_logprobs\": 1,
+                    },
                 },
             )
             response.raise_for_status()
             payload = response.json()
 
-        return [0.0 if lp is None else float(lp) for lp in payload.get(\"prompt_logprobs\") or []]
+        return _extract_token_logprobs(token_ids, payload.get(\"prompt_logprobs\"))
 
     return await asyncio.gather(*[_compute_single(client, sample) for client, sample in zip(cycle(clients), samples)])
 """
@@ -302,10 +325,6 @@ def patch_orchestrator_utils_py(path: Path) -> None:
             text = text.replace(anchor, "import httpx\n" + anchor, 1)
         else:
             text = "import httpx\n" + text
-
-    if "payload.get(\"prompt_logprobs\")" in text:
-        path.write_text(text)
-        return
 
     if TEACHER_LOGPROB_BLOCK_OLD in text:
         text = text.replace(TEACHER_LOGPROB_BLOCK_OLD, TEACHER_LOGPROB_BLOCK_NEW, 1)
