@@ -152,6 +152,7 @@ def build_teacher_inference_config(
 def build_config(args: argparse.Namespace) -> dict[str, Any]:
     trainer, orchestrator, inference = load_templates()
     trainer.pop("buffer", None)
+    orchestrator.pop("model", None)
 
     # resolve paths and  model names
     output_dir = args.output.resolve()
@@ -175,7 +176,8 @@ def build_config(args: argparse.Namespace) -> dict[str, Any]:
     maybe_set(trainer_ckpt, "resume_step", args.resume_step)
     maybe_set(trainer, "max_steps", args.max_steps)
 
-    orch_model = orchestrator.setdefault("model", {})
+    orch_student = orchestrator.setdefault("student", {})
+    orch_student_client = orch_student.setdefault("client", {})
     orch_train = orchestrator.setdefault("train", {})
     orch_sampling = orch_train.setdefault("sampling", {})
     env_list = orch_train.setdefault("env", [{"id": "task-trace", "args": {}}])
@@ -183,7 +185,8 @@ def build_config(args: argparse.Namespace) -> dict[str, Any]:
     orch_ckpt = orchestrator.setdefault("ckpt", {})
 
     # set rollout model and related configs
-    orch_model["name"] = rollout_model
+    orch_student.setdefault("model", {})["name"] = rollout_model
+    orch_student_client["base_url"] = [f"http://localhost:{args.port}/v1"]
     maybe_set(orchestrator, "batch_size", args.batch_size)
     maybe_set(orchestrator, "rollouts_per_example", args.rollouts_per_example)
     maybe_set(orchestrator, "seq_len", args.seq_len)
