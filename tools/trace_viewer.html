@@ -452,18 +452,30 @@
       if (!trimmed) return [];
       if (path.endsWith(".jsonl")) {
         return trimmed
-          .split(/\n+/)
+          .split(/\r?\n/)
           .filter(Boolean)
-          .map(line => JSON.parse(line));
+          .map((line, idx) => {
+            try {
+              return JSON.parse(line);
+            } catch (err) {
+              throw new Error(`Invalid JSONL line ${idx + 1}: ${err.message}`);
+            }
+          });
       }
       try {
         return JSON.parse(trimmed);
       } catch (err) {
         if (trimmed.includes("\n")) {
           return trimmed
-            .split(/\n+/)
+            .split(/\r?\n/)
             .filter(Boolean)
-            .map(line => JSON.parse(line));
+            .map((line, idx) => {
+              try {
+                return JSON.parse(line);
+              } catch (lineErr) {
+                throw new Error(`Invalid JSONL line ${idx + 1}: ${lineErr.message}`);
+              }
+            });
         }
         throw err;
       }
