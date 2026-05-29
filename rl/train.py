@@ -104,6 +104,23 @@ def add_invalid_token_logit_bias(sampling: dict[str, Any], model_name: str) -> N
     for token_id in range(tokenizer_len, model_vocab):
         logit_bias[token_id] = -100.0
 
+
+def add_chat_boundary_stop_tokens(sampling: dict[str, Any], model_name: str) -> None:
+    tok = AutoTokenizer.from_pretrained(model_name)
+    stop_ids = [
+        token_id
+        for token_id in (
+            tok.convert_tokens_to_ids("<|im_start|>"),
+            tok.convert_tokens_to_ids("<|im_end|>"),
+        )
+        if isinstance(token_id, int) and token_id >= 0
+    ]
+    if not stop_ids:
+        return
+    extra_body = sampling.setdefault("extra_body", {})
+    existing = extra_body.setdefault("stop_token_ids", [])
+    extra_body["stop_token_ids"] = sorted({*existing, *stop_ids})
+
 # clone inference config, swap in teacher model, sets teacher context length, sets teacher port,
 # and lowers taecher GPU mem usage if I did not override it
 def build_teacher_inference_config(
@@ -175,6 +192,7 @@ def build_config(args: argparse.Namespace) -> dict[str, Any]:
     maybe_set(orch_sampling, "temperature", args.temperature)
     maybe_set(orch_sampling, "max_completion_tokens", args.max_completion_tokens)
     add_invalid_token_logit_bias(orch_sampling, rollout_model)
+    add_chat_boundary_stop_tokens(orch_sampling, rollout_model)
 
     # env args
     if data_path is not None:
