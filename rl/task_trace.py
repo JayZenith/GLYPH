@@ -33,6 +33,7 @@ DEFAULT_REWARD_CONFIG = {
     "missing_final_after_success_penalty": -1.0,
     "failed_terminal_penalty": -2.0,
     "no_terminal_verifier_penalty": -2.5,
+    "malformed_call_penalty": -1.0,
     "tool_budget_exhausted_penalty": -2.0,
     "role_leakage_penalty": -0.75,
     "post_boundary_penalty": -2.0,
@@ -288,6 +289,11 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
     first_call = calls[0]
     reward = _score_tool_alignment(first_call, expected_tool, expected_args)
     reward += min(_role_leak_count(raw_assistant_trace), 4) * REWARD_CONFIG["role_leakage_penalty"]
+    # Malformed call keyword (e.g. "CALLTYPE" instead of "CALL ") breaks the
+    # parser so no tool executes. Penalize per occurrence (capped) to train the
+    # exact `CALL <tool>(...)` form.
+    malformed = len(re.findall(r"\bCALL[A-Z]", raw_assistant_trace))
+    reward += min(malformed, 4) * REWARD_CONFIG["malformed_call_penalty"]
     if _has_post_boundary_text(raw_assistant_trace):
         reward += REWARD_CONFIG["post_boundary_penalty"]
 
