@@ -14,7 +14,6 @@ from agent_runtime.rust.results import (
     format_result_block,
     parse_call_blocks,
 )
-from agent_runtime.rust.reward import compute_tool_reward
 from agent_runtime.rust.tools import RUST_TOOLS
 
 # Tool names allowed by the Rust RL environment.
@@ -32,15 +31,22 @@ DEFAULT_REWARD_CONFIG = {
     "tool_budget_exhausted_penalty": -2.0,
     "role_leakage_penalty": -0.75,
     "post_boundary_penalty": -2.0,
-    # Monotonic progress ladder: each correct step toward a verified FINAL must
-    # strictly beat quitting at the previous step, so the gradient always points
-    # forward instead of toward bailing early.
+    # Monotonic progress ladder (dominant term): the deepest OUTCOME a rollout
+    # reaches. Each rung strictly beats quitting at the prior rung, so the
+    # gradient points forward instead of toward bailing early.
     "stage_quit_immediately": -2.0,   # called nothing useful / stopped at once
-    "stage_read": -1.0,               # reached read_file
-    "stage_patch": 0.0,               # reached apply_patch
-    "stage_terminal_attempt": 1.0,    # ran cargo_test/cargo_run (pass or fail)
-    "stage_terminal_pass": 3.0,       # verifier actually passed
+    "stage_read": -1.0,               # reached read_file, then quit
+    "stage_patch": -0.5,              # patched but never ran a verifier
+    "stage_failed_terminal": 0.5,     # ran cargo_test/run, ended on a failure
+    "stage_terminal_pass": 3.0,       # verifier passed (no clean FINAL)
     "stage_clean_final": 5.0,         # verifier passed AND clean FINAL
+    # Recovery shaping (on top of the stage): a bounded cost per failed verifier
+    # attempt, fully refunded on eventual success. A recovered trajectory thus
+    # reaches success parity (persistence not punished), while a never-passing
+    # loop only ever trends down — capped, never positive, so it can't be farmed.
+    "failed_cycle_cost": -0.25,       # per failed cargo_test/run attempt
+    "recovery_refund": 0.25,          # per failed attempt, only if it ends in success
+    "max_scored_cycles": 4,           # cap on failed attempts that score (anti-farm)
 }
 
 REWARD_CONFIG = DEFAULT_REWARD_CONFIG.copy()
@@ -133,6 +139,20 @@ def _terminal_verifier_success(
             continue
         return bool(res.get("success", False)), True
     return False, False
+
+
+# Ordered pass/fail for every executed cargo_test/cargo_run call, in call order.
+# Lets the reward count failed attempts and detect recovery (fail -> ... -> pass).
+def _verifier_outcomes(calls: list[dict], tool_text: str) -> list[bool]:
+    outcomes: list[bool] = []
+    for call in calls:
+        if call["tool"] not in {"cargo_test", "cargo_run"}:
+            continue
+        res = _find_result_for(call["id"], tool_text)
+        if res is None:
+            continue
+        outcomes.append(bool(res.get("success", False)))
+    return outcomes
 
 
 def _completion_text(completion) -> str:
@@ -504,9 +524,12 @@ def load_environment(
     stage_quit_immediately: float | None = None,
     stage_read: float | None = None,
     stage_patch: float | None = None,
-    stage_terminal_attempt: float | None = None,
+    stage_failed_terminal: float | None = None,
     stage_terminal_pass: float | None = None,
     stage_clean_final: float | None = None,
+    failed_cycle_cost: float | None = None,
+    recovery_refund: float | None = None,
+    max_scored_cycles: int | None = None,
 ) -> vf.Environment:
     """Load the Rust tool RL environment with real multi-round tool execution."""
     _set_reward_config(
@@ -520,9 +543,12 @@ def load_environment(
             "stage_quit_immediately": stage_quit_immediately,
             "stage_read": stage_read,
             "stage_patch": stage_patch,
-            "stage_terminal_attempt": stage_terminal_attempt,
+            "stage_failed_terminal": stage_failed_terminal,
             "stage_terminal_pass": stage_terminal_pass,
             "stage_clean_final": stage_clean_final,
+            "failed_cycle_cost": failed_cycle_cost,
+            "recovery_refund": recovery_refund,
+            "max_scored_cycles": max_scored_cycles,
         }
     )
 
