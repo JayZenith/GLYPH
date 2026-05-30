@@ -27,40 +27,45 @@ python3 synthetic_data/build_rl_prompts.py \
 Recommended multi-GPU run:
 
 ```bash
-HF_HOME=/workspace/.hf_home \
-CARGO_HOME=$HOME/.cargo \
-RUSTUP_HOME=$HOME/.rustup \
-PATH=/workspace/prime-rl-src/.venv/bin:$HOME/.cargo/bin:$PATH \
-PYTHONPATH=/workspace/glyph:/workspace/glyph/rl \
-CUDA_VISIBLE_DEVICES=0,1,2,3 \
-/workspace/prime-rl-src/.venv/bin/python rl/train.py \
-  --model JayZenith/SFT_V1 \
-  --teacher-model JayZenith/SFT_V1 \
-  --teacher-device 1 \
-  --teacher-tau 0.01 \
-  --prime-rl-gpu-ids 0,2,3 \
-  --num-infer-gpus 1 \
-  --num-train-gpus 2 \
-  --gpus-per-node 3 \
-  --data synthetic_data/rl_prompts_1062.jsonl \
-  --output outputs/rlvr1 \
-  --max-steps 200 \
-  --batch-size 12 \
-  --rollouts-per-example 2 \
-  --seq-len 5120 \
-  --max-model-len 12288 \
-  --teacher-max-model-len 12288 \
-  --max-completion-tokens 1536 \
-  --learning-rate 5e-7 \
-  --weight-decay 0.01 \
-  --checkpoint-interval 1000 \
-  --temperature 0.4 \
-  --gpu-memory-utilization 0.70 \
-  --teacher-gpu-memory-utilization 0.50 \
-  --max-tool-rounds 15 \
-  --tool-timeout 30 \
-  --port 8000 \
-  --teacher-port 8001
+  cd /workspace/glyph
+  mkdir -p outputs/rlvr1/logs
+
+  nohup env \
+  HF_HOME=/workspace/.hf_home \
+    CARGO_HOME=$HOME/.cargo \
+    RUSTUP_HOME=$HOME/.rustup \   
+    PATH=/workspace/prime-rl-src/.venv/bin:$HOME/.cargo/bin:$PATH \
+    PYTHONPATH=/workspace/glyph:/workspace/glyph/rl \
+    /workspace/prime-rl-src/.venv/bin/python rl/train.py \
+      --model JayZenith/SFT_V1 \
+      --teacher-model JayZenith/SFT_V1 \
+      --teacher-device 0 \
+      --teacher-tau 0.01 \
+      --prime-rl-gpu-ids 2,3 \
+      --num-infer-gpus 1 \
+      --num-train-gpus 1 \
+      --gpus-per-node 2 \
+      --data synthetic_data/rl_prompts_1062.jsonl \
+      --output outputs/rlvr_penalty_runpod \
+      --max-steps 200 \
+      --batch-size 24 \ 
+      --rollouts-per-example 8 \
+      --seq-len 5120 \
+      --max-model-len 12288 \
+      --teacher-max-model-len 12288 \
+      --max-completion-tokens 1536 \
+      --learning-rate 5e-7 \
+      --weight-decay 0.01 \
+      --checkpoint-interval 1000 \
+      --temperature 0.8 \
+      --gpu-memory-utilization 0.70 \
+      --teacher-gpu-memory-utilization 0.50 \
+      --max-tool-rounds 15 \
+      --tool-timeout 30 \
+      --port 8010 \
+      --teacher-port 8011
+    > outputs/rlvr1/logs/launcher.log 2>&1 < /dev/null &
+
 ```
 
 Or use the wrapper:
@@ -70,6 +75,12 @@ bash rl/setup/run_task_trace_2xa100.sh
 ```
 
 ## 4. Monitor
+```bash
+mkdir -p results/RLVR1
+scp -P 12886 root@23.127.144.217:/workspace/glyph/outputs/rlvr1/run_default/
+rollouts/step_5/train_rollouts.jsonl results/RLVR1/step_5_train_rollouts.jsonl
+
+```
 
 ```bash
 python3 rl/scripts/inspect_rollouts.py outputs/rlvr1

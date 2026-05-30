@@ -310,58 +310,120 @@ so:
 PRIME-RL is the training stack as my code defines the `task environment + reward` then hands it to PRIME-RL
 
 ## 3 core PRIME-RL runtime pieces
-1. Inference
-2. Orchestrator
-3. Trainer 
-Where the orchestrator is the CPU process between trainer and inference
+1. Inference: holds current policy and generates rollouts 
+2. Orchestrator: CPU-side, samples prompts, calls inference for rollouts, invokes verifier env, packs complete rollouts to send to trainer, and relays updated trainer weights back to infernce
+3. Trainer: updates weights, receives rollout batches, rewards, logprobs, advantages, then does the RL gradient updates. Runds backprop/FSDP/optimizer. 
 
-### Inference 
-vLLM server holding current policy. Generates rollouts as "given this Rust prompt, produces actions / `CALL` blocks / `FINAL`."
-
-# Trainer
-Updates weights. Receives rollout batches, rewards, logprobs, advantages, then does the RL gradient update. Runs backprop/FSDP/optimizer. 
-* FSDP means Fully Sharded Data Parallel and splits model wegihts, gradients, and optimzer state across GPUs. Here's my setup
 ```text
 GPU 0 = rollout inference vLLM
 GPU 1 = frozen teacher vLLM
 GPU 2-3 = trainer FSDP shards
 ```
 
-# Orchestrator 
-CPU-side traffic controller. Sampels prompts, calls inference for rollouts, invokes the verifier environment, packs completes rollots, sends them to trainer, and relays updated trainer weights back to inference. 
-
 # Teacher
-Optional frozen model as another inference server. Gives token-level logprobs so student policy stays close to SFT behavior while still learning from reard; PRIME-RL calls this on-policy distillation/teacher anchoring. 
+Frozen base SFT model. Gives token-level logprobs so student policy stays close to SFT behavior while still learning from reward. PRIME-RL calls this on-policy distillation/teacher anchoring. 
 
-
-My Setup is 
-```text
-orchestrator samples RL prompt
-→ inference GPU generates trace
-→ task_trace.py env executes Rust tools
-→ reward function scores result
-→ orchestrator packs rollout batch
-→ trainer GPU updates model
-→ trainer pushes new weights to inference
-→ repeat
-```
-
-My task_trace.py is not PRIME-RL itself; it's the `custom environment` PRIME-RL calls into for Rust tool execution and reawrd scoring. train.py is also not PRIME-RL, it's a warpper that builds PRIME-RL configs, maps GPUs, starts teacher inference, validates config, then calls PRIME-RL's local RL entrypoint.
+My task_trace.py is the `custom environment` PRIME-RL calls into for Rust tool execution and reward scoring. train.py builds PRIME-RL configs, maps GPUs, starts teacher inference, validates config, then calls PRIME-RL's local RL entrypoint.
 
 ### Note
-Current PRIME-RL docs say OPD can be done natively with `num_teacher_gpus` plus `teacher_tau > 0` and that automatically starts teacher inference. My repo intentionall pins older PRIME-RL, before the student/teacher inference-pool refactor.SO:
-```text
-Latest PRIME-RL:
-native teacher deployment via num_teacher_gpus
+Current PRIME-RL docs say OPD can be done natively with `num_teacher_gpus` plus `teacher_tau > 0` and that automatically starts teacher inference. My repo intentionall pins older PRIME-RL, before the student/teacher inference-pool refactor.
 
-Your pinned PRIME-RL:
-external teacher vLLM server + orchestrator teacher client
-```
 My train.py proves that: it starts teacher inference as a separate subprocess, then points the orchestrator at http://127.0.0.1:{teacher_port}/v1
 
-## The Core Reward Function
-I will not penalize an expected sequence biut focus on the model solving with either fewer/more calls and a clean `FINAL` response. That is successs. Penalizing extra calls can punish valid recovery/exploration. 
+# The first main issue i ran into `(results/RLVR1/rollouts)`
+
+## What happened
+model never stops at <|im_end|> and dumps a whole fake multi-turn transcript (hallucinates fake user/assistant turns instead of halting) in turn 1. Reward still pays it (+1.83) as the verifier only grades the real CALL-RESULT-FINAL and ignores the garbage. SO RL is reinforcing non-termination. Env runs only the first real `CALL`, so multi-step tasks never cmoplete `(is_complete=0 everywhere)`. Stop fails as the boundary is emitted in `literal text`, not token `151645`, so `stop_token_ids` dosen't catch it.
+* Model's only emit `token IDs` samples from vocab but the text `<|im_end|>` can be produced as the single special token id 151645, or as a sequence of ordinary tokens that decode to the same characters -- e.g. `<`, `|`, `im_end`, `|`, `>`.
+* So model can still leak probability onto the look-alike spelling. 
+
+### Real picture
+- stop tokens are enforced via VLLM - `stop_token_ids: [151644, 151645]` is in every request.
+- SFT masking is correct too - `sft/data.py` trains `<|im_end|>` token as a lable, so termination is learnable. 
+- Yet msg[0] has text after <|im_end|>. An id-based stop can only fail to fire
+  if the model isn't emitting token 151645 there — it's emitting the literal 
+  string <|im_end|> as ordinary text tokens. Tells: it writes <|im_end|>user /
+  <|im_end|>assistant (wrong — should be <|im_start|>), and turns 2–3 did stop
+  cleanly, so the id-stop works when the real token is sampled. Turn 1 spells
+  the boundary as text, so stop_token_ids never matches.
+  - This shows the model is emitting the string and stop id versions as when the string version is emitted, inferenc is not stopped. 
+
+## Attempted Fix
+Add a string stop as backup + penalize post-boundary tokens.
+```bash
+  # alongside add_chat_boundary_stop_tokens
+  extra_body  # keep stop_token_ids
+  sampling["stop"] = ["<|im_end|>", "<|im_start|>"]  # catches the literal-text 
+  spelling
+```
+Then keep reward penalty for content after first boundary and penalty fixes the gradient. 
+* Note: to prove token-vs-string, token ids need to be saved and (`return_token_ids` needs to persist) and then log generated token ids for one step and check if `151645` appears mid-completion.
+
+What's actually happening (confirmed across steps):
+- Every rollout (12/12, every step) fails to stop after the first <|im_end|>.
+- is_completed = 0 for all rows — no rollout ever finishes cleanly.
+
+Why it cascades: the model dumps its entire imagined multi-turn solution
+inside turn 1 (e.g. the -4.2 row emits read_file, then hallucinates
+<|im_end|>user\nCALL apply_patch(...) etc.). But the env only executes the
+first real CALL, returns one RESULT, and the rest of the model's "plan" is
+never run — it's just text. So:
+- Single-call tasks (test_only) → one CALL is enough → succeed → +1.8.
+- Multi-step tasks (patch_test_recover) → need CALL→RESULT→patch→test loop,
+but the loop never happens because turn 1 never yielded control → fail → -4.2.
 
 
-## Removed explicit expected-sequence reward
-I will need to watch the model for weird but successful workflows unless tool reards and extra-call penalty are enougn.
+# Curious
+I only trained on the stop id (my traces tokenized <|im_end|> -> 151645) but it's a `base` model: pretraining saw the ltieral characters `<|im_end|>` as ordinary text so multi-token spelling already exists in its priors. SFT taught the id but didn't fully kill pretrained string pathway, thus is `leaks`. 
+
+
+### Result from these issues
+RL has no learning signal as with no clean completions, there's barely any positive signal, so reward drifts down (step_0 -2.21 -> step_38 -3.72). Fix stopping first -> the multi-turn tasks should start cmpleting -> RL gets real signal.
+
+
+
+# SO moving onto the fix
+Stopping on both the id and string, but then penalize post-boundary tokens in reward / fix SFT, so it learns to emit the real stop token 151645.
+
+  Teaching only comes from training signal:
+  - SFT already trains 151645 as a label (right direction, just not winning).
+  - RL: penalize tokens after the first boundary → gradient pushes mass onto the
+  real stop. That's what teaches it.
+
+
+# SO NEW ROADBLOCK, model found that bailing early caps the downside instead of gaming the upside. `(results/RLVR1/rollouts2)`
+- classic when per-step/length penalites outweight the complegtion bonus
+Model now stops too early. It patches, then quits — no cargo_test, no FINAL, sometimes an empty <|im_end|> turn. Fixed the "never stops" bug, created "stops before finishing" bug. Reward lets early-quit be cheaper than completing, so it bails.
+
+
+## Attempted Fix
+● Reward shaping. Make a verified FINAL the only path to positive reward, and
+  penalize ending without it:
+  - No FINAL reached → strongly negative (worse than continuing).
+  - Empty/no-op turn (no CALL, no FINAL) → penalize.
+  - Task verified (cargo_test/cargo_run passes) and clean FINAL → positive.
+
+
+
+# SIDE NOTES 
+● Whoever told you "averaging at the end" is wrong. Look at
+  rl/task_trace.py:248-320 (_rust_tool_reward): the episode reward is a single
+  sum over the whole transcript — alignment + per-call tool rewards summed over
+  every executed call + terminal bonus/penalty + structure. One terminal scalar.
+  No per-turn penalty, no averaging, no discounting.
+
+
+# POTENTIAL ISSUE: Avoidance mechanism -> reward avoidance
+- terminal_success_bonus: +3.0, clean_final_after_success:+2.0 - prize for not finishing. 
+- failed_terminal_penalty: -2.0 - what you eat if you run cargo_test/cargo_run and it fails 
+- missing_final_after_success_penalty: -1.0 - only fires inside terminal_success branch
+- TRAP: terinal bonuses/penalties only apply if a terminal verifier actually ran. If model patches and quits before running cargo_test, then terminal_success=False AND saw_terminal=False → it hits
+  neither branch. No −2.0, no missing-FINAL penalty, nothing.
+
+
+SO RUNNING TEST RISKS -2.0 AND NOT RUNNING IT RISKS 0. not testing is the safe move. 
+
+Fix: penalize "patched but never reached a terminal verifier" at least as hard as a failed terminal (e.g. an unconditional "no clean FINAL → big negative"), so quitting early is worse than trying and failing.
+- The empty <|im_end|> turn (row #1 step_11) — the −2.5 should kill it
+indirectly, but confirm those vanish.
+- CALLTYPE — already self-corrects, ignore.
