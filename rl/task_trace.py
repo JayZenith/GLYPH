@@ -225,6 +225,26 @@ def _latest_assistant_segment(text: str) -> str:
     return text.rsplit(marker, 1)[-1]
 
 
+def _append_unseen_text(prior: str, text: str) -> str:
+    if not text or text in prior:
+        return prior
+    max_overlap = min(len(prior), len(text))
+    for size in range(max_overlap, 0, -1):
+        if prior.endswith(text[:size]):
+            return prior + text[size:]
+    return prior + text
+
+
+def _format_chatml_tool_turn(result_block: str) -> str:
+    return (
+        "\n\n"
+        "<|im_start|>tool\n"
+        f"{result_block}\n"
+        "<|im_end|>\n\n"
+        "<|im_start|>assistant\n"
+    )
+
+
 def _trajectory_generated_text(state: dict) -> str:
     parts: list[str] = []
     for step in state.get("trajectory") or []:
@@ -424,6 +444,12 @@ class RustToolEnv(vf.MultiTurnEnv):
                     total += len(_message_content(message))
         return total
 
+    def _raw_trace_text(self, state: dict, messages=None) -> str:
+        prior = state.get("raw_chatml_transcript", "")
+        if messages is not None:
+            prior = _append_unseen_text(prior, self._messages_text(messages))
+        return prior
+
     async def is_completed(self, state, **kwargs) -> bool:
         trajectory = state.get("trajectory") or []
         if not trajectory:
@@ -438,14 +464,18 @@ class RustToolEnv(vf.MultiTurnEnv):
         if state.get("tool_budget_exhausted"):
             return True
         text = _strip_role_leak_tail(
-            _latest_assistant_segment(self._messages_text(trajectory[-1]["completion"]))
+            _latest_assistant_segment(
+                self._raw_trace_text(state, trajectory[-1]["completion"])
+            )
         )
         executed = set(state.get("executed_call_ids") or [])
         calls = parse_call_blocks(text)
         return not any(call["id"] not in executed for call in calls)
 
     async def env_response(self, messages, state, **kwargs):
-        raw_text = self._messages_text(messages)
+        prior_trace = state.get("raw_chatml_transcript", "")
+        incoming_text = self._messages_text(messages)
+        raw_text = self._raw_trace_text(state, messages)
         text = _strip_role_leak_tail(_latest_assistant_segment(raw_text))
         if self._trajectory_chars(state) + len(text) >= MAX_ROLLOUT_TRANSCRIPT_CHARS:
             state["tool_budget_exhausted"] = True
@@ -489,18 +519,22 @@ class RustToolEnv(vf.MultiTurnEnv):
                 )
             executed.add(cid)
             result_block = format_result_block(cid, er)
+            tool_turn = _format_chatml_tool_turn(result_block)
             state.setdefault("executed_tool_calls", []).append(call)
             state.setdefault("executed_result_blocks", []).append(result_block)
+            prior_trace = _append_unseen_text(prior_trace, incoming_text)
+            prior_trace = f"{prior_trace}{tool_turn}"
             responses.append(
                 {
                     "role": "tool",
                     "tool_call_id": cid,
-                    "content": result_block,
+                    "content": tool_turn,
                 }
             )
 
         state["rounds_used"] = state.get("rounds_used", 0) + 1
         state["executed_call_ids"] = sorted(executed)
+        state["raw_chatml_transcript"] = prior_trace
         return responses
 
     def _infer_info_from_calls(self, calls: list[dict]) -> dict:
