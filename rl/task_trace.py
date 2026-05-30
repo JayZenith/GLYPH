@@ -329,7 +329,9 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
         for call in calls
         if _find_result_for(call["id"], tool_text) is not None
     }
-    terminal_success, saw_terminal = _terminal_verifier_success(calls, tool_text)
+    verifier_outcomes = _verifier_outcomes(calls, tool_text)
+    saw_terminal = bool(verifier_outcomes)
+    terminal_success = saw_terminal and verifier_outcomes[-1]
     clean_final = _ended_cleanly_after_response(assistant_trace)
 
     if terminal_success and clean_final:
@@ -337,13 +339,23 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
     elif terminal_success:
         reward += REWARD_CONFIG["stage_terminal_pass"]
     elif saw_terminal:
-        reward += REWARD_CONFIG["stage_terminal_attempt"]
+        reward += REWARD_CONFIG["stage_failed_terminal"]
     elif "apply_patch" in executed_tools:
         reward += REWARD_CONFIG["stage_patch"]
     elif "read_file" in executed_tools:
         reward += REWARD_CONFIG["stage_read"]
     else:
         reward += REWARD_CONFIG["stage_quit_immediately"]
+
+    # Recovery shaping: bounded retry cost per failed verifier attempt, fully
+    # refunded on eventual success. Recovered trajectories reach success parity
+    # (persistence isn't punished); a never-passing loop only trends down,
+    # capped and never positive, so failing loops can't be farmed.
+    failed_attempts = sum(1 for ok in verifier_outcomes if not ok)
+    scored_fails = min(failed_attempts, REWARD_CONFIG["max_scored_cycles"])
+    reward += scored_fails * REWARD_CONFIG["failed_cycle_cost"]
+    if terminal_success:
+        reward += scored_fails * REWARD_CONFIG["recovery_refund"]
 
     if state.get("tool_budget_exhausted"):
         reward += REWARD_CONFIG["tool_budget_exhausted_penalty"]
