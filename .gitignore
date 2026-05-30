@@ -47,3 +47,6 @@ results/
 .env
 *.key
 remote_artifacts/
+
+# Local CLIs
+.runpod-cli/
