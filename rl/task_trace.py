@@ -27,16 +27,20 @@ RUST_TOOL_NAMES.discard(None)
 DEBUG_PARSE = False
 DEFAULT_REWARD_CONFIG = {
     "structure_valid_bonus": 0.5,
-    "no_call_penalty": -1.25,
-    "terminal_success_bonus": 3.0,
-    "clean_final_after_success_bonus": 2.0,
-    "missing_final_after_success_penalty": -1.0,
-    "failed_terminal_penalty": -2.0,
-    "no_terminal_verifier_penalty": -2.5,
+    "no_call_penalty": -2.0,
     "malformed_call_penalty": -1.0,
     "tool_budget_exhausted_penalty": -2.0,
     "role_leakage_penalty": -0.75,
     "post_boundary_penalty": -2.0,
+    # Monotonic progress ladder: each correct step toward a verified FINAL must
+    # strictly beat quitting at the previous step, so the gradient always points
+    # forward instead of toward bailing early.
+    "stage_quit_immediately": -2.0,   # called nothing useful / stopped at once
+    "stage_read": -1.0,               # reached read_file
+    "stage_patch": 0.0,               # reached apply_patch
+    "stage_terminal_attempt": 1.0,    # ran cargo_test/cargo_run (pass or fail)
+    "stage_terminal_pass": 3.0,       # verifier actually passed
+    "stage_clean_final": 5.0,         # verifier passed AND clean FINAL
 }
 
 REWARD_CONFIG = DEFAULT_REWARD_CONFIG.copy()
@@ -297,34 +301,29 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
     if _has_post_boundary_text(raw_assistant_trace):
         reward += REWARD_CONFIG["post_boundary_penalty"]
 
-    # Sum compute_tool_reward across every executed call. Multi-step workflows
-    # (apply_patch → cargo_test, apply_patch → cargo_run) are credited per call.
-    expected_output = info.get("expected_output")
-    for call in calls:
-        res = _find_result_for(call["id"], tool_text)
-        if res is None:
-            continue
-        tr = compute_tool_reward(
-            tool_name=call["tool"],
-            execution_result=res,
-            expected_output=expected_output if call["tool"] == "cargo_run" else None,
-        )
-        reward += tr.total
-
+    # Monotonic progress ladder. Credit the *deepest* stage the rollout actually
+    # reached (only calls with a real env result count), so every correct step
+    # strictly beats quitting at the prior step and the gradient points forward.
+    executed_tools = {
+        call["tool"]
+        for call in calls
+        if _find_result_for(call["id"], tool_text) is not None
+    }
     terminal_success, saw_terminal = _terminal_verifier_success(calls, tool_text)
-    if terminal_success:
-        reward += REWARD_CONFIG["terminal_success_bonus"]
-        if _ended_cleanly_after_response(assistant_trace):
-            reward += REWARD_CONFIG["clean_final_after_success_bonus"]
-        else:
-            reward += REWARD_CONFIG["missing_final_after_success_penalty"]
+    clean_final = _ended_cleanly_after_response(assistant_trace)
+
+    if terminal_success and clean_final:
+        reward += REWARD_CONFIG["stage_clean_final"]
+    elif terminal_success:
+        reward += REWARD_CONFIG["stage_terminal_pass"]
     elif saw_terminal:
-        reward += REWARD_CONFIG["failed_terminal_penalty"]
+        reward += REWARD_CONFIG["stage_terminal_attempt"]
+    elif "apply_patch" in executed_tools:
+        reward += REWARD_CONFIG["stage_patch"]
+    elif "read_file" in executed_tools:
+        reward += REWARD_CONFIG["stage_read"]
     else:
-        # Patched/acted but never ran a terminal verifier (cargo_test/cargo_run)
-        # and never reached a clean FINAL. Quitting early must cost more than
-        # trying and failing, or bailing becomes the safe policy.
-        reward += REWARD_CONFIG["no_terminal_verifier_penalty"]
+        reward += REWARD_CONFIG["stage_quit_immediately"]
 
     if state.get("tool_budget_exhausted"):
         reward += REWARD_CONFIG["tool_budget_exhausted_penalty"]
@@ -498,26 +497,32 @@ def load_environment(
     max_tool_rounds: int = 5,
     structure_valid_bonus: float | None = None,
     no_call_penalty: float | None = None,
-    terminal_success_bonus: float | None = None,
-    clean_final_after_success_bonus: float | None = None,
-    missing_final_after_success_penalty: float | None = None,
-    failed_terminal_penalty: float | None = None,
+    malformed_call_penalty: float | None = None,
     tool_budget_exhausted_penalty: float | None = None,
     role_leakage_penalty: float | None = None,
     post_boundary_penalty: float | None = None,
+    stage_quit_immediately: float | None = None,
+    stage_read: float | None = None,
+    stage_patch: float | None = None,
+    stage_terminal_attempt: float | None = None,
+    stage_terminal_pass: float | None = None,
+    stage_clean_final: float | None = None,
 ) -> vf.Environment:
     """Load the Rust tool RL environment with real multi-round tool execution."""
     _set_reward_config(
         {
             "structure_valid_bonus": structure_valid_bonus,
             "no_call_penalty": no_call_penalty,
-            "terminal_success_bonus": terminal_success_bonus,
-            "clean_final_after_success_bonus": clean_final_after_success_bonus,
-            "missing_final_after_success_penalty": missing_final_after_success_penalty,
-            "failed_terminal_penalty": failed_terminal_penalty,
+            "malformed_call_penalty": malformed_call_penalty,
             "tool_budget_exhausted_penalty": tool_budget_exhausted_penalty,
             "role_leakage_penalty": role_leakage_penalty,
             "post_boundary_penalty": post_boundary_penalty,
+            "stage_quit_immediately": stage_quit_immediately,
+            "stage_read": stage_read,
+            "stage_patch": stage_patch,
+            "stage_terminal_attempt": stage_terminal_attempt,
+            "stage_terminal_pass": stage_terminal_pass,
+            "stage_clean_final": stage_clean_final,
         }
     )
 
