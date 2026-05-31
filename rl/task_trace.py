@@ -28,7 +28,7 @@ DEFAULT_REWARD_CONFIG = {
     "structure_valid_bonus": 0.5,
     "no_call_penalty": -2.0,
     "malformed_call_penalty": -1.0,
-    "tool_budget_exhausted_penalty": -2.0,
+    "tool_budget_exhausted_penalty": -5.0,
     "role_leakage_penalty": -0.75,
     "post_boundary_penalty": -2.0,
     "final_once_bonus": 1.0,
@@ -36,10 +36,10 @@ DEFAULT_REWARD_CONFIG = {
     "missing_final_penalty": -1.0,
     "dirty_final_penalty": -0.5,
     "final_after_result_turn_bonus": 3.0,
-    "empty_after_result_no_final_penalty": -3.0,
-    "verifier_success_final_bonus": 5.0,
-    "verifier_success_more_tools_penalty": -3.0,
-    "verifier_success_no_final_penalty": -4.0,
+    "empty_after_result_no_final_penalty": -8.0,
+    "verifier_success_final_bonus": 10.0,
+    "verifier_success_more_tools_penalty": -6.0,
+    "verifier_success_no_final_penalty": -10.0,
     "recovery_read_after_fail_bonus": 0.75,
     "recovery_second_patch_bonus": 1.5,
     "recovery_pass_final_bonus": 4.0,
@@ -350,12 +350,31 @@ def _assistant_after_last_result(full_text: str) -> str | None:
     return segment
 
 
-def _post_result_final_reward(full_text: str) -> float:
+def _last_result_is_successful_verifier(calls: list[dict], tool_text: str, full_text: str) -> bool:
+    last_result = full_text.rfind("RESULT ")
+    if last_result < 0:
+        return False
+    last_successful_verifier_result = -1
+    for call in calls:
+        if call["tool"] not in {"cargo_test", "cargo_run"}:
+            continue
+        result = _find_result_for(call["id"], tool_text)
+        if result is None or not result.get("success"):
+            continue
+        pos = _result_offset(call["id"], full_text)
+        if pos >= 0:
+            last_successful_verifier_result = max(last_successful_verifier_result, pos)
+    return last_successful_verifier_result == last_result
+
+
+def _post_result_final_reward(full_text: str, calls: list[dict], tool_text: str) -> float:
     segment = _assistant_after_last_result(full_text)
     if segment is None:
         return 0.0
     clean_segment = segment.replace("<|im_end|>", "").strip()
     if final_count(segment) > 0:
+        if not _last_result_is_successful_verifier(calls, tool_text, full_text):
+            return 0.0
         return REWARD_CONFIG["final_after_result_turn_bonus"]
     if not clean_segment:
         return REWARD_CONFIG["empty_after_result_no_final_penalty"]
@@ -483,7 +502,7 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
         reward += REWARD_CONFIG["post_boundary_penalty"]
 
     reward += _finalization_reward(raw_assistant_trace, full_text)
-    reward += _post_result_final_reward(full_text)
+    reward += _post_result_final_reward(full_text, calls, tool_text)
     reward += _verifier_success_final_reward(calls, tool_text, raw_assistant_trace, full_text)
 
     if state.get("tool_budget_exhausted"):

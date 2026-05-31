@@ -133,7 +133,7 @@ class RewardGoldenTests(unittest.TestCase):
         baseline = score(read, [result])
         final_after_result = score_with_raw_trace("\n".join([read, "FINAL: fixed"]), [result], raw)
 
-        self.assertGreaterEqual(final_after_result - baseline, 6.0)
+        self.assertAlmostEqual(final_after_result - baseline, 3.0)
 
     def test_empty_assistant_after_last_result_gets_big_penalty(self) -> None:
         read = call("read_file", "c1", file_path="src/lib.rs")
@@ -144,7 +144,7 @@ class RewardGoldenTests(unittest.TestCase):
         no_empty = score_with_raw_trace(read, [result], raw_without_empty_turn)
         empty = score_with_raw_trace(read, [result], raw_with_empty_turn)
 
-        self.assertAlmostEqual(empty - no_empty, -3.0)
+        self.assertAlmostEqual(empty - no_empty, -8.0)
 
     def test_verifier_success_final_beats_no_final(self) -> None:
         read = call("read_file", "c1", file_path="src/lib.rs")
@@ -160,7 +160,7 @@ class RewardGoldenTests(unittest.TestCase):
             [result_block("c1", True), result_block("c2", True), result_block("c3", True)],
         )
 
-        self.assertGreaterEqual(verifier_final - verifier_no_final, 10.0)
+        self.assertGreaterEqual(verifier_final - verifier_no_final, 20.0)
 
     def test_tool_use_after_successful_verifier_is_penalized(self) -> None:
         read = call("read_file", "c1", file_path="src/lib.rs")
@@ -182,7 +182,7 @@ class RewardGoldenTests(unittest.TestCase):
             ],
         )
 
-        self.assertGreaterEqual(verifier_final - tool_after_success, 13.0)
+        self.assertGreaterEqual(verifier_final - tool_after_success, 21.0)
 
     def test_recovery_doorway_gets_separate_credit(self) -> None:
         read = call("read_file", "c1", file_path="src/lib.rs")
@@ -265,7 +265,7 @@ class RewardGoldenTests(unittest.TestCase):
             ],
         )
 
-        self.assertAlmostEqual(recovered_final - recovered_patch, 12.0)
+        self.assertAlmostEqual(recovered_final - recovered_patch, 17.0)
 
 
 def assistant_text(row: dict) -> str:
