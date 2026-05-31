@@ -187,6 +187,22 @@ class RewardGoldenTests(unittest.TestCase):
 
         self.assertGreaterEqual(verifier_final - tool_after_success, 21.0)
 
+    def test_successful_patch_without_later_verifier_is_penalized(self) -> None:
+        read = call("read_file", "c1", file_path="src/lib.rs")
+        patch = call("apply_patch", "c2", file_path="src/lib.rs", find="bug", replace="fix")
+        ok = call("cargo_test", "c3", project_path=".")
+
+        patch_only = score(
+            "\n".join([read, patch]),
+            [result_block("c1", True), result_block("c2", True)],
+        )
+        patch_then_verifier = score(
+            "\n".join([read, patch, ok]),
+            [result_block("c1", True), result_block("c2", True), result_block("c3", False)],
+        )
+
+        self.assertAlmostEqual(patch_then_verifier - patch_only, 10.0)
+
     def test_recovery_doorway_gets_separate_credit(self) -> None:
         read = call("read_file", "c1", file_path="src/lib.rs")
         patch = call("apply_patch", "c2", file_path="src/lib.rs", find="bug", replace="bad")
@@ -236,7 +252,7 @@ class RewardGoldenTests(unittest.TestCase):
             ],
         )
 
-        self.assertAlmostEqual(recovered_patch - recovery_doorway, 1.5)
+        self.assertAlmostEqual(recovered_patch - recovery_doorway, -8.5)
 
     def test_recovered_pass_final_gets_much_more_credit(self) -> None:
         read = call("read_file", "c1", file_path="src/lib.rs")
@@ -268,7 +284,7 @@ class RewardGoldenTests(unittest.TestCase):
             ],
         )
 
-        self.assertAlmostEqual(recovered_final - recovered_patch, 17.0)
+        self.assertAlmostEqual(recovered_final - recovered_patch, 27.0)
 
 
 def assistant_text(row: dict) -> str:

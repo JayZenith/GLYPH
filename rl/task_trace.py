@@ -40,6 +40,7 @@ DEFAULT_REWARD_CONFIG = {
     "verifier_success_final_bonus": 10.0,
     "verifier_success_more_tools_penalty": -6.0,
     "verifier_success_no_final_penalty": -10.0,
+    "patch_without_later_verifier_penalty": -10.0,
     "recovery_read_after_fail_bonus": 0.75,
     "recovery_second_patch_bonus": 1.5,
     "recovery_pass_final_bonus": 4.0,
@@ -421,6 +422,27 @@ def _verifier_success_final_reward(calls: list[dict], tool_text: str, assistant_
     return reward
 
 
+def _patch_without_later_verifier_reward(calls: list[dict], tool_text: str) -> float:
+    last_successful_patch_idx: int | None = None
+    for idx, call in enumerate(calls):
+        if call["tool"] != "apply_patch":
+            continue
+        result = _find_result_for(call["id"], tool_text)
+        if result is not None and result.get("success"):
+            last_successful_patch_idx = idx
+
+    if last_successful_patch_idx is None:
+        return 0.0
+
+    for call in calls[last_successful_patch_idx + 1 :]:
+        if call["tool"] not in {"cargo_test", "cargo_run"}:
+            continue
+        if _find_result_for(call["id"], tool_text) is not None:
+            return 0.0
+
+    return REWARD_CONFIG["patch_without_later_verifier_penalty"]
+
+
 def _has_dirty_final_tail(assistant_text: str) -> bool:
     if not ended_cleanly_after_final(assistant_text):
         return True
@@ -506,6 +528,7 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
     reward += _finalization_reward(raw_assistant_trace, full_text)
     reward += _post_result_final_reward(full_text, calls, tool_text)
     reward += _verifier_success_final_reward(calls, tool_text, raw_assistant_trace, full_text)
+    reward += _patch_without_later_verifier_reward(calls, tool_text)
 
     if state.get("tool_budget_exhausted"):
         reward += REWARD_CONFIG["tool_budget_exhausted_penalty"]
