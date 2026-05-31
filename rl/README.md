@@ -46,6 +46,23 @@ python3 rl/train.py \
   --output outputs/rlvr1
 ```
 
+Canary eval during training:
+
+```bash
+python3 rl/scripts/canary_eval.py \
+  --weights-root outputs/rlvr1/weights \
+  --train-data synthetic_data/signal_1062.jsonl \
+  --prompt-file sft/evals/eval_prompts_heldout_69.yaml \
+  --prompt-section post_eval_heldout_69 \
+  --output outputs/rlvr1/canary_eval/latest.json \
+  --cases-root runs/rlvr1/rust_cases/eval_canary
+```
+
+This runs six fixed held-out prompts: common missing-`FINAL` failures, one
+SFT-only fixed case, one RLVR-regressed case, and one normal passing case. It is
+not part of the PPO reward; it is a small external monitor for whether checkpoint
+behavior is actually changing.
+
 Multi-turn execution: `RustToolEnv` in `task_trace.py` parses each `CALL ...`
 the model emits, runs the real tool via `agent_runtime/rust`, and injects a
 `RESULT cN:` block back into the rollout (up to `max_tool_rounds`, default 15).
