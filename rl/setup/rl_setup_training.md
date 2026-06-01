@@ -28,7 +28,10 @@ Note: this currently uses the pinned PRIME-RL path in `install_prime_rl.sh` plus
 ## 2. Build RL prompts
 
 Variable-depth prompts (from signal_v2) so rollouts actually go deep, where the
-stop failure happens. Already committed as `rl_prompts_v2_1323.jsonl`; rebuild with:
+stop failure happens. RL prompts are just task prompts for the env — they do NOT
+need to match SFT_V1's training data; using deeper tasks than SFT_V1 saw is
+correct and gives a stronger signal on the stop target. Already committed as
+`rl_prompts_v2_1323.jsonl`; rebuild with:
 
 ```bash
 python3 synthetic_data/build_rl_prompts.py \
