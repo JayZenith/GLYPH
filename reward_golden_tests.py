@@ -36,7 +36,12 @@ def _install_verifiers_stub() -> None:
 
 
 _install_verifiers_stub()
-from rl.task_trace import _find_result_for, _rust_tool_reward, _verifier_outcomes  # noqa: E402
+from rl.task_trace import (  # noqa: E402
+    REWARD_CONFIG,
+    _find_result_for,
+    _rust_tool_reward,
+    _verifier_outcomes,
+)
 
 
 def result_block(call_id: str, success: bool) -> str:
@@ -109,182 +114,107 @@ def score_with_raw_trace(assistant: str, results: list[str], raw: str) -> float:
 
 
 class RewardGoldenTests(unittest.TestCase):
-    def test_finalization_terms_are_additive(self) -> None:
-        read = call("read_file", "c1", file_path="src/lib.rs")
-        result = [result_block("c1", True)]
+    """Properties of the bounded, outcome-first reward (post recovery-data pivot).
 
-        no_final = score(read, result)
-        clean_final = score("\n".join([read, "FINAL: fixed"]), result)
-        dirty_final = score("\n".join([read, "FINAL: fixed", "extra text"]), result)
-        double_final = score("\n".join([read, "FINAL: one", "FINAL: two"]), result)
+    Design invariants under test:
+      1. Finalization is decoupled from solving: a clean FINAL is rewarded even
+         on an unsolved task (graceful exit), so finalizing always beats looping.
+      2. Real verifier success is the dominant signal.
+      3. No stacked cliffs: the worst no-FINAL trajectory stays near the positive
+         scale so one bad rollout cannot dominate a GRPO group.
+      4. Wandering with tools after success is only mildly discouraged, not
+         crushed (that shape overlaps with legitimate recovery).
+    """
 
-        self.assertAlmostEqual(clean_final - no_final, 3.0)
-        self.assertAlmostEqual(clean_final - dirty_final, 0.5)
-        self.assertAlmostEqual(clean_final - double_final, 1.0)
+    READ = call("read_file", "c1", file_path="src/lib.rs")
+    PATCH = call("apply_patch", "c2", file_path="src/lib.rs", find="bug", replace="fix")
 
-    def test_final_after_last_result_turn_gets_big_bonus(self) -> None:
-        read = call("read_file", "c1", file_path="src/lib.rs")
-        result = result_block("c1", True)
-        raw = (
-            f"{read}\n<|im_end|>\n\n<|im_start|>tool\n{result}\n<|im_end|>\n\n"
-            "<|im_start|>assistant\nFINAL: fixed\n<|im_end|>"
+    def test_clean_final_rewarded_even_on_unsolved_task(self) -> None:
+        # Graceful exit: cargo_test failed, but the model still emits one FINAL.
+        fail = call("cargo_test", "c3", project_path=".")
+        results = [result_block("c1", True), result_block("c2", True), result_block("c3", False)]
+        loop = score("\n".join([self.READ, self.PATCH, fail]), results)
+        graceful = score("\n".join([self.READ, self.PATCH, fail, "FINAL: tried"]), results)
+
+        expected = (
+            REWARD_CONFIG["final_once_bonus"]
+            + REWARD_CONFIG["clean_final_after_last_tool_bonus"]
+            - REWARD_CONFIG["missing_final_penalty"]
         )
+        self.assertAlmostEqual(graceful - loop, expected)
+        self.assertGreater(graceful, loop)
+        self.assertGreater(graceful, 0.0)  # graceful exit is net positive
 
-        baseline = score(read, [result])
-        final_after_result = score_with_raw_trace("\n".join([read, "FINAL: fixed"]), [result], raw)
-
-        self.assertAlmostEqual(final_after_result - baseline, 3.0)
-
-    def test_empty_assistant_after_last_result_gets_big_penalty(self) -> None:
-        read = call("read_file", "c1", file_path="src/lib.rs")
-        result = result_block("c1", True)
-        raw_without_empty_turn = f"{read}\n<|im_end|>\n\n<|im_start|>tool\n{result}\n<|im_end|>"
-        raw_with_empty_turn = f"{raw_without_empty_turn}\n\n<|im_start|>assistant\n"
-        raw_with_bare_empty_turn = f"{raw_without_empty_turn}\n\n<|im_start|>assistant"
-
-        no_empty = score_with_raw_trace(read, [result], raw_without_empty_turn)
-        empty = score_with_raw_trace(read, [result], raw_with_empty_turn)
-        bare_empty = score_with_raw_trace(read, [result], raw_with_bare_empty_turn)
-
-        self.assertAlmostEqual(empty - no_empty, -8.0)
-        self.assertAlmostEqual(bare_empty - no_empty, -8.0)
-
-    def test_verifier_success_final_beats_no_final(self) -> None:
-        read = call("read_file", "c1", file_path="src/lib.rs")
-        patch = call("apply_patch", "c2", file_path="src/lib.rs", find="bug", replace="fix")
+    def test_solving_is_rewarded_even_without_final(self) -> None:
+        # Anti-collapse: solving stays strongly positive so RL never has an
+        # incentive to abandon the tool-solving the SFT model already does.
         ok = call("cargo_test", "c3", project_path=".")
+        results = [result_block("c1", True), result_block("c2", True), result_block("c3", True)]
+        solved_no_final = score("\n".join([self.READ, self.PATCH, ok]), results)
+        self.assertGreater(solved_no_final, 3.0)
 
-        verifier_no_final = score(
-            "\n".join([read, patch, ok]),
+    def test_solving_dominates_formatting(self) -> None:
+        ok = call("cargo_test", "c3", project_path=".")
+        fail = call("cargo_test", "c3", project_path=".")
+        solved_final = score(
+            "\n".join([self.READ, self.PATCH, ok, "FINAL: done"]),
             [result_block("c1", True), result_block("c2", True), result_block("c3", True)],
         )
-        verifier_final = score(
-            "\n".join([read, patch, ok, "FINAL: fixed"]),
-            [result_block("c1", True), result_block("c2", True), result_block("c3", True)],
+        graceful = score(
+            "\n".join([self.READ, self.PATCH, fail, "FINAL: tried"]),
+            [result_block("c1", True), result_block("c2", True), result_block("c3", False)],
         )
+        expected = (
+            REWARD_CONFIG["verifier_success_bonus"]
+            + REWARD_CONFIG["verifier_success_clean_final_bonus"]
+        )
+        self.assertAlmostEqual(solved_final - graceful, expected)
 
-        self.assertGreaterEqual(verifier_final - verifier_no_final, 20.0)
-
-    def test_tool_use_after_successful_verifier_is_penalized(self) -> None:
-        read = call("read_file", "c1", file_path="src/lib.rs")
-        patch = call("apply_patch", "c2", file_path="src/lib.rs", find="bug", replace="fix")
+    def test_tool_use_after_success_is_only_mildly_penalized(self) -> None:
         ok = call("cargo_test", "c3", project_path=".")
         read_again = call("read_file", "c4", file_path="src/lib.rs")
-
-        verifier_final = score(
-            "\n".join([read, patch, ok, "FINAL: fixed"]),
+        stop = score(
+            "\n".join([self.READ, self.PATCH, ok, "FINAL: done"]),
             [result_block("c1", True), result_block("c2", True), result_block("c3", True)],
         )
-        tool_after_success = score(
-            "\n".join([read, patch, ok, read_again]),
-            [
-                result_block("c1", True),
-                result_block("c2", True),
-                result_block("c3", True),
-                result_block("c4", True),
-            ],
+        more = score(
+            "\n".join([self.READ, self.PATCH, ok, read_again, "FINAL: done"]),
+            [result_block("c1", True), result_block("c2", True),
+             result_block("c3", True), result_block("c4", True)],
         )
+        self.assertGreater(stop, more)
+        self.assertLessEqual(stop - more, 4.0)  # mild, not the old ~21 cliff
+        self.assertGreater(more, 3.0)           # still clearly positive (solved)
 
-        self.assertGreaterEqual(verifier_final - tool_after_success, 21.0)
+    def test_missing_final_penalty_does_not_stack(self) -> None:
+        # The unsolved no-FINAL loop must stay near the positive scale.
+        fail = call("cargo_test", "c3", project_path=".")
+        loop = score(
+            "\n".join([self.READ, self.PATCH, fail]),
+            [result_block("c1", True), result_block("c2", True), result_block("c3", False)],
+        )
+        self.assertGreater(loop, -5.0)
 
-    def test_successful_patch_without_later_verifier_is_penalized(self) -> None:
-        read = call("read_file", "c1", file_path="src/lib.rs")
-        patch = call("apply_patch", "c2", file_path="src/lib.rs", find="bug", replace="fix")
-        ok = call("cargo_test", "c3", project_path=".")
-
-        patch_only = score(
-            "\n".join([read, patch]),
+    def test_patch_without_later_verifier_is_mildly_penalized(self) -> None:
+        fail = call("cargo_test", "c3", project_path=".")
+        no_verifier = score(
+            "\n".join([self.READ, self.PATCH]),
             [result_block("c1", True), result_block("c2", True)],
         )
-        patch_then_verifier = score(
-            "\n".join([read, patch, ok]),
+        with_verifier = score(
+            "\n".join([self.READ, self.PATCH, fail]),
             [result_block("c1", True), result_block("c2", True), result_block("c3", False)],
         )
-
-        self.assertAlmostEqual(patch_then_verifier - patch_only, 10.0)
-
-    def test_recovery_doorway_gets_separate_credit(self) -> None:
-        read = call("read_file", "c1", file_path="src/lib.rs")
-        patch = call("apply_patch", "c2", file_path="src/lib.rs", find="bug", replace="bad")
-        fail = call("cargo_test", "c3", project_path=".")
-        read_again = call("read_file", "c4", file_path="src/lib.rs")
-
-        before_recovery = score(
-            "\n".join([read, patch, fail]),
-            [result_block("c1", True), result_block("c2", True), result_block("c3", False)],
-        )
-        recovery_doorway = score(
-            "\n".join([read, patch, fail, read_again]),
-            [
-                result_block("c1", True),
-                result_block("c2", True),
-                result_block("c3", False),
-                result_block("c4", True),
-            ],
+        self.assertAlmostEqual(
+            with_verifier - no_verifier, -REWARD_CONFIG["patch_without_later_verifier_penalty"]
         )
 
-        self.assertAlmostEqual(recovery_doorway - before_recovery, 0.75)
-
-    def test_second_patch_gets_more_recovery_credit(self) -> None:
-        read = call("read_file", "c1", file_path="src/lib.rs")
-        patch = call("apply_patch", "c2", file_path="src/lib.rs", find="bug", replace="bad")
-        fail = call("cargo_test", "c3", project_path=".")
-        read_again = call("read_file", "c4", file_path="src/lib.rs")
-        second_patch = call("apply_patch", "c5", file_path="src/lib.rs", find="bad", replace="fix")
-
-        recovery_doorway = score(
-            "\n".join([read, patch, fail, read_again]),
-            [
-                result_block("c1", True),
-                result_block("c2", True),
-                result_block("c3", False),
-                result_block("c4", True),
-            ],
-        )
-        recovered_patch = score(
-            "\n".join([read, patch, fail, read_again, second_patch]),
-            [
-                result_block("c1", True),
-                result_block("c2", True),
-                result_block("c3", False),
-                result_block("c4", True),
-                result_block("c5", True),
-            ],
-        )
-
-        self.assertAlmostEqual(recovered_patch - recovery_doorway, -8.5)
-
-    def test_recovered_pass_final_gets_much_more_credit(self) -> None:
-        read = call("read_file", "c1", file_path="src/lib.rs")
-        patch = call("apply_patch", "c2", file_path="src/lib.rs", find="bug", replace="bad")
-        fail = call("cargo_test", "c3", project_path=".")
-        read_again = call("read_file", "c4", file_path="src/lib.rs")
-        second_patch = call("apply_patch", "c5", file_path="src/lib.rs", find="bad", replace="fix")
-        ok = call("cargo_test", "c6", project_path=".")
-
-        recovered_patch = score(
-            "\n".join([read, patch, fail, read_again, second_patch]),
-            [
-                result_block("c1", True),
-                result_block("c2", True),
-                result_block("c3", False),
-                result_block("c4", True),
-                result_block("c5", True),
-            ],
-        )
-        recovered_final = score(
-            "\n".join([read, patch, fail, read_again, second_patch, ok, "FINAL: fixed"]),
-            [
-                result_block("c1", True),
-                result_block("c2", True),
-                result_block("c3", False),
-                result_block("c4", True),
-                result_block("c5", True),
-                result_block("c6", True),
-            ],
-        )
-
-        self.assertAlmostEqual(recovered_final - recovered_patch, 27.0)
+    def test_dirty_final_loses_clean_bonus_and_takes_penalty(self) -> None:
+        ok = call("cargo_test", "c3", project_path=".")
+        results = [result_block("c1", True), result_block("c2", True), result_block("c3", True)]
+        clean = score("\n".join([self.READ, self.PATCH, ok, "FINAL: done"]), results)
+        dirty = score("\n".join([self.READ, self.PATCH, ok, "FINAL: done", "trailing junk"]), results)
+        self.assertAlmostEqual(clean - dirty, -REWARD_CONFIG["dirty_final_penalty"])
 
 
 def assistant_text(row: dict) -> str:

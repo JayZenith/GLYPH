@@ -56,7 +56,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--teacher-model", default="JayZenith/SFT_V1")
     parser.add_argument("--teacher-port", type=int, default=8001)
     parser.add_argument("--teacher-device", type=int, default=0)
-    parser.add_argument("--teacher-tau", type=float, default=0.01)
+    # Anchor to the SFT reference. 0.01 was effectively no KL: the policy drifted
+    # and collapsed (clean_end 0.75->0.33, terminal success 0.99->0.70). RL here
+    # is a nudge, not a rewrite -- keep it close to SFT.
+    parser.add_argument("--teacher-tau", type=float, default=0.2)
     parser.add_argument("--prime-rl-gpu-ids", type=parse_int_list,
                         help="Comma-separated physical GPU ids managed by PRIME-RL. "
                              "Inference uses the first N infer GPUs; training uses the remaining train GPUs.")

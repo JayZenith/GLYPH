@@ -1,0 +1,212 @@
+post_eval_smoke_12:
+- name: eval100_040_patch_test_recover_006_route_action_enum_branch_recovery
+  kind: patch_test_recover
+  system: You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.
+  blueprint_root: synthetic_data/eval_blueprints/eval100_040_patch_test_recover_006_route_action_enum_branch_recovery
+  trace_prefix: runs/rlvr1/rust_cases/eval100_040_patch_test_recover_006_route_action_enum_branch_recovery
+  user: In the Rust crate at runs/rlvr1/rust_cases/eval100_040_patch_test_recover_006_route_action_enum_branch_recovery, fix the enum branch logic in src/lib.rs so the tests pass. Make the smallest reasonable changes and verify with cargo test after each patch.
+  expected_tool_sequence:
+  - read_file
+  - apply_patch
+  - cargo_test
+  - read_file
+  - apply_patch
+  - cargo_test
+  case_id: eval100_040_patch_test_recover_006_route_action_enum_branch_recovery
+  difficulty: hard
+  expected_output: null
+- name: eval100_058_patch_test_recover_024_booking_overlap_half_open_recover_24
+  kind: patch_test_recover
+  system: You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.
+  blueprint_root: synthetic_data/eval_blueprints/eval100_058_patch_test_recover_024_booking_overlap_half_open_recover_24
+  trace_prefix: runs/rlvr1/rust_cases/eval100_058_patch_test_recover_024_booking_overlap_half_open_recover_24
+  user: In the Rust crate at runs/rlvr1/rust_cases/eval100_058_patch_test_recover_024_booking_overlap_half_open_recover_24, fix the booking overlap logic so the tests pass. Keep the implementation compact and idiomatic.
+  expected_tool_sequence:
+  - read_file
+  - apply_patch
+  - cargo_test
+  - read_file
+  - apply_patch
+  - cargo_test
+  case_id: eval100_058_patch_test_recover_024_booking_overlap_half_open_recover_24
+  difficulty: hard
+  expected_output: null
+- name: eval100_044_patch_test_recover_010_rank_players_dense_tiebreak_recover
+  kind: patch_test_recover
+  system: You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.
+  blueprint_root: synthetic_data/eval_blueprints/eval100_044_patch_test_recover_010_rank_players_dense_tiebreak_recover
+  trace_prefix: runs/rlvr1/rust_cases/eval100_044_patch_test_recover_010_rank_players_dense_tiebreak_recover
+  user: In the Rust crate at runs/rlvr1/rust_cases/eval100_044_patch_test_recover_010_rank_players_dense_tiebreak_recover, fix the ranking logic in src/lib.rs so the tests pass. Keep the implementation compact and preserve the public API.
+  expected_tool_sequence:
+  - read_file
+  - apply_patch
+  - cargo_test
+  - read_file
+  - apply_patch
+  - cargo_test
+  case_id: eval100_044_patch_test_recover_010_rank_players_dense_tiebreak_recover
+  difficulty: hard
+  expected_output: null
+- name: eval100_048_patch_test_recover_014_dispatch_action_match_branch_repair
+  kind: patch_test_recover
+  system: You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.
+  blueprint_root: synthetic_data/eval_blueprints/eval100_048_patch_test_recover_014_dispatch_action_match_branch_repair
+  trace_prefix: runs/rlvr1/rust_cases/eval100_048_patch_test_recover_014_dispatch_action_match_branch_repair
+  user: In the Rust crate at runs/rlvr1/rust_cases/eval100_048_patch_test_recover_014_dispatch_action_match_branch_repair, fix the enum match/dispatch logic in src/lib.rs so the tests pass. Keep the code compact and don't add dependencies.
+  expected_tool_sequence:
+  - read_file
+  - apply_patch
+  - cargo_test
+  - read_file
+  - apply_patch
+  - cargo_test
+  case_id: eval100_048_patch_test_recover_014_dispatch_action_match_branch_repair
+  difficulty: hard
+  expected_output: null
+- name: eval100_087_patch_run_recover_023_layered_config_merge_precedence_23
+  kind: patch_run_recover
+  system: You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.
+  blueprint_root: synthetic_data/eval_blueprints/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23
+  trace_prefix: runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23
+  user: In the Rust crate at runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23, fix the config merging logic in src/main.rs so the program prints the correct effective settings. Precedence should be defaults < file < env, explicit false values must not be ignored, and tags from higher-precedence layers should replace lower-precedence tags instead of being appended.
+  expected_tool_sequence:
+  - read_file
+  - apply_patch
+  - cargo_run
+  - read_file
+  - apply_patch
+  - cargo_run
+  case_id: eval100_087_patch_run_recover_023_layered_config_merge_precedence_23
+  difficulty: hard
+  expected_output: 'host=env.example.com
+
+    port=9000
+
+    debug=false
+
+    tags=ops,blue'
+- name: eval100_070_patch_run_recover_006_dispatch_report_match_branch_recovery
+  kind: patch_run_recover
+  system: You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.
+  blueprint_root: synthetic_data/eval_blueprints/eval100_070_patch_run_recover_006_dispatch_report_match_branch_recovery
+  trace_prefix: runs/rlvr1/rust_cases/eval100_070_patch_run_recover_006_dispatch_report_match_branch_recovery
+  user: In the Rust crate at runs/rlvr1/rust_cases/eval100_070_patch_run_recover_006_dispatch_report_match_branch_recovery, fix the command dispatch/report logic so running the binary prints the correct per-command status lines and summary. Keep the program structure compact and only patch src/main.rs.
+  expected_tool_sequence:
+  - read_file
+  - apply_patch
+  - cargo_run
+  - read_file
+  - apply_patch
+  - cargo_run
+  case_id: eval100_070_patch_run_recover_006_dispatch_report_match_branch_recovery
+  difficulty: hard
+  expected_output: 'copy: copied report.csv x2
+
+    move: moved archive.zip to /backup
+
+    delete: skipped temp.log (dry-run)
+
+    delete: deleted old.log
+
+    summary: copied=2 moved=1 deleted=1 skipped=1 errors=0'
+- name: eval100_085_patch_run_recover_021_log_window_filter_map_recover
+  kind: patch_run_recover
+  system: You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.
+  blueprint_root: synthetic_data/eval_blueprints/eval100_085_patch_run_recover_021_log_window_filter_map_recover
+  trace_prefix: runs/rlvr1/rust_cases/eval100_085_patch_run_recover_021_log_window_filter_map_recover
+  user: In the Rust crate at runs/rlvr1/rust_cases/eval100_085_patch_run_recover_021_log_window_filter_map_recover, fix the event summarizer so running the binary prints the correct per-user report. Keep it compact and use iterator-based logic where sensible.
+  expected_tool_sequence:
+  - read_file
+  - apply_patch
+  - cargo_run
+  - read_file
+  - apply_patch
+  - cargo_run
+  case_id: eval100_085_patch_run_recover_021_log_window_filter_map_recover
+  difficulty: hard
+  expected_output: 'alice: 2 ok / 1 fail / 4 tags [build,deploy,green,smoke]
+
+    bob: 1 ok / 1 fail / 3 tags [build,lint,unit]
+
+    carol: 1 ok / 0 fail / 1 tags [ops]'
+- name: eval100_019_patch_test_pass_020_workflow_reopen_preserves_completion
+  kind: patch_test_pass
+  system: You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.
+  blueprint_root: synthetic_data/eval_blueprints/eval100_019_patch_test_pass_020_workflow_reopen_preserves_completion
+  trace_prefix: runs/rlvr1/rust_cases/eval100_019_patch_test_pass_020_workflow_reopen_preserves_completion
+  user: Please fix the state transition logic in the Rust crate at runs/rlvr1/rust_cases/eval100_019_patch_test_pass_020_workflow_reopen_preserves_completion so the tests pass. A reopened workflow item should move out of completed state correctly without losing cancellation behavior.
+  expected_tool_sequence:
+  - read_file
+  - apply_patch
+  - cargo_test
+  case_id: eval100_019_patch_test_pass_020_workflow_reopen_preserves_completion
+  difficulty: medium
+  expected_output: null
+- name: eval100_013_patch_test_pass_014_dispatch_policy_match_order
+  kind: patch_test_pass
+  system: You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.
+  blueprint_root: synthetic_data/eval_blueprints/eval100_013_patch_test_pass_014_dispatch_policy_match_order
+  trace_prefix: runs/rlvr1/rust_cases/eval100_013_patch_test_pass_014_dispatch_policy_match_order
+  user: In the Rust crate at runs/rlvr1/rust_cases/eval100_013_patch_test_pass_014_dispatch_policy_match_order, fix the enum branch logic in src/lib.rs so the tests pass. Keep the implementation compact and only change the bug.
+  expected_tool_sequence:
+  - read_file
+  - apply_patch
+  - cargo_test
+  case_id: eval100_013_patch_test_pass_014_dispatch_policy_match_order
+  difficulty: medium
+  expected_output: null
+- name: eval100_034_patch_run_pass_015_config_merge_precedence_env_default_override
+  kind: patch_run_pass
+  system: You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.
+  blueprint_root: synthetic_data/eval_blueprints/eval100_034_patch_run_pass_015_config_merge_precedence_env_default_override
+  trace_prefix: runs/rlvr1/rust_cases/eval100_034_patch_run_pass_015_config_merge_precedence_env_default_override
+  user: In the Rust crate at runs/rlvr1/rust_cases/eval100_034_patch_run_pass_015_config_merge_precedence_env_default_override, fix the config merge logic in src/main.rs so layered settings respect precedence correctly when combining defaults, file config, environment config, and CLI overrides. Then run the program and ensure its stdout matches the intended merged summary.
+  expected_tool_sequence:
+  - read_file
+  - apply_patch
+  - cargo_run
+  case_id: eval100_034_patch_run_pass_015_config_merge_precedence_env_default_override
+  difficulty: medium
+  expected_output: 'host=file.example
+
+    port=9000
+
+    timeout=45
+
+    debug=true'
+- name: eval100_022_patch_run_pass_003_department_report_filters_zero_and_formats_top
+  kind: patch_run_pass
+  system: You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.
+  blueprint_root: synthetic_data/eval_blueprints/eval100_022_patch_run_pass_003_department_report_filters_zero_and_formats_top
+  trace_prefix: runs/rlvr1/rust_cases/eval100_022_patch_run_pass_003_department_report_filters_zero_and_formats_top
+  user: In the Rust crate at runs/rlvr1/rust_cases/eval100_022_patch_run_pass_003_department_report_filters_zero_and_formats_top, fix the reporting logic in src/main.rs so running the program produces the correct grouped department summary. Keep the implementation compact and preserve the current data setup.
+  expected_tool_sequence:
+  - read_file
+  - apply_patch
+  - cargo_run
+  case_id: eval100_022_patch_run_pass_003_department_report_filters_zero_and_formats_top
+  difficulty: medium
+  expected_output: 'ACTIVE DEPARTMENTS: 3
+
+    TOTAL HOURS: 17
+
+    TOP: Ops (8)
+
+    DETAILS:
+
+    - Design: 6
+
+    - Ops: 8
+
+    - QA: 3'
+- name: eval100_091_test_only_002_rank_players_wins_then_diff_then_name
+  kind: test_only
+  system: You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.
+  blueprint_root: synthetic_data/eval_blueprints/eval100_091_test_only_002_rank_players_wins_then_diff_then_name
+  trace_prefix: runs/rlvr1/rust_cases/eval100_091_test_only_002_rank_players_wins_then_diff_then_name
+  user: In the Rust crate at runs/rlvr1/rust_cases/eval100_091_test_only_002_rank_players_wins_then_diff_then_name, run the test suite and report whether it passes. Do not modify any files.
+  expected_tool_sequence:
+  - cargo_test
+  case_id: eval100_091_test_only_002_rank_players_wins_then_diff_then_name
+  difficulty: medium
+  expected_output: null

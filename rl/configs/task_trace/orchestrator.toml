@@ -1,10 +1,16 @@
 batch_size = 48
-rollouts_per_example = 4
+# More rollouts/example => within-group variance => informative GRPO advantages.
+# v6/v7 used 4 and produced ~56% zero-advantage groups (no gradient); 8 is the floor.
+rollouts_per_example = 8
 seq_len = 5120
+# Stop early on the held-out eval; the best checkpoint in every prior run was the
+# earliest (step ~25), and 25->50->75 regressed. Do not train to 200.
 max_steps = 200
 
 [model]
-name = "JayZenith/SFT_V1"
+# Train from SFT_V2 (signal_v2, variable-depth recovery). SFT_V1 lacked deep
+# recovery, so RL could not reach the success states the reward pays out.
+name = "JayZenith/SFT_V2"
 
 [train.sampling]
 temperature = 0.8
@@ -12,7 +18,7 @@ max_completion_tokens = 1536
 
 [[train.env]]
 id = "task-trace"
-args = { data_path = "synthetic_data/rl_prompts_1062.jsonl", timeout = 30, max_tool_rounds = 15 }
+args = { data_path = "synthetic_data/rl_prompts_v2_1323.jsonl", timeout = 30, max_tool_rounds = 15 }
 
 [[filters]]
 type = "gibberish"
@@ -22,9 +28,11 @@ enforce = false
 type = "repetition"
 enforce = false
 
+# Enforce: drop all-identical-reward groups so easy prompts can't waste compute
+# or dominate, and only informative (variance-bearing) groups produce gradient.
 [[filters]]
 type = "zero_advantage"
-enforce = false
+enforce = true
 
 [ckpt]
 interval = 1000

@@ -24,26 +24,31 @@ RUST_TOOL_NAMES = {
 RUST_TOOL_NAMES.discard(None)
 
 DEBUG_PARSE = False
+# Bounded, outcome-first reward. Worst plausible trajectory (~-5) is kept near
+# the same magnitude as the best (~+13) so a single bad rollout cannot dominate
+# a GRPO group. Finalization is DECOUPLED from task success: a clean FINAL is
+# rewarded even on an unsolved task, so the model has a positive "graceful exit"
+# instead of looping into stacked penalties. Recovery itself is taught by the
+# SFT data (signal_v2 variable-depth traces), not hand-shaped here.
 DEFAULT_REWARD_CONFIG = {
+    # structure / format
     "structure_valid_bonus": 0.5,
     "no_call_penalty": -2.0,
     "malformed_call_penalty": -1.0,
-    "tool_budget_exhausted_penalty": -5.0,
-    "role_leakage_penalty": -0.75,
-    "post_boundary_penalty": -2.0,
+    "role_leakage_penalty": -0.5,
+    "post_boundary_penalty": -1.0,
+    # finalization (independent of whether the task was solved)
     "final_once_bonus": 1.0,
-    "final_after_last_tool_bonus": 1.0,
-    "missing_final_penalty": -1.0,
-    "dirty_final_penalty": -0.5,
-    "final_after_result_turn_bonus": 3.0,
-    "empty_after_result_no_final_penalty": -8.0,
-    "verifier_success_final_bonus": 10.0,
-    "verifier_success_more_tools_penalty": -6.0,
-    "verifier_success_no_final_penalty": -10.0,
-    "patch_without_later_verifier_penalty": -10.0,
-    "recovery_read_after_fail_bonus": 0.75,
-    "recovery_second_patch_bonus": 1.5,
-    "recovery_pass_final_bonus": 4.0,
+    "missing_final_penalty": -2.0,
+    "dirty_final_penalty": -1.0,
+    "clean_final_after_last_tool_bonus": 2.0,
+    # task outcome (primary signal)
+    "verifier_success_bonus": 8.0,
+    "verifier_success_clean_final_bonus": 2.0,
+    # light shaping (small, non-stacking)
+    "tool_after_success_penalty": -1.0,
+    "tool_budget_exhausted_penalty": -2.0,
+    "patch_without_later_verifier_penalty": -1.0,
 }
 
 REWARD_CONFIG = DEFAULT_REWARD_CONFIG.copy()
@@ -144,56 +149,6 @@ def _verifier_outcomes(calls: list[dict], tool_text: str) -> list[bool]:
             continue
         outcomes.append(bool(res.get("success", False)))
     return outcomes
-
-
-def _recovery_reward(calls: list[dict], tool_text: str, assistant_text: str, full_text: str) -> float:
-    """Reward the recovery arc: failed test -> inspect again -> patch again -> pass + FINAL."""
-    events: list[tuple[str, bool | None]] = []
-    for call in calls:
-        result = _find_result_for(call["id"], tool_text)
-        if result is None:
-            continue
-        tool = call["tool"]
-        if tool in {"read_file", "apply_patch"}:
-            events.append((tool, None))
-        elif tool in {"cargo_test", "cargo_run"}:
-            events.append((tool, bool(result.get("success", False))))
-
-    saw_read = False
-    saw_patch = False
-    fail_idx: int | None = None
-    read_again_idx: int | None = None
-    second_patch_idx: int | None = None
-    pass_after_second_patch = False
-
-    for idx, (tool, success) in enumerate(events):
-        if tool == "read_file":
-            saw_read = True
-            if fail_idx is not None and read_again_idx is None:
-                read_again_idx = idx
-        elif tool == "apply_patch":
-            if fail_idx is None:
-                saw_patch = True
-            elif read_again_idx is not None and second_patch_idx is None:
-                second_patch_idx = idx
-        elif tool in {"cargo_test", "cargo_run"}:
-            if success:
-                if second_patch_idx is not None and idx > second_patch_idx:
-                    pass_after_second_patch = True
-            elif saw_read and saw_patch and fail_idx is None:
-                fail_idx = idx
-
-    reward = 0.0
-    if read_again_idx is not None:
-        reward += REWARD_CONFIG["recovery_read_after_fail_bonus"]
-    if second_patch_idx is not None:
-        reward += REWARD_CONFIG["recovery_second_patch_bonus"]
-    if pass_after_second_patch and final_count(assistant_text) == 1:
-        last_final = full_text.rfind("FINAL:")
-        last_result = full_text.rfind("RESULT ")
-        if last_result < 0 or last_final > last_result:
-            reward += REWARD_CONFIG["recovery_pass_final_bonus"]
-    return reward
 
 
 def _completion_text(completion) -> str:
@@ -317,111 +272,69 @@ def _trajectory_full_text(state: dict) -> str:
 
 
 def _finalization_reward(assistant_text: str, full_text: str) -> float:
-    count = final_count(assistant_text)
-    reward = 0.0
+    """Reward clean termination, INDEPENDENT of whether the task was solved.
 
+    This is the graceful-exit signal: a single clean FINAL after the last tool
+    result is rewarded even on an unsolved task, so finalizing always beats
+    looping. Task success is scored separately in `_outcome_reward`.
+    """
+    count = final_count(assistant_text)
+    if count == 0:
+        return REWARD_CONFIG["missing_final_penalty"]
+
+    reward = 0.0
     if count == 1:
         reward += REWARD_CONFIG["final_once_bonus"]
-    elif count == 0:
-        reward += REWARD_CONFIG["missing_final_penalty"]
+    if count > 1 or _has_dirty_final_tail(assistant_text):
+        reward += REWARD_CONFIG["dirty_final_penalty"]
 
-    if count > 0:
-        last_final = full_text.rfind("FINAL:")
-        last_result = full_text.rfind("RESULT ")
-        if last_result < 0 or last_final > last_result:
-            reward += REWARD_CONFIG["final_after_last_tool_bonus"]
-        if _has_dirty_final_tail(assistant_text):
-            reward += REWARD_CONFIG["dirty_final_penalty"]
-
+    last_final = full_text.rfind("FINAL:")
+    last_result = full_text.rfind("RESULT ")
+    if (last_result < 0 or last_final > last_result) and ended_cleanly_after_final(assistant_text):
+        reward += REWARD_CONFIG["clean_final_after_last_tool_bonus"]
     return reward
-
-
-def _assistant_after_last_result(full_text: str) -> str | None:
-    last_result = full_text.rfind("RESULT ")
-    if last_result < 0:
-        return None
-    assistant_marker = "<|im_start|>assistant"
-    assistant_idx = full_text.find(assistant_marker, last_result)
-    if assistant_idx < 0:
-        return None
-    segment = full_text[assistant_idx + len(assistant_marker) :]
-    if segment.startswith("\n"):
-        segment = segment[1:]
-    next_role = segment.find("<|im_start|>")
-    if next_role >= 0:
-        segment = segment[:next_role]
-    return segment
-
-
-def _last_result_is_successful_verifier(calls: list[dict], tool_text: str, full_text: str) -> bool:
-    last_result = full_text.rfind("RESULT ")
-    if last_result < 0:
-        return False
-    last_successful_verifier_result = -1
-    for call in calls:
-        if call["tool"] not in {"cargo_test", "cargo_run"}:
-            continue
-        result = _find_result_for(call["id"], tool_text)
-        if result is None or not result.get("success"):
-            continue
-        pos = _result_offset(call["id"], full_text)
-        if pos >= 0:
-            last_successful_verifier_result = max(last_successful_verifier_result, pos)
-    return last_successful_verifier_result == last_result
-
-
-def _post_result_final_reward(full_text: str, calls: list[dict], tool_text: str) -> float:
-    segment = _assistant_after_last_result(full_text)
-    if segment is None:
-        return 0.0
-    if final_count(segment) > 0:
-        if not _last_result_is_successful_verifier(calls, tool_text, full_text):
-            return 0.0
-        return REWARD_CONFIG["final_after_result_turn_bonus"]
-    # No FINAL in the terminal assistant turn after the last tool result. This is
-    # either an empty assistant (env truncated) or a trailing unexecuted CALL
-    # (the model kept looping until the tool budget ran out). The training env
-    # stops at the budget via is_completed, so the looping failure surfaces as an
-    # unexecuted CALL rather than the canary's empty-assistant shape. Both mean
-    # the model never finalized; penalize equally.
-    return REWARD_CONFIG["empty_after_result_no_final_penalty"]
 
 
 def _result_offset(call_id: str, full_text: str) -> int:
     return full_text.find(f"RESULT {call_id}:")
 
 
-def _verifier_success_final_reward(calls: list[dict], tool_text: str, assistant_text: str, full_text: str) -> float:
-    """After a successful verifier, prefer FINAL immediately over more tool use."""
-    successful_verifier_idx: int | None = None
-    successful_verifier_result_pos = -1
+def _outcome_reward(calls: list[dict], tool_text: str, assistant_text: str, full_text: str) -> float:
+    """Primary signal: reaching a passing verifier, then stopping with one FINAL.
+
+    Bounded and additive with `_finalization_reward`. No huge no-FINAL penalty
+    lives here anymore — the missing-FINAL case is handled once, mildly, in
+    `_finalization_reward`. This only rewards real task success and lightly
+    discourages wandering with more tools after you already passed.
+    """
+    success_idx: int | None = None
+    success_pos = -1
     for idx, call in enumerate(calls):
         if call["tool"] not in {"cargo_test", "cargo_run"}:
             continue
         result = _find_result_for(call["id"], tool_text)
         if result is None or not result.get("success"):
             continue
-        successful_verifier_idx = idx
+        success_idx = idx
         pos = _result_offset(call["id"], full_text)
-        successful_verifier_result_pos = pos if pos >= 0 else successful_verifier_result_pos
+        if pos >= 0:
+            success_pos = pos
 
-    if successful_verifier_idx is None:
+    if success_idx is None:
         return 0.0
 
-    reward = 0.0
-    later_executed_tools = [
-        call for call in calls[successful_verifier_idx + 1 :]
+    reward = REWARD_CONFIG["verifier_success_bonus"]
+    later_tools = [
+        call for call in calls[success_idx + 1 :]
         if _find_result_for(call["id"], tool_text) is not None
     ]
-    if later_executed_tools:
-        reward += REWARD_CONFIG["verifier_success_more_tools_penalty"]
+    if later_tools:
+        reward += REWARD_CONFIG["tool_after_success_penalty"]
 
     final_pos = full_text.rfind("FINAL:")
-    has_final_after_success = final_pos > successful_verifier_result_pos >= 0
-    if final_count(assistant_text) == 1 and has_final_after_success and not later_executed_tools:
-        reward += REWARD_CONFIG["verifier_success_final_bonus"]
-    elif final_count(assistant_text) == 0:
-        reward += REWARD_CONFIG["verifier_success_no_final_penalty"]
+    clean_final_after_success = final_count(assistant_text) >= 1 and final_pos > success_pos >= 0
+    if clean_final_after_success and not later_tools:
+        reward += REWARD_CONFIG["verifier_success_clean_final_bonus"]
     return reward
 
 
@@ -529,14 +442,11 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
         reward += REWARD_CONFIG["post_boundary_penalty"]
 
     reward += _finalization_reward(raw_assistant_trace, full_text)
-    reward += _post_result_final_reward(full_text, calls, tool_text)
-    reward += _verifier_success_final_reward(calls, tool_text, raw_assistant_trace, full_text)
+    reward += _outcome_reward(calls, tool_text, raw_assistant_trace, full_text)
     reward += _patch_without_later_verifier_reward(calls, tool_text)
 
     if state.get("tool_budget_exhausted"):
         reward += REWARD_CONFIG["tool_budget_exhausted_penalty"]
-
-    reward += _recovery_reward(calls, tool_text, raw_assistant_trace, full_text)
 
     return reward + structure
 
@@ -722,9 +632,13 @@ def load_environment(
     role_leakage_penalty: float | None = None,
     post_boundary_penalty: float | None = None,
     final_once_bonus: float | None = None,
-    final_after_last_tool_bonus: float | None = None,
     missing_final_penalty: float | None = None,
     dirty_final_penalty: float | None = None,
+    clean_final_after_last_tool_bonus: float | None = None,
+    verifier_success_bonus: float | None = None,
+    verifier_success_clean_final_bonus: float | None = None,
+    tool_after_success_penalty: float | None = None,
+    patch_without_later_verifier_penalty: float | None = None,
 ) -> vf.Environment:
     """Load the Rust tool RL environment with real multi-round tool execution."""
     _set_reward_config(
@@ -736,9 +650,13 @@ def load_environment(
             "role_leakage_penalty": role_leakage_penalty,
             "post_boundary_penalty": post_boundary_penalty,
             "final_once_bonus": final_once_bonus,
-            "final_after_last_tool_bonus": final_after_last_tool_bonus,
             "missing_final_penalty": missing_final_penalty,
             "dirty_final_penalty": dirty_final_penalty,
+            "clean_final_after_last_tool_bonus": clean_final_after_last_tool_bonus,
+            "verifier_success_bonus": verifier_success_bonus,
+            "verifier_success_clean_final_bonus": verifier_success_clean_final_bonus,
+            "tool_after_success_penalty": tool_after_success_penalty,
+            "patch_without_later_verifier_penalty": patch_without_later_verifier_penalty,
         }
     )
 
