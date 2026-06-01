@@ -1,0 +1,7 @@
+[package]
+name = "rank_players_tiebreak_recovery_242"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"

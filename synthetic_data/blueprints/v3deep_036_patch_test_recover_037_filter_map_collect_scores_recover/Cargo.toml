@@ -1,0 +1,6 @@
+[package]
+name = "filter_map_collect_scores"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

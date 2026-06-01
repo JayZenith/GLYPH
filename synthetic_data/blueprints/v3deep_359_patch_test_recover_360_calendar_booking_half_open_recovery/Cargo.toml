@@ -1,0 +1,6 @@
+[package]
+name = "calendar_booking_half_open_recovery"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

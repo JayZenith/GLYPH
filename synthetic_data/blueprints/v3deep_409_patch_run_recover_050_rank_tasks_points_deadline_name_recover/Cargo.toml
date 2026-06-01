@@ -1,0 +1,6 @@
+[package]
+name = "rank_tasks_points_deadline_name_recover"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

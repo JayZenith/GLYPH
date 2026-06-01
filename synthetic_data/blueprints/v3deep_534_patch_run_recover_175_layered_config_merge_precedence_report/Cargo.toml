@@ -1,0 +1,4 @@
+[package]
+name = "layered_config_merge_precedence_report"
+version = "0.1.0"
+edition = "2021"

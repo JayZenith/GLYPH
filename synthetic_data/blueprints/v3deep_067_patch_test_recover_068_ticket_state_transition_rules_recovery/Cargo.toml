@@ -1,0 +1,6 @@
+[package]
+name = "ticket_state_transition_rules"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

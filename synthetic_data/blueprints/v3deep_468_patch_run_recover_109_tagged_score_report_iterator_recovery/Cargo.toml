@@ -1,0 +1,6 @@
+[package]
+name = "tagged_score_report_iterator_recovery"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

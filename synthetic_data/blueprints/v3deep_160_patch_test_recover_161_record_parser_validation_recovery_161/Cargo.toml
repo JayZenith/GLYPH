@@ -1,0 +1,6 @@
+[package]
+name = "record_parser_validation_recovery_161"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

@@ -1,0 +1,4 @@
+[package]
+name = "ticket_state_transition_rules_recovery"
+version = "0.1.0"
+edition = "2021"

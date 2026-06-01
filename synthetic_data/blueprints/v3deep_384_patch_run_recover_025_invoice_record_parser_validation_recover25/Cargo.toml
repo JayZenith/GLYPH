@@ -1,0 +1,4 @@
+[package]
+name = "invoice_record_parser_validation_recover25"
+version = "0.1.0"
+edition = "2021"

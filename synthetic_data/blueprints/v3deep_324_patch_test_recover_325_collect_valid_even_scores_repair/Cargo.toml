@@ -1,0 +1,6 @@
+[package]
+name = "collect_valid_even_scores"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

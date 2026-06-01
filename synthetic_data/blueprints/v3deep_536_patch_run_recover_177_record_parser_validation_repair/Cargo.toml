@@ -1,0 +1,6 @@
+[package]
+name = "record_parser_validation_repair"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

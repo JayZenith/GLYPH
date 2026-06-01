@@ -1,0 +1,7 @@
+[package]
+name = "collect_codes_iterator_filters_recover"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"

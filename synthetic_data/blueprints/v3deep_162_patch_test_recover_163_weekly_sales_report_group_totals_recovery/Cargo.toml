@@ -1,0 +1,6 @@
+[package]
+name = "weekly_sales_report_group_totals_recovery"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

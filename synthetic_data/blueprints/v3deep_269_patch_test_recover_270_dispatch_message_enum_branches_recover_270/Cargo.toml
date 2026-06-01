@@ -1,0 +1,6 @@
+[package]
+name = "dispatch_message_enum_branches_recover_270"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

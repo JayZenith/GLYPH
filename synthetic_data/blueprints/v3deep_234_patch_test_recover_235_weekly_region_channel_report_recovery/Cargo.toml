@@ -1,0 +1,6 @@
+[package]
+name = "weekly_region_channel_report"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

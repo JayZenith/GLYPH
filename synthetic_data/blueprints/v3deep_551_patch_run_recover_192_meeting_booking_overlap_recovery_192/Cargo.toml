@@ -1,0 +1,6 @@
+[package]
+name = "meeting_booking_overlap_recovery_192"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
