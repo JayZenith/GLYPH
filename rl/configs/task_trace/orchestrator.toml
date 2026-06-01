@@ -8,9 +8,10 @@ seq_len = 5120
 max_steps = 200
 
 [model]
-# Train from SFT_V2 (signal_v2, variable-depth recovery). SFT_V1 lacked deep
-# recovery, so RL could not reach the success states the reward pays out.
-name = "JayZenith/SFT_V2"
+# Train from SFT_V1: it solves efficiently (terminal 68/69) and its only gap is
+# stopping after success -- the clean RL target. SFT_V2/V3 over-recover (churn),
+# which RL would have to unteach first.
+name = "JayZenith/SFT_V1"
 
 [train.sampling]
 temperature = 0.8

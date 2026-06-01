@@ -30,25 +30,23 @@ DEBUG_PARSE = False
 # rewarded even on an unsolved task, so the model has a positive "graceful exit"
 # instead of looping into stacked penalties. Recovery itself is taught by the
 # SFT data (signal_v2 variable-depth traces), not hand-shaped here.
+# Minimal reward. The model already solves (SFT_V1 terminal success 68/69); the
+# only gap is stopping with one FINAL after success. So: reward solving, reward
+# solving-then-stopping much more, mildly discourage not stopping. Everything
+# else is a small format floor. Bounded: best ~+13, worst ~-3.
 DEFAULT_REWARD_CONFIG = {
-    # structure / format
+    # format floor
     "structure_valid_bonus": 0.5,
     "no_call_penalty": -2.0,
     "malformed_call_penalty": -1.0,
-    "role_leakage_penalty": -0.5,
-    "post_boundary_penalty": -1.0,
-    # finalization (independent of whether the task was solved)
+    # finalize (one clean FINAL, even on an unsolved task)
     "final_once_bonus": 1.0,
     "missing_final_penalty": -2.0,
-    "dirty_final_penalty": -1.0,
-    "clean_final_after_last_tool_bonus": 2.0,
-    # task outcome (primary signal)
+    # the target: solve, then stop
     "verifier_success_bonus": 8.0,
-    "verifier_success_clean_final_bonus": 2.0,
-    # light shaping (small, non-stacking)
+    "verifier_success_clean_final_bonus": 3.0,
     "tool_after_success_penalty": -1.0,
     "tool_budget_exhausted_penalty": -2.0,
-    "patch_without_later_verifier_penalty": -1.0,
 }
 
 REWARD_CONFIG = DEFAULT_REWARD_CONFIG.copy()
@@ -187,16 +185,6 @@ def _completion_role_text(completion, role: str) -> str:
     return "" if role == "tool" else _completion_text(completion)
 
 
-def _role_leak_count(text: str) -> int:
-    """Count assistant text that tries to continue as chat/template roles."""
-    patterns = (
-        r"<\|im_start\|>",
-        r"<\|im_end\|>\s*(?:user|tool|assistant)\b",
-        r"(?m)^(?:user|tool|assistant)\s*$",
-    )
-    return sum(len(re.findall(pattern, text)) for pattern in patterns)
-
-
 def _strip_role_leak_tail(text: str) -> str:
     """Use only the assistant segment before leaked chat-template boundaries."""
     markers = [
@@ -208,10 +196,6 @@ def _strip_role_leak_tail(text: str) -> str:
         )
     ]
     return text[: min(markers)].rstrip() if markers else text
-
-
-def _has_post_boundary_text(text: str) -> bool:
-    return _strip_role_leak_tail(text) != text.rstrip()
 
 
 def _latest_assistant_segment(text: str) -> str:
@@ -271,28 +255,15 @@ def _trajectory_full_text(state: dict) -> str:
     return "\n".join(parts)
 
 
-def _finalization_reward(assistant_text: str, full_text: str) -> float:
-    """Reward clean termination, INDEPENDENT of whether the task was solved.
+def _finalization_reward(assistant_text: str) -> float:
+    """Exactly one FINAL -> small bonus; otherwise the missing-FINAL penalty.
 
-    This is the graceful-exit signal: a single clean FINAL after the last tool
-    result is rewarded even on an unsolved task, so finalizing always beats
-    looping. Task success is scored separately in `_outcome_reward`.
+    Independent of solving: finalizing always beats looping. Solving and
+    solve-then-stop are scored separately in `_outcome_reward`.
     """
-    count = final_count(assistant_text)
-    if count == 0:
-        return REWARD_CONFIG["missing_final_penalty"]
-
-    reward = 0.0
-    if count == 1:
-        reward += REWARD_CONFIG["final_once_bonus"]
-    if count > 1 or _has_dirty_final_tail(assistant_text):
-        reward += REWARD_CONFIG["dirty_final_penalty"]
-
-    last_final = full_text.rfind("FINAL:")
-    last_result = full_text.rfind("RESULT ")
-    if (last_result < 0 or last_final > last_result) and ended_cleanly_after_final(assistant_text):
-        reward += REWARD_CONFIG["clean_final_after_last_tool_bonus"]
-    return reward
+    if final_count(assistant_text) == 1:
+        return REWARD_CONFIG["final_once_bonus"]
+    return REWARD_CONFIG["missing_final_penalty"]
 
 
 def _result_offset(call_id: str, full_text: str) -> int:
@@ -336,38 +307,6 @@ def _outcome_reward(calls: list[dict], tool_text: str, assistant_text: str, full
     if clean_final_after_success and not later_tools:
         reward += REWARD_CONFIG["verifier_success_clean_final_bonus"]
     return reward
-
-
-def _patch_without_later_verifier_reward(calls: list[dict], tool_text: str) -> float:
-    last_successful_patch_idx: int | None = None
-    for idx, call in enumerate(calls):
-        if call["tool"] != "apply_patch":
-            continue
-        result = _find_result_for(call["id"], tool_text)
-        if result is not None and result.get("success"):
-            last_successful_patch_idx = idx
-
-    if last_successful_patch_idx is None:
-        return 0.0
-
-    for call in calls[last_successful_patch_idx + 1 :]:
-        if call["tool"] not in {"cargo_test", "cargo_run"}:
-            continue
-        if _find_result_for(call["id"], tool_text) is not None:
-            return 0.0
-
-    return REWARD_CONFIG["patch_without_later_verifier_penalty"]
-
-
-def _has_dirty_final_tail(assistant_text: str) -> bool:
-    if not ended_cleanly_after_final(assistant_text):
-        return True
-    tail = assistant_text[assistant_text.rfind("FINAL:") :]
-    if "\n" not in tail:
-        return False
-    after_first_line = tail.split("\n", 1)[1]
-    after_first_line = after_first_line.replace("<|im_end|>", "")
-    return bool(after_first_line.strip())
 
 
 def _find_result_for(call_id: str, text: str) -> dict | None:
@@ -432,18 +371,14 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
 
     first_call = calls[0]
     reward = _score_tool_alignment(first_call, expected_tool, expected_args)
-    reward += min(_role_leak_count(raw_assistant_trace), 4) * REWARD_CONFIG["role_leakage_penalty"]
     # Malformed call keyword (e.g. "CALLTYPE" instead of "CALL ") breaks the
     # parser so no tool executes. Penalize per occurrence (capped) to train the
     # exact `CALL <tool>(...)` form.
     malformed = len(re.findall(r"\bCALL[A-Z]", raw_assistant_trace))
     reward += min(malformed, 4) * REWARD_CONFIG["malformed_call_penalty"]
-    if _has_post_boundary_text(raw_assistant_trace):
-        reward += REWARD_CONFIG["post_boundary_penalty"]
 
-    reward += _finalization_reward(raw_assistant_trace, full_text)
+    reward += _finalization_reward(raw_assistant_trace)
     reward += _outcome_reward(calls, tool_text, raw_assistant_trace, full_text)
-    reward += _patch_without_later_verifier_reward(calls, tool_text)
 
     if state.get("tool_budget_exhausted"):
         reward += REWARD_CONFIG["tool_budget_exhausted_penalty"]
@@ -629,16 +564,11 @@ def load_environment(
     no_call_penalty: float | None = None,
     malformed_call_penalty: float | None = None,
     tool_budget_exhausted_penalty: float | None = None,
-    role_leakage_penalty: float | None = None,
-    post_boundary_penalty: float | None = None,
     final_once_bonus: float | None = None,
     missing_final_penalty: float | None = None,
-    dirty_final_penalty: float | None = None,
-    clean_final_after_last_tool_bonus: float | None = None,
     verifier_success_bonus: float | None = None,
     verifier_success_clean_final_bonus: float | None = None,
     tool_after_success_penalty: float | None = None,
-    patch_without_later_verifier_penalty: float | None = None,
 ) -> vf.Environment:
     """Load the Rust tool RL environment with real multi-round tool execution."""
     _set_reward_config(
@@ -647,16 +577,11 @@ def load_environment(
             "no_call_penalty": no_call_penalty,
             "malformed_call_penalty": malformed_call_penalty,
             "tool_budget_exhausted_penalty": tool_budget_exhausted_penalty,
-            "role_leakage_penalty": role_leakage_penalty,
-            "post_boundary_penalty": post_boundary_penalty,
             "final_once_bonus": final_once_bonus,
             "missing_final_penalty": missing_final_penalty,
-            "dirty_final_penalty": dirty_final_penalty,
-            "clean_final_after_last_tool_bonus": clean_final_after_last_tool_bonus,
             "verifier_success_bonus": verifier_success_bonus,
             "verifier_success_clean_final_bonus": verifier_success_clean_final_bonus,
             "tool_after_success_penalty": tool_after_success_penalty,
-            "patch_without_later_verifier_penalty": patch_without_later_verifier_penalty,
         }
     )
 

@@ -114,107 +114,69 @@ def score_with_raw_trace(assistant: str, results: list[str], raw: str) -> float:
 
 
 class RewardGoldenTests(unittest.TestCase):
-    """Properties of the bounded, outcome-first reward (post recovery-data pivot).
+    """Minimal reward: solve, then stop with one FINAL. Invariants:
 
-    Design invariants under test:
-      1. Finalization is decoupled from solving: a clean FINAL is rewarded even
-         on an unsolved task (graceful exit), so finalizing always beats looping.
-      2. Real verifier success is the dominant signal.
-      3. No stacked cliffs: the worst no-FINAL trajectory stays near the positive
-         scale so one bad rollout cannot dominate a GRPO group.
-      4. Wandering with tools after success is only mildly discouraged, not
-         crushed (that shape overlaps with legitimate recovery).
+      - solve + clean stop is the maximum
+      - solving is rewarded even without FINAL (no collapse incentive)
+      - a clean FINAL beats looping even on an unsolved task (graceful exit)
+      - not stopping (tools after success / no FINAL) is mildly discouraged
+      - bounded: worst trajectory stays near the positive scale
     """
 
     READ = call("read_file", "c1", file_path="src/lib.rs")
     PATCH = call("apply_patch", "c2", file_path="src/lib.rs", find="bug", replace="fix")
+    OK = call("cargo_test", "c3", project_path=".")
+    FAIL = call("cargo_test", "c3", project_path=".")
+    SOLVED = [result_block("c1", True), result_block("c2", True), result_block("c3", True)]
+    UNSOLVED = [result_block("c1", True), result_block("c2", True), result_block("c3", False)]
 
-    def test_clean_final_rewarded_even_on_unsolved_task(self) -> None:
-        # Graceful exit: cargo_test failed, but the model still emits one FINAL.
-        fail = call("cargo_test", "c3", project_path=".")
-        results = [result_block("c1", True), result_block("c2", True), result_block("c3", False)]
-        loop = score("\n".join([self.READ, self.PATCH, fail]), results)
-        graceful = score("\n".join([self.READ, self.PATCH, fail, "FINAL: tried"]), results)
+    def _solve_stop(self):
+        return score("\n".join([self.READ, self.PATCH, self.OK, "FINAL: done"]), self.SOLVED)
 
-        expected = (
-            REWARD_CONFIG["final_once_bonus"]
-            + REWARD_CONFIG["clean_final_after_last_tool_bonus"]
-            - REWARD_CONFIG["missing_final_penalty"]
+    def test_solve_then_stop_is_the_maximum(self) -> None:
+        solve_stop = self._solve_stop()
+        solve_nostop = score("\n".join([self.READ, self.PATCH, self.OK]), self.SOLVED)
+        graceful = score("\n".join([self.READ, self.PATCH, self.FAIL, "FINAL: tried"]), self.UNSOLVED)
+        loop = score("\n".join([self.READ, self.PATCH, self.FAIL]), self.UNSOLVED)
+        self.assertGreater(solve_stop, solve_nostop)
+        self.assertGreater(solve_stop, graceful)
+        self.assertGreater(solve_stop, loop)
+
+    def test_solving_rewarded_even_without_final(self) -> None:
+        # No incentive to abandon the solving the SFT model already does.
+        solve_nostop = score("\n".join([self.READ, self.PATCH, self.OK]), self.SOLVED)
+        self.assertGreater(solve_nostop, 3.0)
+
+    def test_clean_final_beats_looping_on_unsolved(self) -> None:
+        graceful = score("\n".join([self.READ, self.PATCH, self.FAIL, "FINAL: tried"]), self.UNSOLVED)
+        loop = score("\n".join([self.READ, self.PATCH, self.FAIL]), self.UNSOLVED)
+        self.assertAlmostEqual(
+            graceful - loop,
+            REWARD_CONFIG["final_once_bonus"] - REWARD_CONFIG["missing_final_penalty"],
         )
-        self.assertAlmostEqual(graceful - loop, expected)
-        self.assertGreater(graceful, loop)
-        self.assertGreater(graceful, 0.0)  # graceful exit is net positive
-
-    def test_solving_is_rewarded_even_without_final(self) -> None:
-        # Anti-collapse: solving stays strongly positive so RL never has an
-        # incentive to abandon the tool-solving the SFT model already does.
-        ok = call("cargo_test", "c3", project_path=".")
-        results = [result_block("c1", True), result_block("c2", True), result_block("c3", True)]
-        solved_no_final = score("\n".join([self.READ, self.PATCH, ok]), results)
-        self.assertGreater(solved_no_final, 3.0)
+        self.assertGreater(graceful, 0.0)
 
     def test_solving_dominates_formatting(self) -> None:
-        ok = call("cargo_test", "c3", project_path=".")
-        fail = call("cargo_test", "c3", project_path=".")
-        solved_final = score(
-            "\n".join([self.READ, self.PATCH, ok, "FINAL: done"]),
-            [result_block("c1", True), result_block("c2", True), result_block("c3", True)],
-        )
-        graceful = score(
-            "\n".join([self.READ, self.PATCH, fail, "FINAL: tried"]),
-            [result_block("c1", True), result_block("c2", True), result_block("c3", False)],
-        )
-        expected = (
-            REWARD_CONFIG["verifier_success_bonus"]
-            + REWARD_CONFIG["verifier_success_clean_final_bonus"]
-        )
-        self.assertAlmostEqual(solved_final - graceful, expected)
-
-    def test_tool_use_after_success_is_only_mildly_penalized(self) -> None:
-        ok = call("cargo_test", "c3", project_path=".")
-        read_again = call("read_file", "c4", file_path="src/lib.rs")
-        stop = score(
-            "\n".join([self.READ, self.PATCH, ok, "FINAL: done"]),
-            [result_block("c1", True), result_block("c2", True), result_block("c3", True)],
-        )
-        more = score(
-            "\n".join([self.READ, self.PATCH, ok, read_again, "FINAL: done"]),
-            [result_block("c1", True), result_block("c2", True),
-             result_block("c3", True), result_block("c4", True)],
-        )
-        self.assertGreater(stop, more)
-        self.assertLessEqual(stop - more, 4.0)  # mild, not the old ~21 cliff
-        self.assertGreater(more, 3.0)           # still clearly positive (solved)
-
-    def test_missing_final_penalty_does_not_stack(self) -> None:
-        # The unsolved no-FINAL loop must stay near the positive scale.
-        fail = call("cargo_test", "c3", project_path=".")
-        loop = score(
-            "\n".join([self.READ, self.PATCH, fail]),
-            [result_block("c1", True), result_block("c2", True), result_block("c3", False)],
-        )
-        self.assertGreater(loop, -5.0)
-
-    def test_patch_without_later_verifier_is_mildly_penalized(self) -> None:
-        fail = call("cargo_test", "c3", project_path=".")
-        no_verifier = score(
-            "\n".join([self.READ, self.PATCH]),
-            [result_block("c1", True), result_block("c2", True)],
-        )
-        with_verifier = score(
-            "\n".join([self.READ, self.PATCH, fail]),
-            [result_block("c1", True), result_block("c2", True), result_block("c3", False)],
-        )
+        solve_stop = self._solve_stop()
+        graceful = score("\n".join([self.READ, self.PATCH, self.FAIL, "FINAL: tried"]), self.UNSOLVED)
         self.assertAlmostEqual(
-            with_verifier - no_verifier, -REWARD_CONFIG["patch_without_later_verifier_penalty"]
+            solve_stop - graceful,
+            REWARD_CONFIG["verifier_success_bonus"] + REWARD_CONFIG["verifier_success_clean_final_bonus"],
         )
 
-    def test_dirty_final_loses_clean_bonus_and_takes_penalty(self) -> None:
-        ok = call("cargo_test", "c3", project_path=".")
-        results = [result_block("c1", True), result_block("c2", True), result_block("c3", True)]
-        clean = score("\n".join([self.READ, self.PATCH, ok, "FINAL: done"]), results)
-        dirty = score("\n".join([self.READ, self.PATCH, ok, "FINAL: done", "trailing junk"]), results)
-        self.assertAlmostEqual(clean - dirty, -REWARD_CONFIG["dirty_final_penalty"])
+    def test_tools_after_success_only_mildly_penalized(self) -> None:
+        read_again = call("read_file", "c4", file_path="src/lib.rs")
+        more = score(
+            "\n".join([self.READ, self.PATCH, self.OK, read_again, "FINAL: done"]),
+            self.SOLVED + [result_block("c4", True)],
+        )
+        self.assertGreater(self._solve_stop(), more)
+        self.assertLessEqual(self._solve_stop() - more, 4.0)
+        self.assertGreater(more, 3.0)
+
+    def test_worst_case_is_bounded(self) -> None:
+        loop = score("\n".join([self.READ, self.PATCH, self.FAIL]), self.UNSOLVED)
+        self.assertGreater(loop, -4.0)
 
 
 def assistant_text(row: dict) -> str:

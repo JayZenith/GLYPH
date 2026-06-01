@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# RLVR v2 — corrected recipe. See rl/RLVR_NOTES.md for why each value changed.
-# Prereqs: SFT_V2 trained+pushed (signal_v2), and it must beat SFT_V1's 52/69 on
-# the held-out 69 BEFORE running this. RL is a nudge, not a fix for weak SFT.
+# RLVR — corrected recipe. See rl/RLVR_NOTES.md for why each value changed.
+# Base = SFT_V1: it already solves (terminal 68/69); the only gap RL fixes is
+# stopping with one FINAL after success. Minimal "solve -> stop" reward.
 set -euo pipefail
 
-MODEL="${MODEL:-JayZenith/SFT_V2}"          # base + teacher (anchor target)
+MODEL="${MODEL:-JayZenith/SFT_V1}"          # base + teacher (anchor target)
 OUTPUT="${OUTPUT:-outputs/rlvr_v2}"
 DATA="${DATA:-synthetic_data/rl_prompts_v2_1323.jsonl}"
 
