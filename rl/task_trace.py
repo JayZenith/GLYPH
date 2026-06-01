@@ -45,7 +45,10 @@ DEFAULT_REWARD_CONFIG = {
     # the target: solve, then stop
     "verifier_success_bonus": 8.0,
     "verifier_success_clean_final_bonus": 3.0,
-    "tool_after_success_penalty": -1.0,
+    # Post-success churn (using tools after the task already passed) IS the
+    # failure mode. Penalize it hard -- but bounded, so solving stays net-positive
+    # and the model is never pushed to abandon solving.
+    "tool_after_success_penalty": -3.0,
     "tool_budget_exhausted_penalty": -2.0,
 }
 

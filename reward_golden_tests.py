@@ -164,15 +164,17 @@ class RewardGoldenTests(unittest.TestCase):
             REWARD_CONFIG["verifier_success_bonus"] + REWARD_CONFIG["verifier_success_clean_final_bonus"],
         )
 
-    def test_tools_after_success_only_mildly_penalized(self) -> None:
+    def test_churn_after_success_is_penalized_but_bounded(self) -> None:
+        # Using a tool after the task already passed is the exact failure mode, so
+        # it's penalized hard -- yet solving stays net-positive (never push the
+        # model to abandon solving).
         read_again = call("read_file", "c4", file_path="src/lib.rs")
         more = score(
             "\n".join([self.READ, self.PATCH, self.OK, read_again, "FINAL: done"]),
             self.SOLVED + [result_block("c4", True)],
         )
-        self.assertGreater(self._solve_stop(), more)
-        self.assertLessEqual(self._solve_stop() - more, 4.0)
-        self.assertGreater(more, 3.0)
+        self.assertGreaterEqual(self._solve_stop() - more, 5.0)  # strongly discouraged
+        self.assertGreater(more, 0.0)                            # but solving still pays
 
     def test_worst_case_is_bounded(self) -> None:
         loop = score("\n".join([self.READ, self.PATCH, self.FAIL]), self.UNSOLVED)

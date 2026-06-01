@@ -53,7 +53,7 @@ finalize
 the target: solve, then stop
   verifier_success_bonus     +8.0    a verifier actually passed (real correctness)
   verifier_success_clean_final +3.0  passed AND one FINAL after it AND no tools after
-  tool_after_success_penalty -1.0    any tool ran after the pass (churn)
+  tool_after_success_penalty -3.0    any tool ran after the pass (churn = the failure)
   tool_budget_exhausted      -2.0    hit max_tool_rounds
 ```
 
