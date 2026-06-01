@@ -374,14 +374,17 @@ def _post_result_final_reward(full_text: str, calls: list[dict], tool_text: str)
     segment = _assistant_after_last_result(full_text)
     if segment is None:
         return 0.0
-    clean_segment = segment.replace("<|im_end|>", "").strip()
     if final_count(segment) > 0:
         if not _last_result_is_successful_verifier(calls, tool_text, full_text):
             return 0.0
         return REWARD_CONFIG["final_after_result_turn_bonus"]
-    if not clean_segment:
-        return REWARD_CONFIG["empty_after_result_no_final_penalty"]
-    return 0.0
+    # No FINAL in the terminal assistant turn after the last tool result. This is
+    # either an empty assistant (env truncated) or a trailing unexecuted CALL
+    # (the model kept looping until the tool budget ran out). The training env
+    # stops at the budget via is_completed, so the looping failure surfaces as an
+    # unexecuted CALL rather than the canary's empty-assistant shape. Both mean
+    # the model never finalized; penalize equally.
+    return REWARD_CONFIG["empty_after_result_no_final_penalty"]
 
 
 def _result_offset(call_id: str, full_text: str) -> int:
@@ -610,8 +613,10 @@ class RustToolEnv(vf.MultiTurnEnv):
         if not trajectory:
             return False
         if state.get("rounds_used", 0) >= self.max_tool_rounds:
+            state["tool_budget_exhausted"] = True
             return True
         if len(state.get("executed_call_ids") or []) >= self.max_tool_rounds:
+            state["tool_budget_exhausted"] = True
             return True
         if state.get("tool_budget_exhausted"):
             return True
