@@ -1,0 +1,940 @@
+[
+  {
+    "name": "general50_007_patch_test_pass_008_booking_overlap_half_open_edge_rules",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "general50_008_patch_test_pass_009_csv_key_value_skip_invalid_lines",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "general50_012_patch_test_pass_013_keep_active_even_scores_filter_map",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "general50_028_patch_test_recover_007_layered_bool_and_timeout_precedence",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "general50_034_patch_test_recover_013_collect_visible_scores_recover_iter_filters",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scale200_011_patch_test_pass_012_workflow_event_terminal_reopen_rules",
+    "solves": 6,
+    "k": 8,
+    "pass_at_k": 0.75,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scale200_033_patch_test_pass_034_rank_players_tiebreak_desc_name_fix",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scale200_039_patch_test_pass_040_booking_half_open_and_capacity_conflicts",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scale200_046_patch_test_pass_047_config_merge_precedence_env_overrides_file_not_defaults",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scale200_051_patch_test_pass_052_ticket_lifecycle_reopen_and_terminal_rules",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scale200_064_patch_test_pass_065_parse_record_require_three_fields",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scale200_066_patch_test_pass_067_weekly_category_report_pending_excluded",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scale200_106_patch_run_pass_035_department_hours_summary_filter_and_top",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scale200_107_patch_run_pass_036_ticket_status_reopen_transition",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scale200_110_patch_run_pass_039_config_merge_precedence_cli_over_env_over_default",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scale200_114_patch_test_recover_003_category_report_missing_invalid_recovery",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scale200_125_patch_test_recover_014_dispatch_action_enum_recovery_case14",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scale200_158_patch_test_recover_047_layered_config_merge_precedence_recover_47",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scale200_166_patch_test_recover_055_config_layer_merge_precedence_recovery_55",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scale200_170_patch_test_recover_059_monthly_region_summary_recover",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_005_patch_test_pass_006_enum_http_status_branch_fix",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_012_patch_test_pass_013_keep_parsed_even_numbers",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_017_patch_test_pass_018_leaderboard_rank_tiebreak_name_order",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_029_patch_test_pass_030_event_status_match_branch_fix",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_039_patch_test_pass_040_booking_half_open_reject_invalid_and_sorted_insert",
+    "solves": 4,
+    "k": 8,
+    "pass_at_k": 0.5,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalea400_059_patch_test_pass_060_ticket_lifecycle_terminal_and_resolution_rules",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalea400_066_patch_test_pass_067_monthly_region_report_zero_order_filter",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_070_patch_test_pass_071_config_layer_override_precedence",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_093_patch_run_pass_009_validate_colon_records_required_fields",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalea400_099_patch_run_pass_015_merge_layers_override_empty_string_precedence",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_120_patch_run_pass_036_ticket_lifecycle_transition_summary",
+    "solves": 6,
+    "k": 8,
+    "pass_at_k": 0.75,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalea400_135_patch_run_pass_051_department_hours_report_totals",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_158_patch_test_recover_019_monthly_store_report_filters_and_sort",
+    "solves": 6,
+    "k": 8,
+    "pass_at_k": 0.75,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalea400_159_patch_test_recover_020_ticket_status_reopen_transition",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_164_patch_test_recover_025_record_parser_validate_required_and_age",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_183_patch_test_recover_044_ticket_status_close_reopen_rules",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_188_patch_test_recover_049_record_parser_requires_fields_and_valid_scores",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_211_patch_test_recover_072_booking_overlap_half_open_recover",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_214_patch_test_recover_075_monthly_department_report_filters_and_order",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_223_patch_test_recover_084_ticket_lifecycle_reopen_then_resolve",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_225_patch_test_recover_086_event_describe_enum_branch_recovery",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_249_patch_run_recover_010_team_standings_ranking_tiebreaks_recover",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_256_patch_run_recover_017_csv_inventory_parse_validate_recover",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalea400_305_patch_run_recover_066_rank_players_multi_tiebreak_recovery",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_317_patch_run_recover_078_route_action_match_branches_recover_78",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalea400_318_patch_run_recover_079_layered_config_override_precedence",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_332_patch_run_recover_093_active_tags_sorted_unique_recover",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalea400_353_patch_run_recover_114_leaderboard_sort_tiebreak_recover_114",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalea400_358_patch_run_recover_119_layered_config_merge_precedence_119",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scaleb350_006_patch_test_pass_007_layered_config_override_empty_string_precedence",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_016_patch_test_pass_017_csv_record_field_count_validation",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_017_patch_test_pass_018_rank_players_points_name_tiebreak",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_028_patch_test_pass_029_collect_short_codes_filters_active_nonempty",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scaleb350_038_patch_test_pass_039_layered_config_override_precedence",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_055_patch_test_pass_056_interval_overlap_booking_half_open_edge_cases",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_079_patch_run_pass_005_filter_map_even_name_pairs",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scaleb350_091_patch_run_pass_017_validate_colon_records_require_nonempty_name_and_positive_age",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_104_patch_run_pass_030_route_action_match_fallback_logic",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_116_patch_run_pass_042_rank_scores_desc_name_tiebreak",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_120_patch_run_pass_046_route_action_match_branch_fix",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_133_patch_test_recover_009_csv_record_validation_missing_age_and_tag_rules",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_154_patch_test_recover_030_enum_dispatch_recovery_notifications",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_175_patch_test_recover_051_monthly_sales_report_missing_zero_and_order",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_190_patch_test_recover_066_leaderboard_rank_tiebreak_recovery",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_205_patch_test_recover_081_kv_record_parser_missing_rule_recovery",
+    "solves": 5,
+    "k": 8,
+    "pass_at_k": 0.625,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scaleb350_225_patch_run_recover_011_team_hours_report_recovery",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_240_patch_run_recover_026_rank_cities_medal_tiebreak_recover",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_264_patch_run_recover_050_sales_ranking_tiebreaks_recover_50",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scaleb350_272_patch_run_recover_058_rank_regions_sales_tiebreak_recovery",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_308_patch_run_recover_094_dispatch_report_match_branches_recover_94",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scaleb350_310_patch_run_recover_096_booking_overlap_half_open_recover_96",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalec500_001_patch_test_pass_002_rank_players_wins_then_diff_then_name",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_003_patch_test_pass_004_ticket_lifecycle_reopen_resolution",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalec500_043_patch_test_pass_044_ticket_reopen_from_closed",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_048_patch_test_pass_049_kv_record_validation_missing_value_reject",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_056_patch_run_pass_002_sales_leaderboard_tiebreak_order",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_089_patch_run_pass_035_monthly_region_report_filter_and_top_fix",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_094_patch_run_pass_040_conference_room_interval_overlap_booking",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_109_patch_run_pass_055_config_layers_override_env_over_file",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_111_patch_run_pass_057_validate_colon_records_require_nonempty_value",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalec500_115_patch_run_pass_061_filter_map_positive_even_labels",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_123_patch_run_pass_069_task_filter_map_active_tag_scores",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_130_patch_test_recover_001_csv_record_validation_recover",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalec500_185_patch_test_recover_056_booking_overlap_touching_and_containment",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_187_patch_test_recover_058_rank_players_dense_tiebreak_recover",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_206_patch_test_recover_077_collect_keywords_filter_map_recover77",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalec500_210_patch_test_recover_081_record_parser_validation_recover_81",
+    "solves": 5,
+    "k": 8,
+    "pass_at_k": 0.625,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalec500_221_patch_test_recover_092_ticket_state_reopen_reassign",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_232_patch_test_recover_103_layered_config_override_then_fallback",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_247_patch_test_recover_118_dispatch_action_variant_recovery",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_255_patch_test_recover_126_enum_dispatch_recover_policy_rules",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalec500_258_patch_test_recover_129_record_parser_validation_recover_129",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalec500_269_patch_run_recover_005_filter_map_selected_scores_recover",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_305_patch_run_recover_041_record_parser_validate_age_and_keys",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_322_patch_run_recover_058_sales_ranking_region_tiebreak_recover",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_367_patch_run_recover_103_layered_config_merge_precedence_103",
+    "solves": 6,
+    "k": 8,
+    "pass_at_k": 0.75,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "scalec500_435_patch_run_recover_171_team_hours_summary_open_and_sort_recover",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_439_patch_run_recover_175_config_merge_precedence_env_empty_and_cli_override",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_447_patch_run_recover_183_config_merge_precedence_profile_cli_recover",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_453_patch_run_recover_189_event_pipeline_active_score_recover",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_454_patch_run_recover_190_dispatch_audit_match_recovery",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_456_patch_run_recover_192_booking_interval_overlap_recover_192",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "scalec500_457_patch_run_recover_193_inventory_record_parser_validation_recovery",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "stable50_004_patch_test_pass_005_keep_numeric_prefixes_filter_map",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "stable50_008_patch_test_pass_009_csv_record_field_count_validation",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "stable50_023_patch_run_pass_006_dispatch_event_summary_branch_fix",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "stable50_044_patch_test_recover_017_csv_record_validator_recover_missing_and_quote_rules",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "v2recover_036_patch_test_recover_037_collect_visible_scores_skip_invalid_and_blank",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "v2recover_039_patch_test_recover_040_booking_overlap_edges_recover",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "v2recover_063_patch_test_recover_064_booking_overlap_touching_edges_recover",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "v2recover_064_patch_test_recover_065_record_parser_validate_required_fields",
+    "solves": 5,
+    "k": 8,
+    "pass_at_k": 0.625,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "v2recover_075_patch_test_recover_076_ticket_lifecycle_reopen_then_close",
+    "solves": 5,
+    "k": 8,
+    "pass_at_k": 0.625,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "v2recover_100_patch_test_recover_101_collect_visible_labels_filter_map_recover",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "v2recover_103_patch_test_recover_104_booking_overlap_touch_and_containment",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "v2recover_139_patch_test_recover_140_workflow_state_machine_recovery_140",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "v2recover_150_patch_test_recover_151_layered_config_merge_precedence_151",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "v2recover_183_patch_test_recover_184_booking_half_open_overlap_recovery",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "v2recover_211_patch_test_recover_212_ticket_lifecycle_transition_recovery",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "v2recover_268_patch_run_recover_049_validate_records_skip_blank_and_upper_status",
+    "solves": 6,
+    "k": 8,
+    "pass_at_k": 0.75,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "v2recover_276_patch_run_recover_057_record_parser_validate_counts",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "v2recover_285_patch_run_recover_066_rank_products_multi_tiebreak_recover",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "v2recover_297_patch_run_recover_078_dispatch_summary_enum_branches_recover78",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "v2recover_310_patch_run_recover_091_monthly_region_sales_summary_recovery",
+    "solves": 6,
+    "k": 8,
+    "pass_at_k": 0.75,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "v2recover_354_patch_run_recover_135_layered_profile_merge_precedence_report",
+    "solves": 6,
+    "k": 8,
+    "pass_at_k": 0.75,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "v2recover_388_patch_test_pass_019_monthly_region_summary_skips_refunds",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  },
+  {
+    "name": "v2recover_401_patch_test_pass_032_booking_conflict_touch_and_containment_fix",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "v2recover_408_patch_test_pass_039_layered_config_override_precedence_case",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "v2recover_421_patch_test_pass_052_ticket_queue_state_transition_rules",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "v2recover_435_patch_test_pass_066_rank_players_score_name_tiebreak",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "v2recover_449_patch_run_pass_010_sales_rank_tiebreak_region_name",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "v2recover_461_patch_run_pass_022_dispatch_notifications_match_branches",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "v2recover_462_patch_run_pass_023_config_merge_precedence_env_cli_case23",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "v2recover_474_patch_run_pass_035_team_sales_aggregation_report",
+    "solves": 8,
+    "k": 8,
+    "pass_at_k": 1.0,
+    "band": "solved"
+  },
+  {
+    "name": "v2recover_477_patch_run_pass_038_event_kind_branch_summary_fix",
+    "solves": 7,
+    "k": 8,
+    "pass_at_k": 0.875,
+    "band": "rlvr-target"
+  }
+]
