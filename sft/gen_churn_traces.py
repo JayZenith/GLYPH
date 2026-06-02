@@ -113,6 +113,10 @@ def main() -> int:
                    help="Where per-rollout sandboxes are materialized.")
     p.add_argument("--output-raw", default="synthetic_data/churn_traces_raw.jsonl")
     p.add_argument("--output-sft", default="synthetic_data/churn_fixed_sft.jsonl")
+    p.add_argument("--temperature", type=float, default=0.0,
+                   help="0 = greedy. Use ~0.8 to surface off-mode churn (greedy mostly stops cleanly).")
+    p.add_argument("--samples-per-prompt", type=int, default=1,
+                   help="Rollouts per prompt; keep every churn one. Use with --temperature>0.")
     p.add_argument("--max-new-tokens", type=int, default=4000)
     p.add_argument("--max-tool-rounds", type=int, default=15)
     p.add_argument("--tool-timeout", type=int, default=30)
@@ -139,48 +143,54 @@ def main() -> int:
     try:
         for i, row in enumerate(rows):
             prompt = row["prompt"]
-            out, n_tok = generate(
-                model, tok, prompt, args.max_new_tokens,
-                max_tool_rounds=args.max_tool_rounds,
-                execution={
-                    "blueprint_root": row.get("blueprint_root"),
-                    "trace_prefix": row.get("trace_prefix"),
-                    "sandbox_root": sandbox_root,
-                    "timeout": args.tool_timeout,
-                    "nsjail_path": args.nsjail_path,
-                    "expected_output": row.get("expected_output"),
-                },
-            )
-            n_seen += 1
+            kind = row.get("kind", "other")
             item = {
-                "kind": row.get("kind", "other"),
+                "kind": kind,
                 "expected_tool_sequence": row.get("expected_tool_sequence", []),
                 "expected_output": row.get("expected_output"),
             }
-            metrics = score_output(prompt, out, item, n_tok, args.max_new_tokens)
-            full_trace = prompt + out
-            fixed = truncate_at_first_success(full_trace, row.get("kind", "other"))
-            if fixed is not None:
-                n_churn += 1
-                n_fixed += 1
-                tag = "churn->fixed"
-                raw_f.write(json.dumps({
-                    "case_id": row.get("case_id"), "kind": row.get("kind"),
-                    "trace": full_trace, "metrics": metrics,
-                }) + "\n")
-                sft_f.write(json.dumps({
-                    "trace": fixed,
-                    "family": row.get("kind"),
-                    "case_id": row.get("case_id"),
-                    "difficulty": row.get("difficulty"),
-                    "expected_tool_sequence": row.get("expected_tool_sequence", []),
-                    "expected_output": row.get("expected_output"),
-                }) + "\n")
-            elif _first_verifier_success(full_trace) is None:
-                tag = "unsolved"  # never passed a verifier -> capability failure, not churn
-            else:
-                tag = "clean"  # solved and stopped cleanly
-            print(f"[{i+1}/{len(rows)}] {row.get('case_id')} -> {tag}", flush=True)
+            tags = []  # one per sample
+            for _ in range(max(args.samples_per_prompt, 1)):
+                out, n_tok = generate(
+                    model, tok, prompt, args.max_new_tokens,
+                    max_tool_rounds=args.max_tool_rounds,
+                    temperature=args.temperature,
+                    execution={
+                        "blueprint_root": row.get("blueprint_root"),
+                        "trace_prefix": row.get("trace_prefix"),
+                        "sandbox_root": sandbox_root,
+                        "timeout": args.tool_timeout,
+                        "nsjail_path": args.nsjail_path,
+                        "expected_output": row.get("expected_output"),
+                    },
+                )
+                n_seen += 1
+                metrics = score_output(prompt, out, item, n_tok, args.max_new_tokens)
+                full_trace = prompt + out
+                fixed = truncate_at_first_success(full_trace, kind)
+                if fixed is not None:
+                    n_churn += 1
+                    n_fixed += 1
+                    tags.append("churn")
+                    raw_f.write(json.dumps({
+                        "case_id": row.get("case_id"), "kind": kind,
+                        "trace": full_trace, "metrics": metrics,
+                    }) + "\n")
+                    sft_f.write(json.dumps({
+                        "trace": fixed,
+                        "family": kind,
+                        "case_id": row.get("case_id"),
+                        "difficulty": row.get("difficulty"),
+                        "expected_tool_sequence": row.get("expected_tool_sequence", []),
+                        "expected_output": row.get("expected_output"),
+                    }) + "\n")
+                elif _first_verifier_success(full_trace) is None:
+                    tags.append("unsolved")
+                else:
+                    tags.append("clean")
+            n_c = tags.count("churn")
+            print(f"[{i+1}/{len(rows)}] {row.get('case_id')} -> churn={n_c}/{len(tags)} {tags}",
+                  flush=True)
     finally:
         raw_f.close()
         sft_f.close()

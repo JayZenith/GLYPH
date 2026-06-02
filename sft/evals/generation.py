@@ -35,7 +35,8 @@ def load_model(model_path: str):
     return model, tokenizer
 
 
-def _generate_once(model, tokenizer, prompt: str, max_new_tokens: int, token_callback=None) -> tuple[str, int, bool]:
+def _generate_once(model, tokenizer, prompt: str, max_new_tokens: int, token_callback=None,
+                   temperature: float | None = None) -> tuple[str, int, bool]:
     inputs = tokenizer(prompt, return_tensors="pt", add_special_tokens=False).to(model.device)
     input_len = inputs["input_ids"].shape[1]
     stop_ids = [tokenizer.eos_token_id]
@@ -46,10 +47,13 @@ def _generate_once(model, tokenizer, prompt: str, max_new_tokens: int, token_cal
     gen_kwargs = dict(
         **inputs,
         max_new_tokens=max_new_tokens,
-        do_sample=False,
         pad_token_id=tokenizer.pad_token_id,
         eos_token_id=stop_ids,
     )
+    if temperature and temperature > 0:
+        gen_kwargs.update(do_sample=True, temperature=temperature, top_p=1.0)
+    else:
+        gen_kwargs["do_sample"] = False
 
     if token_callback is not None:
         streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=False)
@@ -88,6 +92,7 @@ def generate(
     max_tool_rounds: int = 5,
     token_callback=None,
     execution: dict | None = None,
+    temperature: float | None = None,
 ) -> tuple[str, int]:
     accumulated = ""
     total_new_tokens = 0
@@ -114,6 +119,7 @@ def generate(
             cur_prompt,
             remaining,
             token_callback=token_callback,
+            temperature=temperature,
         )
         accumulated += chunk
         total_new_tokens += n_tok
