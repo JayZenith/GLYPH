@@ -69,27 +69,39 @@ def _assistant_call_tools(full_trace: str) -> dict[str, str]:
     return id_to_tool
 
 
-def truncate_at_first_success(full_trace: str, kind: str) -> str | None:
-    """Cut the trace right after the first passing verifier RESULT and append one
-    clean FINAL. Returns the surgically-fixed trace, or None if no verifier
-    success is found (then there is nothing to teach)."""
+def _first_verifier_success(full_trace: str):
+    """Return the regex match for the FIRST passing cargo_test/cargo_run RESULT
+    block, or None if no verifier ever passed (i.e. the task was never solved)."""
     id_to_tool = _assistant_call_tools(full_trace)
     for m in _TOOL_BLOCK.finditer(full_trace):
         body, call_id = m.group(1), m.group(2)
-        if id_to_tool.get(call_id) not in VERIFIERS:
-            continue
-        if "status: success" not in body:
-            continue
-        head = full_trace[: m.end()]  # up to and including the success </im_end>
-        final = _FINAL_BY_KIND.get(kind, _FINAL_DEFAULT)
-        return f"{head}\n\n<|im_start|>assistant\n{final}\n<|im_end|>"
+        if id_to_tool.get(call_id) in VERIFIERS and "status: success" in body:
+            return m
     return None
 
 
-def is_churn(metrics: dict) -> bool:
-    """Solved (terminal verifier passed) but did not end cleanly -- i.e. churned
-    past success and/or never emitted FINAL. These are the traces worth fixing."""
-    return bool(metrics.get("terminal_tool_success")) and not bool(metrics.get("clean_end"))
+def churn_match(full_trace: str):
+    """Return the first-verifier-success match IFF this is a genuine
+    solve-then-churn trace: a verifier passed, but the model then ran more tools
+    and/or never emitted FINAL. None means either never-solved (a real task
+    failure, not churn) or solved-and-stopped-cleanly (nothing to fix)."""
+    m = _first_verifier_success(full_trace)
+    if m is None:
+        return None  # never solved -> not churn, a capability failure
+    tail = full_trace[m.end():]
+    churned = ("<|im_start|>tool" in tail) or ("FINAL:" not in full_trace)
+    return m if churned else None
+
+
+def truncate_at_first_success(full_trace: str, kind: str) -> str | None:
+    """Cut the trace right after the first passing verifier RESULT and append one
+    clean FINAL. Returns None if it is not a genuine solve-then-churn trace."""
+    m = churn_match(full_trace)
+    if m is None:
+        return None
+    head = full_trace[: m.end()]  # up to and including the success </im_end>
+    final = _FINAL_BY_KIND.get(kind, _FINAL_DEFAULT)
+    return f"{head}\n\n<|im_start|>assistant\n{final}\n<|im_end|>"
 
 
 def main() -> int:
@@ -146,28 +158,28 @@ def main() -> int:
                 "expected_output": row.get("expected_output"),
             }
             metrics = score_output(prompt, out, item, n_tok, args.max_new_tokens)
-            tag = "clean"
-            if is_churn(metrics):
+            full_trace = prompt + out
+            fixed = truncate_at_first_success(full_trace, row.get("kind", "other"))
+            if fixed is not None:
                 n_churn += 1
-                full_trace = prompt + out
+                n_fixed += 1
+                tag = "churn->fixed"
                 raw_f.write(json.dumps({
                     "case_id": row.get("case_id"), "kind": row.get("kind"),
                     "trace": full_trace, "metrics": metrics,
                 }) + "\n")
-                fixed = truncate_at_first_success(full_trace, row.get("kind", "other"))
-                if fixed is not None:
-                    n_fixed += 1
-                    tag = "churn->fixed"
-                    sft_f.write(json.dumps({
-                        "trace": fixed,
-                        "family": row.get("kind"),
-                        "case_id": row.get("case_id"),
-                        "difficulty": row.get("difficulty"),
-                        "expected_tool_sequence": row.get("expected_tool_sequence", []),
-                        "expected_output": row.get("expected_output"),
-                    }) + "\n")
-                else:
-                    tag = "churn(no-success-cut)"
+                sft_f.write(json.dumps({
+                    "trace": fixed,
+                    "family": row.get("kind"),
+                    "case_id": row.get("case_id"),
+                    "difficulty": row.get("difficulty"),
+                    "expected_tool_sequence": row.get("expected_tool_sequence", []),
+                    "expected_output": row.get("expected_output"),
+                }) + "\n")
+            elif _first_verifier_success(full_trace) is None:
+                tag = "unsolved"  # never passed a verifier -> capability failure, not churn
+            else:
+                tag = "clean"  # solved and stopped cleanly
             print(f"[{i+1}/{len(rows)}] {row.get('case_id')} -> {tag}", flush=True)
     finally:
         raw_f.close()
