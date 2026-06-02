@@ -124,14 +124,23 @@ def main() -> int:
     p.add_argument("--limit", type=int, default=None, help="First N prompts only.")
     p.add_argument("--kinds", default=None,
                    help="Comma-separated kinds to keep (e.g. recover kinds), where churn lives.")
+    p.add_argument("--min-recover-depth", type=int, default=0,
+                   help="Keep only prompts whose teacher solution makes >= N cargo_test/cargo_run "
+                        "attempts. Churn concentrates in deep multi-attempt recovery; depth>=3 is the "
+                        "churn-prone core (depth-2 one-fix cases mostly stop cleanly).")
     args = p.parse_args()
 
     keep_kinds = set(args.kinds.split(",")) if args.kinds else None
     rows = [json.loads(line) for line in Path(args.rl_prompts).read_text().splitlines() if line.strip()]
     if keep_kinds:
         rows = [r for r in rows if r.get("kind") in keep_kinds]
+    if args.min_recover_depth > 0:
+        def _depth(r):
+            return sum(1 for t in (r.get("expected_tool_sequence") or []) if t in VERIFIERS)
+        rows = [r for r in rows if _depth(r) >= args.min_recover_depth]
     if args.limit is not None:
         rows = rows[: args.limit]
+    print(f"{len(rows)} prompts after filters.", flush=True)
 
     print(f"Loading {args.model} ...")
     model, tok = load_model(args.model)
