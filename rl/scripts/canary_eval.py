@@ -118,7 +118,12 @@ def main() -> int:
     parser.add_argument("--train-data", default="synthetic_data/signal_1062.jsonl")
     parser.add_argument("--prompt-file", default="sft/evals/eval_prompts_heldout_69.yaml")
     parser.add_argument("--prompt-section", default="post_eval_heldout_69")
-    parser.add_argument("--names", nargs="*", default=DEFAULT_CANARY_NAMES)
+    parser.add_argument(
+        "--names",
+        nargs="*",
+        default=None,
+        help="Prompt names to evaluate. Omit to use the default heldout canary names; pass with no values to evaluate the full selected prompt section.",
+    )
     parser.add_argument("--output", required=True)
     parser.add_argument("--max-new-tokens", type=int, default=4000)
     parser.add_argument("--max-tool-rounds", type=int, default=15)
@@ -134,7 +139,10 @@ def main() -> int:
         raise ValueError("Pass --model or --weights-root")
 
     prompts = load_prompts(args.prompt_section, args.prompt_file)
-    prompts = _select_prompts(prompts, args.names)
+    if args.names == []:
+        prompts = [dict(item) for item in prompts]
+    else:
+        prompts = _select_prompts(prompts, args.names or DEFAULT_CANARY_NAMES)
     prompts = prepare_eval_items(prompts, Path(args.cases_root))
     assert_no_prompt_overlap(prompts, args.train_data)
 

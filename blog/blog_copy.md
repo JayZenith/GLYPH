@@ -78,7 +78,49 @@ The +8/+3 dominate and only fire on real success. The ~11-point gap between solv
 - clean_end or terminal_tool_success drops below the SFT_V1 baseline for 2 checkpoints → stop, it's collapsing.
 - Success bar: beat SFT_V1's 52/69. If RL can't, the problem is harder than stopping and we re-diagnose.
 
+## Then RLVR-to-stop regressed too — and that was the real finding
+
+We wired the cheaper-credit option: `terminal_on_success` (`rl/task_trace.py`, `--terminal-on-success` in `rl/train.py`) — end the episode one turn after the first verifier pass, forcing the next turn to be terminal so credit lands exactly on the stop decision. Ran it as RLVR_B.
+
+It collapsed on full eval: valid **52→19**, terminal 68→46 at step 25. A 12-prompt smoke set hid it (only 3 churn cases in the smoke). Exactly one case improved (`eval100_020`). What fixed shallow stopping broke depth (`eval100_087`). Same signature as RLVR_V1.
+
+One caveat before the conclusion: B isn't a clean control. It changed *two* things vs RLVR_V1 — the corrected reward **and** the `terminal_on_success` horizon truncation — so it doesn't isolate "the reward was fine." It only shows that even the most aggressive credit trick for stopping still collapses. The clean "corrected reward, normal episodes" full-69 run was never taken past smoke, so it isn't evidence. The real proof isn't the run comparison at all — it's the measurement:
+
+**Churn is an out-of-distribution tail. The training prompts don't elicit it.** We measured the model's own behavior on the *train* set:
+- temp-0 train: **0 churn** (72 clean / 24 unsolved of 96)
+- temp-0.8, depth≥3 train: **0/16 churn**
+
+In-distribution the model terminates cleanly. It only churns on the held-out 69 — prompts whose difficulty/shape the train set never produced. So RL was being asked to install a stop behavior the policy *never samples* on the prompts it trains on. GRPO can only reinforce variance that exists in the rollouts; if the model never churns-then-recovers-then-stops on train prompts, there's no gradient to shape. **RL can't teach a behavior the policy doesn't emit.** That's scale-independent — true at any compute budget — and it's the actual ML insight of this project.
+
+So the earlier "stopping is RL's job" conclusion was half-right: it's a distribution-shift problem, but the shift is between *held-out* and *train*, not between teacher-clean and model-messy. You can't RL it away on train data, and you shouldn't try to RL it on the 69 (that's the measure-only set). The termination tail is an **SFT-coverage / data problem** (cover the hard held-out shapes in training), not an RL problem.
+
+## The pivot: RLVR for what it's actually good at
+
+Drop the termination tail. RLVR's legitimate use on `SFT_V1` is the thing it's designed for — **lift solve-rate where the policy partially solves**:
+
+- pass@k scan on a train slice. Band each prompt: `0 < solves < k` = **rlvr-target** (reward variance exists → gradient), `== k` = solved (no gradient), `== 0` = capability gap (RL can't cross).
+- Candidate set carved: `runs/rlvr_passk_train150/prompts.yaml` (150 mixed-difficulty train prompts, metadata: kind/difficulty/depth). Trim the 16 depth-1 trivia (pass@k=k for sure) → scan the ~134 depth≥3 (`sft/passk_scan.py`, k=8, T=0.8).
+- RL on the rlvr-target band only (`rl/scripts/launch_rlvr_v2.sh`). **Zero the termination tails** (−3 churn, −2 budget, ±finalize) for this run — they were shaped for the *stopping* goal, which we're explicitly not optimizing here, so carrying stop-pressure into a capability run is just off-target noise. Reward = **verifier (+8) + format floor only**. The +8 variance across the 8 rollouts of a partial-solve prompt is the whole signal; sparse verifier reward is *correct* for capability lift. (Note: the tails weren't what we were testing in RLVR_B — that run was reward + `terminal_on_success` together against an OOD target — and regardless, there's no reason to keep stop-pressure in a run that isn't about stopping.)
+- Artifact = **pass@1 before vs after** on the rlvr-target band, labeled in-set lift. No held-out split for v1: a small unmatched held-out is noisier than honest in-set numbers; add a stratified (kind, depth, tool, pass@k-bucket) split only when volume makes it fair.
+
+## Serving + honest generalization
+
+Served via vLLM/TGI + a harness that replays the training protocol **byte-for-byte** (`agent_runtime/protocol.py`: parse `CALL tool(... id="cN")`, execute for real, format the `RESULT` block identically, loop, detect FINAL). Path generalization is fine — paths are copied from prompt to tool call, a new crate path is in-distribution as a token pattern. The real limits, predicted from what we measured:
+
+- narrow code distribution (synthetic single-file crates with oracle tests) → degrades on multi-file real repos with no oracle;
+- brittle to protocol drift — any formatting mismatch is instant OOD;
+- no verifier at inference — the signal RL optimized doesn't exist when serving;
+- the termination tail resurfaces the moment input looks unfamiliar.
+
+This is **narrow by design** under solo/compute constraints — narrowness bought legible failure modes. The deliverable isn't "a general Rust agent"; it's the full SFT→RLVR→serve loop with a faithful harness and a measured map of where each stage breaks: SFT coverage gaps, RL's inability to install unsampled behavior, the OOD termination tail. Those are predictable because they were measured.
+
+## What's next
+- Run the ~134-prompt pass@k scan → freeze the rlvr-target band.
+- RLVR (GRPO) on that band; report in-set pass@1 lift.
+- (Separate track) close the termination tail the right way: add the hard held-out shapes to SFT coverage so the model samples them, *then* RL has something to reinforce.
+
 ## Assets
-- Models: `JayZenith/SFT_V1` (RL base), `SFT_V2`, `SFT_V3`, `RLVR_V1` (regressed, do not use).
-- Data: `signal_1062` → `signal_v2_1323` → `signal_v3` (HF: `SFT_V1_DATASET`, `SFT_V2_DATASET`).
-- Results: `results/SFT_V1|V2|V3`, `results/RLVR_V1` (eval json, tensorboard).
+- Models: `JayZenith/SFT_V1` (RL base), `SFT_V2`, `SFT_V3`, `RLVR_V1` (regressed, do not use), `RLVR_B` (terminal_on_success, regressed — kept as the A/B evidence).
+- Data: `signal_1062` → `signal_v2_1323` → `signal_v3` (HF: `SFT_V1_DATASET`, `SFT_V2_DATASET`). RL prompt pool: `synthetic_data/rl_prompts_v2_1323.jsonl`. pass@k candidate set: `runs/rlvr_passk_train150/`.
+- Results: `results/SFT_V1|V2|V3`, `results/RLVR_V1`, RLVR_B eval (52→19 collapse), pass@k scan → `results/passk_train134.json`.
+- Tooling: `sft/passk_scan.py` (RLVR-addressable banding), `sft/gen_churn_traces.py` (rejection-sampling harness, shelved — train doesn't churn), `reward_golden_tests.py` (6 reward unit tests).

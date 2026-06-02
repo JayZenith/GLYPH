@@ -19,6 +19,13 @@ from sft.eval_formal import prepare_eval_items
 from sft.evals.prompt_loader import build_prompt
 
 
+def write_results(path: Path, results: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(results, indent=2))
+    tmp.replace(path)
+
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--sft-model", default="JayZenith/SFT_V1")
@@ -34,6 +41,10 @@ def main() -> int:
     p.add_argument("--max-tool-rounds", type=int, default=15)
     p.add_argument("--tool-timeout", type=int, default=30)
     p.add_argument("--output", default="results/passk_failed.json")
+    p.add_argument("--no-resume", action="store_true",
+                   help="Ignore an existing output JSON instead of skipping completed prompt names.")
+    p.add_argument("--skip-bands", default=None,
+                   help="Comma-separated existing-output bands to omit from the scan on resume, e.g. solved.")
     args = p.parse_args()
 
     keep = None
@@ -48,11 +59,27 @@ def main() -> int:
     prompts = prepare_eval_items(prompts, Path(args.cases_root))
     if keep:
         prompts = [p_ for p_ in prompts if p_["name"] in keep]
-    print(f"{len(prompts)} prompts, k={args.samples} @ T={args.temperature}", flush=True)
+
+    output_path = Path(args.output)
+    results = []
+    completed: set[str] = set()
+    skip_bands = set(args.skip_bands.split(",")) if args.skip_bands else None
+    if output_path.exists() and not args.no_resume:
+        results = json.loads(output_path.read_text())
+        if skip_bands:
+            results = [r for r in results if r.get("band") not in skip_bands]
+            write_results(output_path, results)
+        completed = {r["name"] for r in results}
+        prompts = [p_ for p_ in prompts if p_["name"] not in completed]
+        print(f"resuming from {args.output}: {len(completed)} complete, {len(prompts)} remaining",
+              flush=True)
+
+    total = len(prompts) + len(completed)
+    print(f"{len(prompts)} prompts remaining ({total} total), k={args.samples} @ T={args.temperature}",
+          flush=True)
 
     model, tok = load_model(args.sft_model)
     sandbox_root = Path(args.cases_root) / "_sandboxes"
-    results = []
     for i, item in enumerate(prompts):
         prompt = build_prompt(item["user"], item.get("system"))
         solves = 0
@@ -73,10 +100,11 @@ def main() -> int:
         rate = solves / args.samples
         band = "rlvr-target" if 0 < solves < args.samples else ("solved" if solves else "capability-gap")
         results.append({"name": item["name"], "solves": solves, "k": args.samples, "pass_at_k": rate, "band": band})
-        print(f"[{i+1}/{len(prompts)}] {item['name']} -> {solves}/{args.samples} {band}", flush=True)
+        write_results(output_path, results)
+        done = len(completed) + i + 1
+        print(f"[{done}/{total}] {item['name']} -> {solves}/{args.samples} {band}", flush=True)
 
-    Path(args.output).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.output).write_text(json.dumps(results, indent=2))
+    write_results(output_path, results)
     tgt = [r for r in results if r["band"] == "rlvr-target"]
     print(f"\nrlvr-targets (0<pass<k): {len(tgt)}  capability-gap: "
           f"{sum(r['band']=='capability-gap' for r in results)}  solved: "

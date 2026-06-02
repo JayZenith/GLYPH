@@ -39,17 +39,17 @@ DEFAULT_REWARD_CONFIG = {
     "structure_valid_bonus": 0.5,
     "no_call_penalty": -2.0,
     "malformed_call_penalty": -1.0,
-    # finalize (one clean FINAL, even on an unsolved task)
-    "final_once_bonus": 1.0,
-    "missing_final_penalty": -2.0,
-    # the target: solve, then stop
+    # finalize / termination tails -- ZEROED for the capability-lift run.
+    # These were shaped for the *stopping* goal; this run optimizes solve-rate
+    # only, so stop-pressure is off-target noise. Reward = verifier + format floor.
+    "final_once_bonus": 0.0,
+    "missing_final_penalty": 0.0,
+    # the target here: solve. (verifier is the whole signal)
     "verifier_success_bonus": 8.0,
-    "verifier_success_clean_final_bonus": 3.0,
-    # Post-success churn (using tools after the task already passed) IS the
-    # failure mode. Penalize it hard -- but bounded, so solving stays net-positive
-    # and the model is never pushed to abandon solving.
-    "tool_after_success_penalty": -3.0,
-    "tool_budget_exhausted_penalty": -2.0,
+    "verifier_success_clean_final_bonus": 0.0,
+    # termination tails -- zeroed (see above)
+    "tool_after_success_penalty": 0.0,
+    "tool_budget_exhausted_penalty": 0.0,
 }
 
 REWARD_CONFIG = DEFAULT_REWARD_CONFIG.copy()

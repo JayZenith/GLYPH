@@ -1,50 +1,74 @@
-# RLVR on SFT_V1
+# RLVR on SFT_V1 — capability lift
 
-Goal: RL-teach the one remaining gap — **stop with one `FINAL` after a successful
-verifier**. SFT_V1 already solves (terminal 68/69); RL only fixes stopping.
-Reward is minimal and success-anchored (see `rl/task_trace.py` / `rl/RLVR_NOTES.md`):
+Goal: use RL for what it's actually good at — **raise solve-rate on train cases
+the policy only solves *sometimes***. SFT_V1 already terminates cleanly in
+distribution; the held-out churn/termination gap is an OOD tail RL can't install
+(see Lessons). So we don't RL stopping. We RL solving, on the band where a
+gradient exists.
+
+Reward (`rl/task_trace.py`) is verifier-dominant with the termination tails
+**zeroed** for this run:
 
 ```text
-verifier passed                       +8
-passed AND one FINAL, no tools after  +3
-tool used after success (churn)       -3   <- the failure
-hit max tool rounds                   -2
-one FINAL / missing FINAL            +1 / -2
+verifier passed              +8     <- the whole signal
+structure valid              +0.5   } format floor
+no tool call                 -2     }
+malformed call (per, cap 4)  -1     }
+FINAL / churn / round-cap     0     <- termination tails zeroed (not this run's goal)
 ```
 
-Base = SFT_V1 (not V2/V3 — they over-recover, which RL would have to unteach).
+Locked by `reward_golden_tests.py` (6 tests: solving dominates, termination neutral, bounded).
 
-## 1. Install
+Base = SFT_V1.
+
+## Pipeline
+
+```
+0. pass@k scan (pick targets)  ->  results/passk_train134.json
+1. freeze rlvr-target band     ->  RL prompt subset (0<pass@k<k only)
+2. RLVR (GRPO) on that band
+3. measure in-set pass@1 before vs after  <- the artifact
+```
+
+## 0. pass@k scan — find the RLVR-addressable band
+
+Candidate set already carved: `runs/rlvr_passk_train150/` (150 mixed-difficulty
+train prompts + cases). Trim the 16 depth-1 trivia (pass@k=k, no gradient) →
+scan the ~134 depth≥3.
 
 ```bash
-git clone https://github.com/JayZenith/glyph.git
-cd glyph
+env HF_HOME=/workspace/.hf_home CUDA_VISIBLE_DEVICES=0 PYTHONPATH=/workspace/glyph \
+  /workspace/prime-rl-src/.venv/bin/python sft/passk_scan.py \
+    --sft-model JayZenith/SFT_V1 \
+    --prompt-file runs/rlvr_passk_train150/prompts.yaml \
+    --prompt-section train_passk_scan_134 \
+    --cases-root runs/rlvr_passk_train150/cases \
+    -k 8 --temperature 0.8 \
+    --output results/passk_train134.json
+```
+
+Bands by `terminal_tool_success`: `0<solves<k` = **rlvr-target** (gradient exists),
+`==k` = solved (no variance), `==0` = capability-gap (RL can't cross).
+`passk_train134.json` stores aggregate only — `{name, solves, k, pass_at_k, band}`.
+That's all RL needs; GRPO re-samples its own rollouts at train time.
+
+## 1. Freeze the target band → RL prompts
+
+Keep only `band=="rlvr-target"`. Map those names back to the RL prompt rows
+(`synthetic_data/rl_prompts_v2_1323.jsonl`, or build from the candidate cases) →
+write the RL subset, e.g. `synthetic_data/rl_prompts_passk_target.jsonl`. RL ONLY
+on this band — solved/capability-gap prompts give zero advantage.
+
+## 2. Install + run RLVR (2-GPU)
+
+```bash
+git clone https://github.com/JayZenith/glyph.git && cd glyph
 bash rl/setup/install_prime_rl.sh
 source /workspace/prime-rl-src/.venv/bin/activate
 ```
 
-Note: this currently uses the pinned PRIME-RL path in `install_prime_rl.sh` plus an external frozen-teacher server. Migrating to newer native `num_teacher_gpus` should be done on an instance and tested end-to-end, not half-migrated locally.
-
-## 2. Build RL prompts
-
-Variable-depth prompts (from signal_v2) so rollouts actually go deep, where the
-stop failure happens. RL prompts are just task prompts for the env — they do NOT
-need to match SFT_V1's training data; using deeper tasks than SFT_V1 saw is
-correct and gives a stronger signal on the stop target. Already committed as
-`rl_prompts_v2_1323.jsonl`; rebuild with:
-
 ```bash
-python3 synthetic_data/build_rl_prompts.py \
-  --data synthetic_data/signal_v2_1323.jsonl \
-  --output synthetic_data/rl_prompts_v2_1323.jsonl
-```
-
-## 3. Run RLVR (2-GPU)
-
-Use `rl/scripts/launch_rlvr_v2.sh`, or directly:
-
-```bash
-mkdir -p outputs/rlvr_v2/logs
+mkdir -p outputs/rlvr_passk/logs
 nohup env \
   HF_HOME=/workspace/.hf_home CARGO_HOME=$HOME/.cargo RUSTUP_HOME=$HOME/.rustup \
   PATH=/workspace/prime-rl-src/.venv/bin:$HOME/.cargo/bin:$PATH \
@@ -53,62 +77,52 @@ nohup env \
     --model JayZenith/SFT_V1 \
     --teacher-model JayZenith/SFT_V1 --teacher-device 0 --teacher-tau 0.2 \
     --prime-rl-gpu-ids 2,3 --num-infer-gpus 1 --num-train-gpus 1 --gpus-per-node 2 \
-    --data synthetic_data/rl_prompts_v2_1323.jsonl \
-    --output outputs/rlvr_v2 \
+    --data synthetic_data/rl_prompts_passk_target.jsonl \
+    --output outputs/rlvr_passk \
     --max-steps 200 --batch-size 24 --rollouts-per-example 8 \
     --seq-len 5120 --max-model-len 12288 --teacher-max-model-len 12288 \
     --max-completion-tokens 1536 --learning-rate 5e-7 --weight-decay 0.01 \
     --checkpoint-interval 25 --temperature 0.8 \
     --gpu-memory-utilization 0.70 --teacher-gpu-memory-utilization 0.50 \
     --max-tool-rounds 15 --tool-timeout 30 --port 8010 --teacher-port 8011 \
-    > outputs/rlvr_v2/logs/launcher.log 2>&1 < /dev/null &
+    > outputs/rlvr_passk/logs/launcher.log 2>&1 < /dev/null &
 ```
 
-Key settings and why: `teacher-tau 0.2` (anchor hard to SFT — 0.01 collapsed the
-first run), `rollouts-per-example 8` + `temperature 0.8` (within-group variance;
-4 / 0.6 starved the gradient), `zero_advantage` filter enforced in
-`rl/configs/task_trace/orchestrator.toml`.
+Settings that matter (the rest are scenery): `teacher-tau 0.2` (anchor to SFT —
+`0.01` collapsed the first run), `rollouts-per-example 8` + `temperature 0.8`
+(within-group variance is the whole gradient on a partial-solve prompt;
+4 / 0.6 starved it), `zero_advantage` filter on
+(`rl/configs/task_trace/orchestrator.toml`). Do NOT use `--terminal-on-success`
+(that was the stopping experiment; see Lessons).
 
-Logs: `tail -f outputs/rlvr_v2/logs/{launcher,orchestrator,trainer}.log`
+Logs: `tail -f outputs/rlvr_passk/logs/{launcher,orchestrator,trainer}.log`
 
-## 4. Gate every checkpoint (separate 1-GPU box)
+## 3. Measure — pass@1 before vs after (the artifact)
 
-Eval needs 1 GPU; the RL box is multi-GPU and blocks while evaling — run the
-watcher elsewhere. Fast smoke set (12 prompts, includes the prior failures) per
-checkpoint:
+Gate checkpoints on a **separate 1-GPU box** (the RL box blocks while evaling).
+Re-run pass@k on the SAME rlvr-target band, per checkpoint:
 
 ```bash
 nohup env HF_HOME=/workspace/.hf_home CUDA_VISIBLE_DEVICES=0 PYTHONPATH=/workspace/glyph \
-  /workspace/prime-rl-src/.venv/bin/python rl/scripts/watch_canary_eval.py \
-  --weights-root outputs/rlvr_v2/weights \
-  --output-dir outputs/rlvr_v2/canary_eval \
-  --train-data synthetic_data/signal_1062.jsonl \
-  --prompt-file sft/evals/eval_prompts_smoke_12.yaml --prompt-section post_eval_smoke_12 \
-  --cases-root runs/rlvr1/rust_cases/eval_canary --interval-seconds 60 \
-  > outputs/rlvr_v2/logs/smoke_eval.log 2>&1 < /dev/null &
+  /workspace/prime-rl-src/.venv/bin/python sft/passk_scan.py \
+    --sft-model outputs/rlvr_passk/weights/step_25 \
+    --prompt-file runs/rlvr_passk_train150/prompts.yaml \
+    --prompt-section train_passk_scan_134 \
+    --cases-root runs/rlvr_passk_train150/cases \
+    -k 8 --temperature 0.8 \
+    --output outputs/rlvr_passk/passk_step25.json \
+    > outputs/rlvr_passk/logs/eval_step25.log 2>&1 < /dev/null &
 ```
 
-Watch per checkpoint: clean_end_rate, final_after_last_tool, terminal_tool_success,
-tool-calls-after-success, max-rounds-hit. **Early-stop** — the best checkpoint is
-usually early (~step 25); 25→50→75 regressed in every prior run.
+Report: mean pass@k on the rlvr-target band, SFT_V1 vs each checkpoint. Lift =
+the deliverable. Label it **in-set** (no held-out split for v1 — a small
+unmatched held-out is noisier than honest in-set numbers).
 
-## 5. Full held-out eval (best 2–3 checkpoints only)
+**Early-stop**: best checkpoint is usually early (~step 25); later checkpoints
+regressed in every prior run. **Kill** if pass@k drops below SFT_V1 baseline for
+2 checkpoints.
 
-```bash
-python -m sft.eval_formal \
-  --sft-model outputs/rlvr_v2/weights/step_25 \
-  --train-data synthetic_data/signal_1062.jsonl \
-  --prompt-file sft/evals/eval_prompts_heldout_69.yaml --prompt-section post_eval_heldout_69 \
-  --output results/RLVR_V2/eval_formal_heldout_69.json \
-  --max-new-tokens 4000 --max-tool-rounds 15 \
-  --cases-root runs/rlvr1/rust_cases/eval_heldout_69
-```
-
-**Success bar: beat SFT_V1's 52/69** (clean_end 0.75). Kill if clean_end or
-terminal_tool_success drops below SFT_V1 for 2 consecutive checkpoints — that's
-the collapse signature.
-
-## 6. Cleanup
+## 4. Cleanup
 
 ```bash
 pkill -f "rl/train.py|prime_rl|vllm|torchrun|wandb|compile_worker" || true
@@ -117,3 +131,22 @@ for p in $(nvidia-smi --query-compute-apps=pid --format=csv,noheader | tr -d " "
 done
 nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader
 ```
+
+GPU box billed hourly — stop it when idle (`vastai stop instance <id>`).
+
+## Lessons (why the pipeline is shaped this way)
+
+- **RL can't install a behavior the policy never samples.** Two stop-targeted
+  variants regressed full eval: RLVR_V1 (stacked-penalty reward, 52→20) and
+  RLVR_B (corrected bounded reward **+** `--terminal-on-success` horizon
+  truncation, 52→19). B changes two things at once, so it's *not* a clean reward
+  control — it only shows the most aggressive credit trick for stopping still
+  collapses. The real evidence is a **direct measurement**: train prompts emit ~0
+  churn (temp-0: 0 churn; temp-0.8 depth≥3: 0/16). Churn is an OOD tail of the
+  *held-out* set, not in the rollouts → no gradient, regardless of reward or
+  truncation. The termination gap is an **SFT-coverage** problem, not an RL one.
+- **So RL's real job here is solve-rate on the partial-solve band** — where
+  rollout variance (some pass, some fail) actually exists. Hence the pass@k gate.
+- **Reward: verifier-dominant + bounded.** RLVR_V1 collapsed on stacked −13..−23
+  penalties with no positive path; the fix is sparse +8-on-success, format floor,
+  no stacking. Termination tails zeroed for this run (off-target).
