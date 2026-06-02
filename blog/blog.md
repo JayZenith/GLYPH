@@ -427,3 +427,174 @@ Fix: penalize "patched but never reached a terminal verifier" at least as hard a
 - The empty <|im_end|> turn (row #1 step_11) — the −2.5 should kill it
 indirectly, but confirm those vanish.
 - CALLTYPE — already self-corrects, ignore.
+
+
+
+# NOW THE ISSUE (results/RLVR1/rollouts3)
+
+  1. zero_advantage 6/6 = your real blocker. GRPO computes advantage = reward − group_mean, where a group is multiple rollouts of the same prompt. Your groups are size 2, and the two rollouts are identical every time (both −3.72, both 2.08). Identical reward → advantage 0 for the whole group → zero gradient. 6/6 means the entire step taught the model nothing. This is why reward shaping alone won't move it — if both samples behave the same, no shaping creates contrast.
+
+  Fix: get variance within each group.
+  - Bump rollouts-per-prompt from 2 to 8–16 (2 is far too small for GRPO).
+  - Raise sampling temp (0.4 is too low — samples collapse to the same
+  trajectory, no exploration).
+
+  Without this, nothing else matters.
+
+  2. CALLTYPE — you're right, it's not self-correcting here (rows #2/#3,
+  step_18, −3.72). Malformed keyword → parser finds no valid CALL → no tool runs → tanks. Happy to add an explicit penalty + ideally a sampling constraint so it can't be emitted.
+
+  3. bare <|im_end|> (rows #4/#5) — the empty-turn quit. My
+  no_terminal_verifier_penalty already targets this, but it's moot until
+  advantage is nonzero.
+
+  4. Also noticed: even the good rollout (ex850, reward 2.08, has FINAL +
+  terminal tool) shows is_completed=False. The env isn't marking successful
+  episodes complete — worth checking the stop-condition logic; it may be
+  undercounting real successes.
+
+
+
+  ```bash
+  HF_HOME=/workspace/.hf_home \
+    CARGO_HOME=$HOME/.cargo \
+    RUSTUP_HOME=$HOME/.rustup \   
+    PATH=/workspace/prime-rl-src/.venv/bin:$HOME/.cargo/bin:$PATH \
+    PYTHONPATH=/workspace/glyph:/workspace/glyph/rl \
+    /workspace/prime-rl-src/.venv/bin/python rl/train.py \
+      --model JayZenith/SFT_V1 \
+      --teacher-model JayZenith/SFT_V1 \
+      --teacher-device 0 \
+      --teacher-tau 0.01 \
+      --prime-rl-gpu-ids 2,3 \
+      --num-infer-gpus 1 \
+      --num-train-gpus 1 \
+      --gpus-per-node 2 \
+      --data synthetic_data/rl_prompts_1062.jsonl \
+      --output outputs/rlvr_penalty_runpod \
+      --max-steps 200 \
+      --batch-size 24 \ 
+      --rollouts-per-example 8 \
+      --seq-len 5120 \
+      --max-model-len 12288 \
+      --teacher-max-model-len 12288 \
+      --max-completion-tokens 1536 \
+      --learning-rate 5e-7 \
+      --weight-decay 0.01 \
+      --checkpoint-interval 1000 \
+      --temperature 0.8 \
+      --gpu-memory-utilization 0.70 \
+      --teacher-gpu-memory-utilization 0.50 \
+      --max-tool-rounds 15 \
+      --tool-timeout 30 \
+      --port 8010 \
+      --teacher-port 8011
+  ```
+
+  *  Three changes: rollouts-per-example 2→8 (group size; 2 can't produce
+  contrast), batch-size 6→24 (keeps 3 prompts × 8 samples — your data showed
+  batch_size = total rollouts, prompts = batch/rollouts), temperature 0.4→0.8
+  (0.4 made the 2 samples collapse identical). If the infer GPU OOMs at 24, drop batch-size to 16 (2 prompts × 8) — keep rollouts-per-example at 8 regardless, that's the one that matters.
+
+  Your sampling-constraint question — you're right. A sampling constraint
+  (logit_bias, grammar-forced decoding) does not teach the model. It's a pure
+  inference guardrail, exactly like the stop token: no gradient, it just blocks the bad token at generation time. The reward penalty is what actually teaches. So I only added the penalty for CALLTYPE (task_trace.py) — that produces the gradient. A constraint would also be clumsy here since CALLTYPE = CALL+TYPE (two tokens), not a single bannable id. Penalty is the correct lever.
+
+
+# The REAL ISSUE
+The RL prompt prefix matches SFT eval format: 
+- system/user blocks
+- ends with <|im_start|>assistant\n 
+- examples in synthetic_data/rl_prompts_1062.jsonl look correct
+
+HOWEVER, the RL continuation after tool result differs from SFT eval
+- SFT eval explicitly injects:
+  - <|im_start|>tool
+  - RESULT ...
+  - <|im_end}>
+  - <|im_start|>assistant
+- RL env returns only a message dict:
+  - {"role": "tool", "content": "RESULT ..."}
+- With `message_type="completion"`, this may not be rendered back into the exact ChatML continuation the SFT model was trained/eval on
+
+Rollouts were however showing the failures as:
+- assistant turn 1: valid CALL read_file(...) <|im_end|>
+- tool result: valid RESULT c1...
+- assistant turn 2: only <|im_end|>
+- Then env sees no pending call and stops.
+
+Symptom in RL rollout:
+
+  assistant: CALL read_file(...) <|im_end|>
+  tool: RESULT c1: ...
+  assistant: <|im_end|>
+
+  That second assistant turn means the model is being asked to continue from a bad boundary/context. It emits/closes the assistant block immediately, env sees no new call, rollout ends.
+
+
+* FIXED by making RL env continuation match SFT eval exactly
+Implemented in rl/task_trace.py.
+
+  Change:
+
+  - RustToolEnv.env_response() now returns tool results as raw ChatML:
+
+  <|im_start|>tool
+  RESULT ...
+  <|im_end|>
+
+  <|im_start|>assistant
+
+  - It also keeps raw_chatml_transcript in state and parses against that, so
+    subsequent calls are read from the same transcript shape as SFT eval.
+
+
+# Issue now is zero_advantage=24/24 and so inspected Step 5/6 rewards/components
+Are the 8 within-group rollouts identical trajectories, or different trajectories the ladder maps to the same score? This determines whether my additive-rewards instict is the fix compared to the current monolothic structure reward system that was constructed previous to the SFT/RT eval fix.
+
+Found that within-group trajectories are differnt (4/8, 7/8, 3/8 unique) but the ladder maps them all to the `same scalar`, so advantage = 0 -> no gradient. 
+
+
+# What's actually happening 
+zero_advantage is not an exploration problem here - it's a `reward resolution` problem. GRPO advntage = reward - group_mean. If all 8 rollouts of a prompt get identical reward, advantage is 0 for entire group regardless of how different the trajectories are. 
+
+
+Look at step_5 ex376: 8 rollouts, 4 distinct trajectories, all scored −3.17. The model tried genuinely different recovery attempts after the test failed — and the ladder said "all equally worthless." No signal to prefer the better attempt.
+
+
+# WHy the ladder causes it
+Ladder is `max`-style. It credits only the `deepest` rung reached, then collapses everything else. Two rollouts that both "patched, ran test, test failed, didn't recover" land on `staged_failed_terminal` (+0.5) identically -- even if one made the tests 0-pass-1-pass and other made them worse. The reward thows away exaclty the partial-progress information GRPO needs to rank siblings. 
+
+  Evidence it's resolution, not depth: step_5/6 rollouts reach term=24/24
+  (everyone runs the verifier). They're all at the same rung. The ladder has
+  nothing left to differentiate them. Compare step_7 (za=8/24) — variance
+  survives there only because rollouts happened to land on different rungs.
+
+
+# So now is additive component rewards the final lever to get things really working?
+Replace "credit the deepest rung" with "sum independent partial-credit signals," so two trajecroeis at same rung still separate on finer-grained progress. 
+
+
+# REGROUP 
+based on SFT, tools are wroking - terminal_tool_success_rate 0.875, result_id_match 1.0,no_repetition 1.0, not_truncated 1.0. Those are solved; don't reward them.
+
+
+The failures are really all about FINAL:
+- missing_final: 2
+- dirty_final: 2
+- final_before_tool_completion: 2
+- (task_failure: 1 — the only non-FINAL one)
+
+
+So single thing RL must fix = emit `one clean FINAL, after the last tool result, then stop.` This is the right v1 as "reward FINAL or penalize"
+
+
+`Minimal additive reward plan (scrap ladder)`
+Three independent terms, sumned:
++1.0   has exactly one valid FINAL
++1.0   FINAL comes after the last tool result (placement) — only if has_final
+-1.0   no FINAL at all
+-0.5   dirty FINAL (text/garbage after it, not clean stop)
+
+
+Additive really is just "basic rewards/penalties -> less zero_advantage" Latter collapsed distinct trajectoreis to one scalar. WIth additive terms, a rollout that emits a clean FINAL and one taht dosent differ by ~2 points even if everything else matches -> nonzero advantage -> gradient.
