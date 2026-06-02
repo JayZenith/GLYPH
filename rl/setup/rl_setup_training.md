@@ -54,10 +54,20 @@ That's all RL needs; GRPO re-samples its own rollouts at train time.
 
 ## 1. Freeze the target band → RL prompts
 
-Keep only `band=="rlvr-target"`. Map those names back to the RL prompt rows
-(`synthetic_data/rl_prompts_v2_1323.jsonl`, or build from the candidate cases) →
-write the RL subset, e.g. `synthetic_data/rl_prompts_passk_target.jsonl`. RL ONLY
-on this band — solved/capability-gap prompts give zero advantage.
+Keep only `band=="rlvr-target"` from `passk_train134.json`. **Build the RL jsonl
+directly from the scanned yaml** `runs/rlvr_passk_train150/prompts.yaml`, filtered
+to those names — do NOT try to join back to `rl_prompts_v2_1323.jsonl` (different
+case_ids and crate paths; the names won't line up). The yaml rows already carry
+everything the env needs, so this is just a format conversion.
+
+Each RL row (the schema `rl/train.py --data` reads, one JSON per line):
+`prompt` (chatml = system+user+`<|im_start|>assistant\n`), `kind`, `case_id`,
+`expected_tool`, `expected_args`, `expected_tool_sequence`, `expected_output`,
+`blueprint_root`, `trace_prefix`. All present in the yaml per case (assemble
+`prompt` from `system`+`user`; `expected_tool`/`expected_args` = first tool of
+`expected_tool_sequence` + its path). Write to
+`synthetic_data/rl_prompts_passk_target.jsonl` (small local script). RL ONLY on
+this band — solved / capability-gap prompts give zero advantage.
 
 ## 2. Install + run RLVR (2-GPU)
 
