@@ -100,18 +100,7 @@ python -m sft.eval_formal \
   --cases-root runs/rlvr1/rust_cases/eval_heldout_69
 ```
 
-## Held-out eval for RLVR_B step 25
-
-```bash
-python -m sft.eval_formal \
-  --sft-model JayZenith/RLVR_B \
-  --train-data synthetic_data/signal_1062.jsonl \
-  --prompt-file sft/evals/eval_prompts_heldout_69.yaml --prompt-section post_eval_heldout_69 \
-  --output outputs/rlvr_b_step25/eval_heldout_69.json \
-  --max-new-tokens 4000 \
-  --max-tool-rounds 15 \
-  --cases-root runs/rlvrb/rust_cases/eval_heldout_69
-```
+Pass `--sft-model <hf-or-path>` to eval any checkpoint (SFT or RLVR) the same way.
 
 Contamination guard: `synthetic_data/audit_blueprint_similarity.py` (train vs eval at 0.92).
 

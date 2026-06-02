@@ -1,9 +1,6 @@
 # RLVR — lessons and the current recipe
 
-Two RL runs aimed at *teaching the model to stop* (emit FINAL after a passing
-verifier, instead of churning to the round cap). Both regressed. The lessons
-below are why the project pivoted to **capability lift** (raise solve-rate on
-the partial-solve band) instead.
+Two RL runs aimed at *teaching the model to stop* (emit FINAL after a passing verifier, instead of churning to the round cap). Both regressed. The lessons below are why the project pivoted to **capability lift** (raise solve-rate on the partial-solve band) instead.
 
 ## What we tried, what we learned
 
