@@ -50,6 +50,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--teacher-gpu-memory-utilization", type=float)
     parser.add_argument("--max-samples", type=int)
     parser.add_argument("--max-tool-rounds", type=int)
+    parser.add_argument("--terminal-on-success", action="store_true",
+                        help="End the episode one turn after the verifier first passes "
+                             "(forces a FINAL-able post-success turn). Opt-in; off by default.")
     parser.add_argument("--nsjail-path")
     parser.add_argument("--tool-timeout", type=int)
     parser.add_argument("--port", type=int)
@@ -206,6 +209,8 @@ def build_config(args: argparse.Namespace) -> dict[str, Any]:
         env_args["data_path"] = str(data_path)
     maybe_set(env_args, "max_samples", args.max_samples)
     maybe_set(env_args, "max_tool_rounds", args.max_tool_rounds)
+    if args.terminal_on_success:
+        env_args["terminal_on_success"] = True
     maybe_set(env_args, "nsjail_path", args.nsjail_path)
     maybe_set(env_args, "timeout", args.tool_timeout)
 
