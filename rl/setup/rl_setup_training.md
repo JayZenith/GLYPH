@@ -24,17 +24,23 @@ Base = SFT_V1.
 ## Pipeline
 
 ```
-0. pass@k scan (pick targets)  ->  results/passk_train134.json
-1. freeze rlvr-target band     ->  RL prompt subset (0<pass@k<k only)
-2. RLVR (GRPO) on that band
-3. measure in-set pass@1 before vs after  <- the artifact
+0. pass@k scan (pick targets)  ->  synthetic_data/passk_train134.json   [DONE: 39 targets]
+1. freeze rlvr-target band      ->  synthetic_data/rl_prompts_passk_target.jsonl [DONE]
+2. RLVR (GRPO) on that band     <- do this
+3. measure in-set pass@k before vs after  <- the artifact
 ```
 
-## 0. pass@k scan — find the RLVR-addressable band
+## 0. pass@k scan — find the RLVR-addressable band  ✅ DONE
 
-Candidate set already carved: `runs/rlvr_passk_train150/` (150 mixed-difficulty
-train prompts + cases). Trim the 16 depth-1 trivia (pass@k=k, no gradient) →
-scan the ~134 depth≥3.
+Scanned the 134 depth≥3 train prompts (`runs/rlvr_passk_train150/`, section
+`train_passk_scan_134`) with SFT_V1, k=8, T=0.8. Result in
+`synthetic_data/passk_train134.json` (aggregate only: `{name, solves, k,
+pass_at_k, band}`). Bands by `terminal_tool_success`: `0<solves<k` =
+**rlvr-target**, `==k` = solved, `==0` = capability-gap.
+
+Outcome: **95 solved (8/8) · 39 rlvr-target · 0 capability-gap.** The 39 targets
+skew near-solved (27 at 7/8, 12 at ≤6/8) — gradient everywhere, modest lift
+ceiling. To reproduce:
 
 ```bash
 env HF_HOME=/workspace/.hf_home CUDA_VISIBLE_DEVICES=0 PYTHONPATH=/workspace/glyph \
@@ -43,33 +49,25 @@ env HF_HOME=/workspace/.hf_home CUDA_VISIBLE_DEVICES=0 PYTHONPATH=/workspace/gly
     --prompt-file runs/rlvr_passk_train150/prompts.yaml \
     --prompt-section train_passk_scan_134 \
     --cases-root runs/rlvr_passk_train150/cases \
-    -k 8 --temperature 0.8 \
-    --output results/passk_train134.json
+    -k 8 --temperature 0.8 --output synthetic_data/passk_train134.json
 ```
 
-Bands by `terminal_tool_success`: `0<solves<k` = **rlvr-target** (gradient exists),
-`==k` = solved (no variance), `==0` = capability-gap (RL can't cross).
-`passk_train134.json` stores aggregate only — `{name, solves, k, pass_at_k, band}`.
-That's all RL needs; GRPO re-samples its own rollouts at train time.
+This same json is the **SFT_V1 baseline** (the "before"): mean pass@k over the 39
+targets = the number RL has to beat.
 
-## 1. Freeze the target band → RL prompts
+## 1. RL dataset (the 39 targets)  ✅ DONE
 
-Keep only `band=="rlvr-target"` from `passk_train134.json`. **Build the RL jsonl
-directly from the scanned yaml** `runs/rlvr_passk_train150/prompts.yaml`, filtered
-to those names — do NOT try to join back to `rl_prompts_v2_1323.jsonl` (different
-case_ids and crate paths; the names won't line up). The yaml rows already carry
-everything the env needs, so this is just a format conversion.
-
-Each RL row (the schema `rl/train.py --data` reads, one JSON per line):
-`prompt` (chatml = system+user+`<|im_start|>assistant\n`), `kind`, `case_id`,
+`synthetic_data/rl_prompts_passk_target.jsonl` — 39 rows, one per rlvr-target
+case, in the schema `rl/train.py --data` reads (`prompt`, `kind`, `case_id`,
 `expected_tool`, `expected_args`, `expected_tool_sequence`, `expected_output`,
-`blueprint_root`, `trace_prefix`. All present in the yaml per case (assemble
-`prompt` from `system`+`user`; `expected_tool`/`expected_args` = first tool of
-`expected_tool_sequence` + its path). Write to
-`synthetic_data/rl_prompts_passk_target.jsonl` (small local script). RL ONLY on
-this band — solved / capability-gap prompts give zero advantage.
+`blueprint_root`, `trace_prefix`). Built directly from
+`runs/rlvr_passk_train150/prompts.yaml` (NOT joined to `rl_prompts_v2_1323.jsonl`
+— different case_ids/paths). RL ONLY on this band; solved / capability-gap
+prompts give zero advantage. Rebuild if the band changes: filter
+`passk_train134.json` to `band=="rlvr-target"`, pull those names from the yaml,
+emit the schema above.
 
-## 2. Install + run RLVR (2-GPU)
+## 2. Install + run RLVR (2-GPU)  ← do this
 
 ```bash
 git clone https://github.com/JayZenith/glyph.git && cd glyph
@@ -107,10 +105,15 @@ Settings that matter (the rest are scenery): `teacher-tau 0.2` (anchor to SFT �
 
 Logs: `tail -f outputs/rlvr_passk/logs/{launcher,orchestrator,trainer}.log`
 
-## 3. Measure — pass@1 before vs after (the artifact)
+## 3. Measure — pass@k before vs after (the artifact)
 
-Gate checkpoints on a **separate 1-GPU box** (the RL box blocks while evaling).
-Re-run pass@k on the SAME rlvr-target band, per checkpoint:
+**Before** = SFT_V1 pass@k on the 39 targets, already in
+`synthetic_data/passk_train134.json` (filter `band=="rlvr-target"`, mean the
+`pass_at_k`).
+
+**After** = re-scan the SAME 39 per checkpoint, on a **separate 1-GPU box** (the
+RL box blocks while evaling). Same flags as the baseline scan, swapping the model
+and output:
 
 ```bash
 nohup env HF_HOME=/workspace/.hf_home CUDA_VISIBLE_DEVICES=0 PYTHONPATH=/workspace/glyph \
@@ -124,13 +127,13 @@ nohup env HF_HOME=/workspace/.hf_home CUDA_VISIBLE_DEVICES=0 PYTHONPATH=/workspa
     > outputs/rlvr_passk/logs/eval_step25.log 2>&1 < /dev/null &
 ```
 
-Report: mean pass@k on the rlvr-target band, SFT_V1 vs each checkpoint. Lift =
-the deliverable. Label it **in-set** (no held-out split for v1 — a small
-unmatched held-out is noisier than honest in-set numbers).
+(Scan all 134; just compare the 39 target names against baseline so before/after
+use the identical set.) Report mean pass@k on the 39, SFT_V1 vs each checkpoint —
+that delta is the deliverable. Label it **in-set** (no held-out split for v1).
 
 **Early-stop**: best checkpoint is usually early (~step 25); later checkpoints
-regressed in every prior run. **Kill** if pass@k drops below SFT_V1 baseline for
-2 checkpoints.
+regressed in every prior run. **Kill** if pass@k drops below the SFT_V1 baseline
+for 2 checkpoints.
 
 ## 4. Cleanup
 
