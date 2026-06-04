@@ -587,6 +587,11 @@ within-group variance reflects something learnable. The final run was small beca
 dataset only had 8 such prompts. Scaling the win requires generating more prompts with
 that same property, then holding back a matched eval set.
 
+Full-parameter GRPO may also have been the wrong adaptation mechanism for an 8-prompt
+target set. A natural follow-up is LoRA-based RLVR, or an auxiliary SFT/protocol loss
+during RL, so the update can specialize the narrow pass@8 band without moving the whole
+model away from the broader tool-use distribution SFT_V1 learned.
+
 ---
 
 ## Assets
