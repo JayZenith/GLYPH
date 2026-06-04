@@ -66,6 +66,19 @@ PROBLEM_ARCHETYPES = (
     "config_merge_precedence",
     "interval_overlap_booking",
 )
+HELDOUT_FAILURE_TARGETS = (
+    ("patch_test_recover", "match_enum_branch_logic", "enum branch routing/policy logic with several independent role, route, or action cases"),
+    ("patch_run_recover", "config_merge_precedence", "layered config precedence across defaults, env, file, and CLI with explicit empty/false handling"),
+    ("patch_run_pass", "aggregation_reporting", "grouped department or region reports with filtering, zero suppression, ordering, and exact formatting"),
+    ("patch_test_recover", "sorting_ranking_tiebreaks", "dense ranking with duplicate merging and multiple tie-break rules"),
+    ("patch_run_pass", "match_enum_branch_logic", "dispatch or label summaries for enum variants with priority/order-specific branches"),
+    ("patch_test_pass", "config_merge_precedence", "config merge precedence where explicit file/user values beat env but env fills missing values"),
+    ("patch_test_recover", "iterator_filter_map_logic", "iterator selection logic with multiple filters, ordering, and edge-case exclusions"),
+    ("patch_run_pass", "match_enum_branch_logic", "shipping or command label matching with enum branch priority and exact stdout"),
+    ("patch_run_pass", "parsing_validation", "record parsing/validation with exact field count, value ranges, and lowercase/name rules"),
+    ("patch_test_recover", "parsing_validation", "structured line parser with missing fields, malformed records, and tag/value validation"),
+    ("patch_test_recover", "aggregation_reporting", "sales or weekly summaries with valid-only filtering, unique counts, grouping, and sort rules"),
+)
 STEP_EXAMPLES = """Step skeleton examples:
 - patch_test_pass: [{"tool":"read_file","file_path":"src/lib.rs"},{"tool":"apply_patch","file_path":"src/lib.rs","find":"...","replace":"..."},{"tool":"cargo_test","expect_status":"success"}]
 - patch_run_pass: [{"tool":"read_file","file_path":"src/main.rs"},{"tool":"apply_patch","file_path":"src/main.rs","find":"...","replace":"..."},{"tool":"cargo_run","expect_status":"success"}]
@@ -85,6 +98,7 @@ Target family: {family}
 Case index: {case_index}
 Difficulty target: {difficulty}
 Target archetype: {archetype}
+{extra_guidance}
 
 Difficulty definition:
 - easy: one clear bug or straightforward already-correct single-tool task.
@@ -220,13 +234,20 @@ def archetype_for(case_index: int) -> str:
     return PROBLEM_ARCHETYPES[(case_index - 1) % len(PROBLEM_ARCHETYPES)]
 
 
-def build_prompt(family: str, case_index: int, difficulty: str) -> str:
+def build_prompt(
+    family: str,
+    case_index: int,
+    difficulty: str,
+    archetype: str | None = None,
+    extra_guidance: str = "",
+    recovery_depth: int | None = None,
+) -> str:
     sequence = FAMILY_SEQUENCES[family]
     recovery_depth_instructions = (
         "- This family has no failed verifier turns; the single verifier must succeed."
     )
     if "recover" in family:
-        depth = recovery_depth_for(difficulty, case_index)
+        depth = recovery_depth if recovery_depth is not None else recovery_depth_for(difficulty, case_index)
         sequence = recover_sequence(family, depth)
         verifier = "cargo_run" if "run" in family else "cargo_test"
         recovery_depth_instructions = (
@@ -241,12 +262,13 @@ def build_prompt(family: str, case_index: int, difficulty: str) -> str:
     expected_output_rule = "a JSON string" if "run" in family else "JSON null"
     expected_output_json = '"exact final stdout"' if "run" in family else "null"
     source_file = "src/main.rs" if "run" in family else "src/lib.rs"
-    archetype = archetype_for(case_index)
+    archetype = archetype or archetype_for(case_index)
     return PROMPT.format(
         family=family,
         case_index=case_index,
         difficulty=difficulty,
         archetype=archetype,
+        extra_guidance=extra_guidance,
         banned_patterns=BANNED_PATTERNS,
         step_examples=STEP_EXAMPLES,
         sequence=" -> ".join(sequence),
@@ -256,6 +278,31 @@ def build_prompt(family: str, case_index: int, difficulty: str) -> str:
         expected_output_json=expected_output_json,
         source_file=source_file,
     )
+
+
+def build_heldout_failure_like_prompt(case_index: int) -> tuple[str, str]:
+    family, archetype, theme = HELDOUT_FAILURE_TARGETS[(case_index - 1) % len(HELDOUT_FAILURE_TARGETS)]
+    difficulty = "hard"
+    recovery_depth = None
+    if "recover" in family:
+        recovery_depth = [3, 4, 5][(case_index - 1) % 3]
+    extra_guidance = f"""
+Heldout-failure-like target:
+- Generate a NEW case similar in shape to SFT_V1 held-out failures, not a copy of any eval case.
+- Theme: {theme}.
+- Make the initial bug plausible but incomplete in several independent ways, so a weak model is likely to loop through repeated failed verifier attempts.
+- Include enough tests/output checks to expose each missing requirement separately.
+- Avoid trivial one-line fixes unless the family is patch_*_pass; even then require multiple interacting edge cases in the single correct patch.
+""".rstrip()
+    prompt = build_prompt(
+        family,
+        case_index,
+        difficulty,
+        archetype=archetype,
+        extra_guidance=extra_guidance,
+        recovery_depth=recovery_depth,
+    )
+    return family, prompt
 
 
 def iter_requests(family_counts: dict[str, int], custom_prefix: str) -> list[dict]:
@@ -283,6 +330,27 @@ def iter_requests(family_counts: dict[str, int], custom_prefix: str) -> list[dic
     return rows
 
 
+def iter_heldout_failure_like_requests(count: int, custom_prefix: str) -> list[dict]:
+    rows = []
+    for i in range(count):
+        family, prompt = build_heldout_failure_like_prompt(i + 1)
+        rows.append({
+            "custom_id": f"{custom_prefix}-{i:03d}-{family}-{i+1:03d}",
+            "method": "POST",
+            "url": "/v1/responses",
+            "body": {
+                "model": MODEL,
+                "input": [
+                    {"role": "system", "content": "You produce strict JSON specs for executable Rust SFT data generation."},
+                    {"role": "user", "content": prompt},
+                ],
+                "text": {"format": {"type": "json_object"}},
+                "max_output_tokens": 3200,
+            },
+        })
+    return rows
+
+
 def write_jsonl(path: Path, family_counts: dict[str, int], custom_prefix: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     rows = iter_requests(family_counts, custom_prefix)
@@ -302,11 +370,35 @@ def write_jsonl(path: Path, family_counts: dict[str, int], custom_prefix: str) -
     }, indent=2))
 
 
+def write_heldout_failure_like_jsonl(path: Path, count: int, custom_prefix: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    rows = iter_heldout_failure_like_requests(count, custom_prefix)
+    with path.open("w", encoding="utf-8") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+    families = Counter(row["custom_id"].split("-", 2)[2].rsplit("-", 1)[0] for row in rows)
+    archetypes = Counter(
+        row["body"]["input"][1]["content"].split("Target archetype: ", 1)[1].splitlines()[0]
+        for row in rows
+    )
+    print(json.dumps({
+        "wrote": str(path),
+        "requests": len(rows),
+        "families": dict(sorted(families.items())),
+        "archetypes": dict(sorted(archetypes.items())),
+    }, indent=2))
+
+
 def preview_prompt(family: str, case_index: int) -> None:
     if family not in DEFAULT_FAMILY_COUNTS:
         raise SystemExit(f"unknown family {family}")
     difficulty = difficulty_for(family, case_index, DEFAULT_FAMILY_COUNTS)
     print(build_prompt(family, case_index, difficulty))
+
+
+def preview_heldout_failure_like_prompt(case_index: int) -> None:
+    _, prompt = build_heldout_failure_like_prompt(case_index)
+    print(prompt)
 
 
 def submit(path: Path, metadata: Path, task_name: str) -> None:
@@ -349,8 +441,14 @@ def main() -> int:
     p.add_argument("--output", type=Path, default=Path("synthetic_data/batch_pilot_100/requests.jsonl"))
     p.add_argument("--counts-json", type=Path, default=None)
     p.add_argument("--custom-prefix", default="pilot100")
+    p = sub.add_parser("build-heldout-failure-like")
+    p.add_argument("--output", type=Path, default=Path("synthetic_data/batch_heldout_fail_like_48/requests.jsonl"))
+    p.add_argument("--count", type=int, default=48)
+    p.add_argument("--custom-prefix", default="heldoutfail48")
     p = sub.add_parser("preview-prompt")
     p.add_argument("--family", choices=sorted(DEFAULT_FAMILY_COUNTS), default="patch_test_recover")
+    p.add_argument("--case-index", type=int, default=1)
+    p = sub.add_parser("preview-heldout-failure-like")
     p.add_argument("--case-index", type=int, default=1)
     p = sub.add_parser("submit")
     p.add_argument("--input", type=Path, default=Path("synthetic_data/batch_pilot_100/requests.jsonl"))
@@ -368,8 +466,12 @@ def main() -> int:
         if args.counts_json is not None:
             family_counts = json.loads(args.counts_json.read_text(encoding="utf-8"))
         write_jsonl(args.output, family_counts, args.custom_prefix)
+    elif args.cmd == "build-heldout-failure-like":
+        write_heldout_failure_like_jsonl(args.output, args.count, args.custom_prefix)
     elif args.cmd == "preview-prompt":
         preview_prompt(args.family, args.case_index)
+    elif args.cmd == "preview-heldout-failure-like":
+        preview_heldout_failure_like_prompt(args.case_index)
     elif args.cmd == "submit":
         submit(args.input, args.metadata, args.task_name)
     elif args.cmd == "status":

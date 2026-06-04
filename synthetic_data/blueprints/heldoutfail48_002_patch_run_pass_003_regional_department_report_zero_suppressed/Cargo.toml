@@ -1,0 +1,6 @@
+[package]
+name = "regional_department_report_zero_suppressed"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

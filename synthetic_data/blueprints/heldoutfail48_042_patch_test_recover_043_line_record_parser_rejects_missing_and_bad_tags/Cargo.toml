@@ -1,0 +1,6 @@
+[package]
+name = "line_record_parser_rejects_missing_and_bad_tags"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

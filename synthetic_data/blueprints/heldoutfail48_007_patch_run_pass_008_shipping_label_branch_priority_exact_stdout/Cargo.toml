@@ -1,0 +1,6 @@
+[package]
+name = "shipping_label_branch_priority_exact_stdout"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
