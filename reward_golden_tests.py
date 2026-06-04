@@ -114,15 +114,9 @@ def score_with_raw_trace(assistant: str, results: list[str], raw: str) -> float:
 
 
 class RewardGoldenTests(unittest.TestCase):
-    """Capability-lift reward: verifier success + format floor only. The
-    termination tails (FINAL bonus, churn / round-cap penalties) are ZEROED --
-    this run optimizes solve-rate, not stopping. Invariants:
-
-      - solving dominates everything (a verifier pass is the whole signal)
-      - termination is NEUTRAL: FINAL / no-FINAL / churn don't move the reward
-      - solving is rewarded with or without FINAL (no collapse incentive)
-      - format floor still applies (no-call / malformed are discouraged)
-      - bounded: worst trajectory stays near the positive scale
+    """Reliability-lift reward. Verifier success dominates, but clean stopping
+    and fewer failed verifier retries are preferred. Penalties stay bounded so
+    recovery traces remain positive and usable.
     """
 
     READ = call("read_file", "c1", file_path="src/lib.rs")
@@ -145,30 +139,22 @@ class RewardGoldenTests(unittest.TestCase):
         return score("\n".join([self.READ, self.PATCH, self.FAIL]), self.UNSOLVED)
 
     def test_solving_dominates(self) -> None:
-        # A verifier pass is worth verifier_success_bonus over an identical
-        # unsolved trajectory; solving beats every non-solving outcome.
-        self.assertAlmostEqual(
-            self._solve_stop() - self._graceful(),
-            REWARD_CONFIG["verifier_success_bonus"],
-        )
+        # Solving beats every non-solving outcome even with finalization shaping.
         self.assertGreater(self._solve_stop(), self._graceful())
         self.assertGreater(self._solve_stop(), self._loop())
 
-    def test_termination_is_neutral(self) -> None:
-        # The zeroed tails: FINAL vs no-FINAL must not change the reward, on
-        # either a solved or an unsolved trajectory.
-        self.assertAlmostEqual(self._solve_stop(), self._solve_nostop())
-        self.assertAlmostEqual(self._graceful(), self._loop())
+    def test_clean_final_is_preferred(self) -> None:
+        self.assertGreater(self._solve_stop(), self._solve_nostop())
+        self.assertGreater(self._graceful(), self._loop())
 
-    def test_churn_after_success_is_neutral(self) -> None:
-        # Using a tool after the task already passed no longer costs anything --
-        # this run isn't about stopping, so churn == clean solve.
+    def test_churn_after_success_is_penalized(self) -> None:
         read_again = call("read_file", "c4", file_path="src/lib.rs")
         more = score(
             "\n".join([self.READ, self.PATCH, self.OK, read_again, "FINAL: done"]),
             self.SOLVED + [result_block("c4", True)],
         )
-        self.assertAlmostEqual(more, self._solve_stop())
+        self.assertLess(more, self._solve_stop())
+        self.assertGreater(more, self._loop())
 
     def test_solving_rewarded_with_or_without_final(self) -> None:
         # No incentive to abandon the solving the SFT model already does.
@@ -183,6 +169,23 @@ class RewardGoldenTests(unittest.TestCase):
     def test_worst_case_is_bounded(self) -> None:
         self.assertGreater(self._loop(), -4.0)
         self.assertGreater(score("FINAL: done", []), -4.0)
+
+    def test_failed_verifier_retries_are_bounded(self) -> None:
+        fail1 = call("cargo_test", "c3", project_path=".")
+        fail2 = call("cargo_test", "c4", project_path=".")
+        ok = call("cargo_test", "c5", project_path=".")
+        one_fail_then_pass = score(
+            "\n".join([self.READ, self.PATCH, fail1, fail2, ok, "FINAL: done"]),
+            [
+                result_block("c1", True),
+                result_block("c2", True),
+                result_block("c3", False),
+                result_block("c4", False),
+                result_block("c5", True),
+            ],
+        )
+        self.assertLess(one_fail_then_pass, self._solve_stop())
+        self.assertGreater(one_fail_then_pass, 6.0)
 
 
 def assistant_text(row: dict) -> str:

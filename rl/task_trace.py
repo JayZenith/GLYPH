@@ -24,32 +24,27 @@ RUST_TOOL_NAMES = {
 RUST_TOOL_NAMES.discard(None)
 
 DEBUG_PARSE = False
-# Bounded, outcome-first reward. Worst plausible trajectory (~-5) is kept near
-# the same magnitude as the best (~+13) so a single bad rollout cannot dominate
-# a GRPO group. Finalization is DECOUPLED from task success: a clean FINAL is
-# rewarded even on an unsolved task, so the model has a positive "graceful exit"
-# instead of looping into stacked penalties. Recovery itself is taught by the
-# SFT data (signal_v2 variable-depth traces), not hand-shaped here.
-# Minimal reward. The model already solves (SFT_V1 terminal success 68/69); the
-# only gap is stopping with one FINAL after success. So: reward solving, reward
-# solving-then-stopping much more, mildly discourage not stopping. Everything
-# else is a small format floor. Bounded: best ~+13, worst ~-3.
+# Bounded, outcome-first reward for reliability lift. A real verifier pass is
+# still the dominant signal, but successful rollouts that stop cleanly and reach
+# the pass with fewer failed verifier attempts are preferred. Penalties are
+# deliberately small/capped so recovery traces with one or two failed attempts
+# remain strongly positive instead of teaching the model to avoid exploration.
 DEFAULT_REWARD_CONFIG = {
     # format floor
     "structure_valid_bonus": 0.5,
     "no_call_penalty": -2.0,
     "malformed_call_penalty": -1.0,
-    # finalize / termination tails -- ZEROED for the capability-lift run.
-    # These were shaped for the *stopping* goal; this run optimizes solve-rate
-    # only, so stop-pressure is off-target noise. Reward = verifier + format floor.
-    "final_once_bonus": 0.0,
-    "missing_final_penalty": 0.0,
-    # the target here: solve. (verifier is the whole signal)
+    # clean completion
+    "final_once_bonus": 0.5,
+    "missing_final_penalty": -0.5,
+    # solve dominates; clean solve is best
     "verifier_success_bonus": 8.0,
-    "verifier_success_clean_final_bonus": 0.0,
-    # termination tails -- zeroed (see above)
-    "tool_after_success_penalty": 0.0,
-    "tool_budget_exhausted_penalty": 0.0,
+    "verifier_success_clean_final_bonus": 3.0,
+    # bounded anti-churn / anti-thrash shaping
+    "tool_after_success_penalty": -2.0,
+    "tool_budget_exhausted_penalty": -1.5,
+    "failed_verifier_penalty": -0.25,
+    "max_failed_verifier_penalty": -1.5,
 }
 
 REWARD_CONFIG = DEFAULT_REWARD_CONFIG.copy()
@@ -233,21 +228,30 @@ def _outcome_reward(calls: list[dict], tool_text: str, assistant_text: str, full
     """
     success_idx: int | None = None
     success_pos = -1
+    failed_before_success = 0
     for idx, call in enumerate(calls):
         if call["tool"] not in {"cargo_test", "cargo_run"}:
             continue
         result = _find_result_for(call["id"], tool_text)
-        if result is None or not result.get("success"):
+        if result is None:
             continue
-        success_idx = idx
-        pos = _result_offset(call["id"], full_text)
-        if pos >= 0:
-            success_pos = pos
+        if result.get("success"):
+            success_idx = idx
+            pos = _result_offset(call["id"], full_text)
+            if pos >= 0:
+                success_pos = pos
+            break
+        failed_before_success += 1
+
+    fail_penalty = max(
+        REWARD_CONFIG["max_failed_verifier_penalty"],
+        failed_before_success * REWARD_CONFIG["failed_verifier_penalty"],
+    )
 
     if success_idx is None:
-        return 0.0
+        return fail_penalty
 
-    reward = REWARD_CONFIG["verifier_success_bonus"]
+    reward = REWARD_CONFIG["verifier_success_bonus"] + fail_penalty
     later_tools = [
         call for call in calls[success_idx + 1 :]
         if _find_result_for(call["id"], tool_text) is not None
@@ -549,6 +553,8 @@ def load_environment(
     verifier_success_bonus: float | None = None,
     verifier_success_clean_final_bonus: float | None = None,
     tool_after_success_penalty: float | None = None,
+    failed_verifier_penalty: float | None = None,
+    max_failed_verifier_penalty: float | None = None,
 ) -> vf.Environment:
     """Load the Rust tool RL environment with real multi-round tool execution."""
     _set_reward_config(
@@ -562,6 +568,8 @@ def load_environment(
             "verifier_success_bonus": verifier_success_bonus,
             "verifier_success_clean_final_bonus": verifier_success_clean_final_bonus,
             "tool_after_success_penalty": tool_after_success_penalty,
+            "failed_verifier_penalty": failed_verifier_penalty,
+            "max_failed_verifier_penalty": max_failed_verifier_penalty,
         }
     )
 
