@@ -432,6 +432,8 @@ This was run on a 4xA100 instance. GPUs `0,1,2` were assigned to PRIME-RL
 Then we stopped training at step 25 and ran the matched vLLM pass@8 sweep on the same 8
 targets:
 
+![narrow RLVR step-25 run](assets/fig_heldout69_step25.png)
+
 ```bash
 NAMES=$(paste -sd, synthetic_data/heldout69_passk_target_names.txt)
 PYTHONPATH=/workspace/glyph python sft/passk_scan_vllm.py \

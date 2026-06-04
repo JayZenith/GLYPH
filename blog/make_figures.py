@@ -1,9 +1,12 @@
-import json, glob, os
+import csv, json, glob, os
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from tensorboard.backend.event_processing import event_accumulator
+try:
+    from tensorboard.backend.event_processing import event_accumulator
+except ModuleNotFoundError:
+    event_accumulator = None
 
 ROOT="."
 OUT=f"{ROOT}/blog/assets"
@@ -16,10 +19,18 @@ def save(fig,name):
     fig.savefig(f"{OUT}/{name}", facecolor="white"); plt.close(fig); print("wrote",name)
 
 # ---------- 1. SFT_V1 training loss ----------
-ev=glob.glob(f"{ROOT}/results/SFT_V1/tensorboard/**/events.out*",recursive=True)[0]
-ea=event_accumulator.EventAccumulator(ev); ea.Reload()
-loss=ea.Scalars("train/loss")
-xs=[s.step for s in loss]; ys=[s.value for s in loss]
+loss_csv=f"{ROOT}/results/SFT_V1/train_log_history.csv"
+if os.path.exists(loss_csv):
+    loss_rows=list(csv.DictReader(open(loss_csv)))
+    xs=[int(r["step"]) for r in loss_rows if r.get("loss")]
+    ys=[float(r["loss"]) for r in loss_rows if r.get("loss")]
+else:
+    if event_accumulator is None:
+        raise RuntimeError("Need tensorboard or results/SFT_V1/train_log_history.csv for SFT loss")
+    ev=glob.glob(f"{ROOT}/results/SFT_V1/tensorboard/**/events.out*",recursive=True)[0]
+    ea=event_accumulator.EventAccumulator(ev); ea.Reload()
+    loss=ea.Scalars("train/loss")
+    xs=[s.step for s in loss]; ys=[s.value for s in loss]
 fig,ax=plt.subplots(figsize=(7,3.6))
 ax.plot(xs,ys,color=BLUE,lw=1.6)
 ax.set_title("SFT_V1 — training loss (Qwen3-4B-Base, signal_1062, 3 epochs)")
@@ -110,7 +121,34 @@ axR.set_ylabel("# prompts"); axR.set_xticks(ks)
 axR.set_title("6 up · 13 down · 20 flat — churn, not lift")
 save(fig,"fig_passk25_eval.png")
 
+# ---------- 6. Narrow heldout-failure pass@8 run: training curve + matched eval ----------
+rows=list(csv.DictReader(open(f"{ROOT}/results/RLVR_HELDOUT69_PASSK_STEP25/rlvr_step25_training_metrics.csv")))
+train_rows=[r for r in rows if r.get("loss")]
+h_steps=np.array([int(r["step"]) for r in train_rows])
+h_reward=np.array([float(r["reward"]) for r in train_rows])
+cmp_rows=list(csv.DictReader(open(f"{ROOT}/results/RLVR_HELDOUT69_PASSK_STEP25/passk8_step25_comparison.csv")))
+before=sum(int(r["before_solves"]) for r in cmp_rows)
+after=sum(int(r["step25_solves"]) for r in cmp_rows)
+total=8*len(cmp_rows)
+hdeltas=dict(Counter(int(r["step25_solves"])-int(r["before_solves"]) for r in cmp_rows))
+
+fig,(axL,axR)=plt.subplots(1,2,figsize=(10,3.8),gridspec_kw={"width_ratios":[1.35,1]})
+fig.suptitle("Narrow held-out-failure RLVR run", y=1.02)
+axL.plot(h_steps,h_reward,color=GREEN,lw=1.4,marker="o",markersize=2.8,alpha=0.85)
+axL.axhline(0,color=GREY,lw=0.9,ls="--")
+axL.set_xlabel("trainer step")
+axL.set_ylabel("mean rollout reward")
+axL.set_title("training reward (steps 0-25)")
+axR.bar(["SFT_V1","step 25"],[before/total,after/total],color=[BLUE,GREEN],width=0.55)
+for i,v in enumerate([before/total,after/total]):
+    axR.text(i,v+0.012,f"{v:.3f}\n{[before,after][i]}/{total}",ha="center",fontsize=9)
+axR.set_ylim(0.6,0.9)
+axR.set_ylabel("pass@8 on 8 selected targets")
+axR.set_title(f"matched vLLM pass@8: {before} → {after} solves")
+save(fig,"fig_heldout69_step25.png")
+
 print("\nSFT_V1:",{k:round(s1[k],3) for k in ["valid_traces","clean_end_rate","terminal_tool_success_rate"]})
 print("RLVR_V1:",{k:round(rv[k],3) for k in ["valid_traces","clean_end_rate","terminal_tool_success_rate"]})
 print("band counts 0..8:",counts)
 print("passk25 steps:",len(steps),"final reward:",round(float(rmean[-1]),2),"mean filtered:",round(float(ffrac.mean()),2))
+print("heldout69 step25:",before,"->",after,"of",total,"deltas",hdeltas)
