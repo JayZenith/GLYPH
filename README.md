@@ -25,10 +25,10 @@ assistant -> FINAL: patched the filter pipeline; stdout now matches.
 - **The first RL runs regressed; the final targeted pass@8 run won, then failed the full
   formal eval.** Not from vibes — from two
   structural facts that a single `pass@k` scan exposed:
-  1. **RL can't install a behavior the policy never samples.** The one SFT gap (stopping
-     after success) is an *out-of-distribution tail*: the model never churns on training
-     prompts, so GRPO has no gradient for it. Stop-targeted runs collapsed (`RLVR_V1`
-     52→20 valid).
+  1. **RL can't install a behavior absent from its own rollouts.** The one SFT gap
+     (stopping after success) did not appear on the original RL training prompts: the
+     model never churned there, so GRPO had no useful stop/churn contrast. Stop-targeted
+     runs collapsed (`RLVR_V1` 52→20 valid).
   2. **RL can't lift capability the policy has already saturated.** The pass@k scan found
      **0 capability-gap prompts and 95/134 already solved**; the "addressable" band is
      jammed at 7–8/8 (failures are decoding noise, not skill). RL on it *churned* the band

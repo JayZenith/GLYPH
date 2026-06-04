@@ -207,15 +207,21 @@ regressed (52 → 19). At which point we stopped tuning and *measured the policy
 > - temp-0: **0 churn** (72 clean / 24 unsolved of 96)
 > - temp-0.8, depth≥3: **0 / 16 churn**
 
-It essentially **never churns in-distribution.** Churning is an **out-of-distribution tail
-of the held-out set** — a behavior the policy doesn't emit on the prompts it trains on. And
-GRPO can only reinforce variance that *exists in its rollouts*. If the model never
-samples "churn → recover → stop" on training prompts, **there is no gradient to shape**,
-no matter how clever the reward. This is independent of compute: it's true at any budget.
+That measurement was real, but it only proves the original RL training prompts did **not**
+expose the churn/stopping failure. It does not prove the held-out failures were missing
+Rust capability.
 
-**You cannot RL a behavior the policy never samples.** Closing the stopping gap is an
-**SFT-coverage** problem (put the hard held-out shapes into training so the model samples
-them), not an RL one. The RL runs *corroborated* this; the measurement *explained* it.
+The later pass@8 scan corrected the story. The 17 SFT_V1 formal failures were almost all
+already successful at the verifier level: in the original HF/Transformers formal eval,
+16/17 had `terminal_tool_success=True` but no clean `FINAL`; only one was a true task
+failure. When the **same prompts/cases** were rescanned with the vLLM pass@8 harness,
+those same 17 became 9 prompts at 8/8 and 8 mixed prompts, with **0 capability gaps**.
+The difference was inference harness, sampling, and scoring criterion, not different
+prompts.
+
+The usable RL lesson is narrower: **you cannot RL a behavior that the rollouts for your RL
+dataset do not contain.** The original RL training distribution had no churn, so a
+stop-targeted reward had no reliable stop/churn contrast to reinforce.
 
 ---
 
@@ -322,7 +328,9 @@ as a **target selector**.
 
 ## 6. The final run — a narrow pass@8 win, then the robustness check failed
 
-At this point the project felt like a mess. The stopping story looked like an OOD tail.
+At this point the project felt like a mess. The stopping story was no longer "the model
+can't solve these"; it was "on the same held-out prompts, the model often reaches verifier
+success under sampling, but clean termination is fragile and harness-dependent."
 The broad 39-prompt pass@k run had regressed. A previous RL run may have solved one
 held-out failure, but the model was worse overall, so it was not a clean win. The only
 honest path left was narrower:
@@ -334,8 +342,11 @@ honest path left was narrower:
 
 That scan changed the interpretation of the held-out failures. SFT_V1 was not 0/8 on
 them. It had latent capability: on the 17 original failures, 9 were already 8/8 under
-sampling and 8 were mixed. So the final RL dataset became exactly those **8 mixed
-held-out-failure prompts**, stored as:
+the vLLM pass@8 harness and 8 were mixed. This is an engine/harness caveat: the original
+failures came from the HF/Transformers formal eval, while this diagnostic was vLLM at
+T=0.8 and counted `terminal_tool_success`, not necessarily clean `FINAL`. Still, for RLVR
+targeting, it identified which prompts had within-group verifier variance. The final RL
+dataset became exactly those **8 mixed held-out-failure prompts**, stored as:
 
 ```text
 synthetic_data/rl_prompts_heldout69_passk_targets.jsonl
@@ -536,11 +547,12 @@ None of these are deep, but each one *looks like a model result* if you don't ch
 Not "a general Rust agent." It's the **full SFT → RLVR → serve loop with a faithful
 harness and a measured map of where each stage breaks**:
 
-- **SFT** installs the protocol and the skill, and it works (terminal 0.99). Its gaps are
-  *coverage* gaps.
-- **RL cannot install a behavior the policy never samples** (the stopping tail) — true at
-  any compute budget. That's the load-bearing ML result, and it's a *measurement*, not an
-  anecdote.
+- **SFT** installs the protocol and the skill, and it works at the verifier level
+  (terminal 0.99). Its weakest part is clean protocol termination under the HF/Transformers
+  formal eval; the same prompts showed much more verifier success under vLLM pass@8.
+- **RL cannot install a behavior absent from its own rollouts.** The original stop-focused
+  RL runs trained on prompts where SFT_V1 showed ~0 churn, so the reward had no reliable
+  stop-after-success contrast to reinforce.
 - **RL cannot lift capability the policy has already saturated** (the 39-prompt pass@k
   band). The scan predicted the broad failure before we spent the GPU-hours.
 - **RL can lift reliability on a narrow, mixed band** (the 8 held-out-failure targets):
@@ -553,9 +565,9 @@ harness and a measured map of where each stage breaks**:
 
 The honest deliverable is not "RL magically makes a 4B Rust agent." It is the targeting
 rule plus the failure boundary: **RLVR helps where the base policy already has partial
-capability and variance; it fails or drifts where the policy is saturated, impossible, or
-OOD; and tiny full-parameter GRPO can still corrupt the broader tool-use prior even while
-improving the selected band.**
+capability and verifier variance; it fails or drifts where the RL dataset lacks the
+failure mode, where the policy is saturated, or where full-parameter updates overpower
+the SFT protocol prior.**
 
 ### What a real lift would need
 

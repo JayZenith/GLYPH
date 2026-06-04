@@ -206,15 +206,17 @@ training distribution*:
 That measurement was real, but the stronger claim I first wanted to make from it was too
 blunt. It proves the original RL training prompts did **not** expose the churn/stopping
 failure, so those prompts could not provide a stop-after-success gradient. It does **not**
-prove the held-out failures were pure capability OOD.
+prove the held-out failures were missing Rust capability.
 
 The later pass@8 scan corrected the story. The 17 SFT_V1 formal failures were almost all
 already successful at the verifier level: in the original HF/Transformers formal eval,
 16/17 had `terminal_tool_success=True` but no clean `FINAL`; only one was a true task
-failure. When rescanned with the vLLM pass@8 harness, those same 17 became 9 prompts at
-8/8 and 8 mixed prompts, with **0 capability gaps**. So the "stopping gap" was not simply
-"the model cannot solve these tasks." It was protocol-termination instability that
-depended on prompt shape, sampling, and inference engine/harness details.
+failure. When the **same prompts/cases** were rescanned with the vLLM pass@8 harness,
+those same 17 became 9 prompts at 8/8 and 8 mixed prompts, with **0 capability gaps**. So
+the "stopping gap" was not simply "the model cannot solve these tasks." It was
+protocol-termination instability that appeared under the HF/Transformers formal eval but
+was much less absolute under the vLLM pass@8 diagnostic. The prompts were the same; the
+difference was inference harness, sampling, and scoring criterion.
 
 The usable RL lesson is narrower: **you cannot RL a behavior that the rollouts for your RL
 dataset do not contain.** The original RL training distribution had no churn, so a
@@ -328,8 +330,8 @@ as a **target selector**.
 ## 6. The final run — a narrow pass@8 win, then the robustness check failed
 
 At this point the project felt like a mess. The stopping story was no longer "the model
-can't solve these"; it was "the model can often solve them, but clean termination is
-fragile and harness-dependent."
+can't solve these"; it was "on the same held-out prompts, the model often reaches verifier
+success under sampling, but clean termination is fragile and harness-dependent."
 The broad 39-prompt pass@k run had regressed. A previous RL run may have solved one
 held-out failure, but the model was worse overall, so it was not a clean win. The only
 honest path left was narrower:
@@ -548,12 +550,12 @@ Not "a general Rust agent." It's the **full SFT → RLVR → serve loop with a f
 harness and a measured map of where each stage breaks**:
 
 - **SFT** installs the protocol and the skill, and it works at the verifier level
-  (terminal 0.99). Its weakest part is clean protocol termination under some held-out
-  shapes and inference conditions.
+  (terminal 0.99). Its weakest part is clean protocol termination under the HF/Transformers
+  formal eval; the same prompts showed much more verifier success under vLLM pass@8.
 - **RL cannot install a behavior absent from its own rollouts.** The original stop-focused
   RL runs trained on prompts where SFT_V1 showed ~0 churn, so the reward had no reliable
-  stop-after-success contrast to reinforce. That is narrower than saying all held-out
-  churn was pure OOD capability failure.
+  stop-after-success contrast to reinforce. That is narrower than saying the held-out
+  churn was a missing-capability problem.
 - **RL cannot lift capability the policy has already saturated** (the 39-prompt pass@k
   band). The scan predicted the broad failure before we spent the GPU-hours.
 - **RL can lift reliability on a narrow, mixed band** (the 8 held-out-failure targets):
