@@ -1,10 +1,10 @@
 # RLVR on SFT_V1 — capability lift
 
 Goal: use RL for what it's actually good at — **raise solve-rate on train cases
-the policy only solves *sometimes***. SFT_V1 already terminates cleanly in
-distribution; the held-out churn/termination gap is an OOD tail RL can't install
-(see Lessons). So we don't RL stopping. We RL solving, on the band where a
-gradient exists.
+the policy only solves *sometimes***. The stop-focused runs failed because the original
+RL training rollouts did not expose solved-but-no-`FINAL` behavior, so the reward had no
+useful stop/churn contrast. This run therefore does not RL stopping; it RLs solving on
+the band where verifier variance exists.
 
 Reward (`rl/task_trace.py`) is verifier-dominant with the termination tails
 **zeroed** for this run:
@@ -153,15 +153,14 @@ GPU box billed hourly — stop it when idle (`vastai stop instance <id>`).
 
 ## Lessons (why the pipeline is shaped this way)
 
-- **RL can't install a behavior the policy never samples.** Two stop-targeted
+- **RL can't fix a failure mode absent from its own rollouts.** Two stop-targeted
   variants regressed full eval: RLVR_V1 (stacked-penalty reward, 52→20) and
   RLVR_B (corrected bounded reward **+** `--terminal-on-success` horizon
   truncation, 52→19). B changes two things at once, so it's *not* a clean reward
-  control — it only shows the most aggressive credit trick for stopping still
-  collapses. The real evidence is a **direct measurement**: train prompts emit ~0
-  churn (temp-0: 0 churn; temp-0.8 depth≥3: 0/16). Churn is an OOD tail of the
-  *held-out* set, not in the rollouts → no gradient, regardless of reward or
-  truncation. The termination gap is an **SFT-coverage** problem, not an RL one.
+  control. The key measurement: train prompts emitted ~0 churn (temp-0: 0 churn;
+  temp-0.8 depth≥3: 0/16), so the RL rollout harness lacked solved-but-no-`FINAL`
+  contrast. Later pass@8 showed the same held-out failures had verifier-success
+  capability under vLLM sampling, so the issue was not simply missing Rust capability.
 - **So RL's real job here is solve-rate on the partial-solve band** — where
   rollout variance (some pass, some fail) actually exists. Hence the pass@k gate.
 - **Reward: verifier-dominant + bounded.** RLVR_V1 collapsed on stacked −13..−23

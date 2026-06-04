@@ -132,7 +132,7 @@ failed attempts before it stops). Stopping is not a simple data-volume fix.
 
 ---
 
-## 3. Stopping is an OOD tail — the load-bearing measurement
+## 3. Stopping was absent from the original RL train rollouts
 
 **RLVR_V1** (stopping reward, but the *broken* early version: penalties stacked to
 −13..−23, `teacher-tau 0.01`, temp 0.8→0.6, rollouts 8→4) collapsed:
@@ -155,7 +155,8 @@ terminal 68→46 @ step 25. Caveat: B changes two things vs V1 (reward **and** h
 truncation) → **not a clean reward control**. It only shows the most aggressive credit
 trick for stopping still collapses.
 
-The A/B is corroboration. **The explanation is a direct measurement of the policy:**
+The A/B is corroboration. **The explanation starts with a direct measurement of the
+policy on the original RL training distribution:**
 
 ```
 churn rate on TRAIN prompts (SFT_V1):
@@ -163,14 +164,16 @@ churn rate on TRAIN prompts (SFT_V1):
   temp-0.8, depth≥3:    0 / 16 churn
 ```
 
-The model **never churns in-distribution**. Churn is an OOD tail of the *held-out* set.
-GRPO reinforces variance present in its rollouts; if "churn→recover→stop" is never
-sampled on training prompts, **there is no gradient for it — at any reward, any compute.**
+The model did not churn on those train prompts, so the original stop-focused RL runs had
+no reliable solved-but-no-`FINAL` contrast to reinforce. The later held-out pass@8 scan
+made the interpretation more precise: the 17 SFT_V1 formal failures were not missing Rust
+capability. In the HF/Transformers formal eval, 16/17 already reached
+`terminal_tool_success=True` but lacked a clean `FINAL`; with the same prompts/cases under
+the vLLM pass@8 diagnostic, 9 were 8/8 and 8 were mixed, with 0 capability gaps.
 
-> **Lesson: you cannot RL a behavior the policy never samples.** Stopping is an
-> **SFT-coverage** problem (put the hard held-out shapes into training so the model samples
-> them), not an RL one. To re-attempt later: cover those shapes in SFT, *then* un-zero the
-> reward tails (§1).
+> **Lesson:** do not assume a reward can fix a failure just because that failure appears in
+> one eval. First verify that the same failure mode appears under the RL rollout harness
+> and scoring rule. In our stop-focused runs, it did not.
 
 ---
 
@@ -302,8 +305,9 @@ Each of these *looks like a model result* if unchased. "Is this number real?" is
 
 ## 8. Verdict + how to read it
 
-- SFT installs the protocol and the skill; it works (terminal 0.99). Its gaps are
-  **coverage** gaps (the OOD stopping tail).
+- SFT installs the protocol and the skill; it works at the verifier level (terminal 0.99).
+  Its weakest part is clean `FINAL` termination under the HF/Transformers formal eval;
+  the same prompts showed much more verifier success under vLLM pass@8.
 - **RL can't install an unsampled behavior** (stopping) and **can't lift a saturated band**
   (capability). Both are *measured*, both are scale-independent.
 - **`pass@k` banding is the cheap pre-flight**: empty / ceiling'd band ⇒ RL won't help ⇒

@@ -218,11 +218,13 @@ protocol-termination instability that appeared under the HF/Transformers formal 
 was much less absolute under the vLLM pass@8 diagnostic. The prompts were the same; the
 difference was inference harness, sampling, and scoring criterion.
 
-The usable RL lesson is narrower: **you cannot RL a behavior that the rollouts for your RL
-dataset do not contain.** The original RL training distribution had no churn, so a
-stop-targeted reward had no reliable stop/churn contrast to reinforce. But the held-out
-formal failures themselves were not evidence of missing Rust capability; they were mostly
-successful tool trajectories that failed to terminate cleanly.
+The usable RL lesson is narrower: do not assume a reward can fix a failure just because
+that failure appears in one eval. First check whether the same failure mode appears under
+the RL rollout harness and scoring rule. In the stop-focused runs, the training rollouts
+did not expose solved-but-no-`FINAL` behavior, so the stop reward had little useful
+contrast to reinforce. Later, pass@8 showed the same held-out prompts had verifier-success
+capability under vLLM sampling, which changed the story from "missing Rust capability" to
+"termination/protocol stability differs by harness and scoring."
 
 ---
 

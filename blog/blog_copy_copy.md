@@ -219,9 +219,13 @@ those same 17 became 9 prompts at 8/8 and 8 mixed prompts, with **0 capability g
 The difference was inference harness, sampling, and scoring criterion, not different
 prompts.
 
-The usable RL lesson is narrower: **you cannot RL a behavior that the rollouts for your RL
-dataset do not contain.** The original RL training distribution had no churn, so a
-stop-targeted reward had no reliable stop/churn contrast to reinforce.
+The usable RL lesson is narrower: do not assume a reward can fix a failure just because
+that failure appears in one eval. First check whether the same failure mode appears under
+the RL rollout harness and scoring rule. In the stop-focused runs, the training rollouts
+did not expose solved-but-no-`FINAL` behavior, so the stop reward had little useful
+contrast to reinforce. Later, pass@8 showed the same held-out prompts had verifier-success
+capability under vLLM sampling, which changed the story from "missing Rust capability" to
+"termination/protocol stability differs by harness and scoring."
 
 ---
 

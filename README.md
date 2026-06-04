@@ -72,8 +72,8 @@ result below.
 | `JayZenith/SFT_V3` | Qwen3-4B-Base | `signal_v3` (deep + clean endings) | 50/69 | 0.725 | 0.99 |
 
 `terminal_tool_success` ≈ solves; `clean_end` ≈ stops cleanly. The gap between them is the
-**stopping** problem, and it plateaus at 0.72–0.75 across three data variants → it is not a
-data-coverage gap that more SFT fixes easily.
+**stopping** problem, and it plateaus at 0.72–0.75 across these three data variants, so
+naively adding more of that SFT data did not fix it.
 
 ![RLVR_V1 collapse](blog/assets/fig_collapse.png)
 

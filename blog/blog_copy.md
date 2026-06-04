@@ -218,15 +218,15 @@ regressed (52 → 19). At which point we stopped tuning and *measured the policy
 > - temp-0: **0 churn** (72 clean / 24 unsolved of 96)
 > - temp-0.8, depth≥3: **0 / 16 churn**
 
-It essentially **never churns in-distribution.** Churning is an **out-of-distribution tail
-of the held-out set** — a behavior the policy doesn't emit on the prompts it trains on. And
-GRPO can only reinforce variance that *exists in its rollouts*. If the model never
-samples "churn → recover → stop" on training prompts, **there is no gradient to shape**,
-no matter how clever the reward. This is independent of compute: it's true at any budget.
+That measurement was real, but it only proves the original RL training prompts did **not**
+expose the churn/stopping failure. It does not prove the held-out failures were missing
+Rust capability. Later, the same 17 held-out formal failures were rescanned with vLLM
+pass@8: 9 were 8/8, 8 were mixed, and 0 were capability gaps. The difference was inference
+harness, sampling, and scoring criterion, not different prompts.
 
-**You cannot RL a behavior the policy never samples.** Closing the stopping gap is an
-**SFT-coverage** problem (put the hard held-out shapes into training so the model samples
-them), not an RL one. The RL runs *corroborated* this; the measurement *explained* it.
+The usable RL lesson is narrower: do not assume a reward can fix a failure just because
+that failure appears in one eval. First check whether the same failure mode appears under
+the RL rollout harness and scoring rule.
 
 ---
 
@@ -357,11 +357,12 @@ None of these are deep, but each one *looks like a model result* if you don't ch
 Not "a general Rust agent." It's the **full SFT → RLVR → serve loop with a faithful
 harness and a measured map of where each stage breaks**:
 
-- **SFT** installs the protocol and the skill, and it works (terminal 0.99). Its gaps are
-  *coverage* gaps.
-- **RL cannot install a behavior the policy never samples** (the stopping tail) — true at
-  any compute budget. That's the load-bearing ML result, and it's a *measurement*, not an
-  anecdote.
+- **SFT** installs the protocol and the skill, and it works at the verifier level
+  (terminal 0.99). Its weakest part is clean protocol termination under the HF/Transformers
+  formal eval; the same prompts showed much more verifier success under vLLM pass@8.
+- **RL cannot fix a failure mode absent from its own rollouts.** The original stop-focused
+  RL runs trained on prompts where SFT_V1 showed ~0 churn, so the reward had no reliable
+  stop-after-success contrast to reinforce.
 - **RL cannot lift capability the policy has already saturated** (the pass@k band). The
   scan predicts this before you spend a GPU-hour.
 - **`pass@k` banding is the cheap diagnostic** for "can RL help here at all?" If the band
