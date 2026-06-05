@@ -1,0 +1,8 @@
+[package]
+name = "weekly_sales_summary_valid_filters_unique_counts"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "weekly_sales_summary_valid_filters_unique_counts"
+path = "src/lib.rs"

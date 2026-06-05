@@ -1,0 +1,6 @@
+[package]
+name = "config_merge_precedence_case50"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

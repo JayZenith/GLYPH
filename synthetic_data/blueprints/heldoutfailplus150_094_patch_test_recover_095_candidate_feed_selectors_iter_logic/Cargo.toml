@@ -1,0 +1,8 @@
+[package]
+name = "candidate_feed_selectors_iter_logic"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "candidate_feed_selectors_iter_logic"
+path = "src/lib.rs"

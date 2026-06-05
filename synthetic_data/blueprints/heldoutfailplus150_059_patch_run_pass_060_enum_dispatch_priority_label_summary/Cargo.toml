@@ -1,0 +1,4 @@
+[package]
+name = "enum_dispatch_priority_label_summary"
+version = "0.1.0"
+edition = "2021"

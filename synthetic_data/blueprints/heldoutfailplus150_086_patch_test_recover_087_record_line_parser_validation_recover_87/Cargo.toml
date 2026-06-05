@@ -1,0 +1,8 @@
+[package]
+name = "record_line_parser_validation_recover_87"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "record_line_parser_validation_recover_87"
+path = "src/lib.rs"

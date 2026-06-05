@@ -1,0 +1,7 @@
+[package]
+name = "weekly_sales_valid_report_recovery"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"

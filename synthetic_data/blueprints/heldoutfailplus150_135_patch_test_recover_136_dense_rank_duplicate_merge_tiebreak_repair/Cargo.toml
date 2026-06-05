@@ -1,0 +1,8 @@
+[package]
+name = "dense_rank_duplicate_merge_tiebreak_repair"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "dense_rank_duplicate_merge_tiebreak_repair"
+path = "src/lib.rs"

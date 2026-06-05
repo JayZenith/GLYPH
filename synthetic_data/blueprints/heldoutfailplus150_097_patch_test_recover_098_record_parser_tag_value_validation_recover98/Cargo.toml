@@ -1,0 +1,8 @@
+[package]
+name = "record_parser_tag_value_validation_recover98"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "record_parser_tag_value_validation_recover98"
+path = "src/lib.rs"

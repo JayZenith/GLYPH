@@ -1,0 +1,6 @@
+[package]
+name = "dispatch_label_summary_priority_branches"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

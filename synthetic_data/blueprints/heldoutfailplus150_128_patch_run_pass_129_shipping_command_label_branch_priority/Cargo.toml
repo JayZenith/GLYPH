@@ -1,0 +1,6 @@
+[package]
+name = "shipping_command_label_branch_priority"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

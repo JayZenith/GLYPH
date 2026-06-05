@@ -1,0 +1,8 @@
+[package]
+name = "weekly_sales_region_summary_repair"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "weekly_sales_region_summary_repair"
+path = "src/lib.rs"

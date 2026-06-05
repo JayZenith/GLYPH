@@ -1,0 +1,8 @@
+[package]
+name = "enum_policy_router_recovery_v12"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "enum_policy_router_recovery_v12"
+path = "src/lib.rs"

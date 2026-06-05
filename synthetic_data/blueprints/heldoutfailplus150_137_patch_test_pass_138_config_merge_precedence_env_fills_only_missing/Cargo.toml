@@ -1,0 +1,8 @@
+[package]
+name = "config_merge_precedence_env_fills_only_missing"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "config_merge_precedence_env_fills_only_missing"
+path = "src/lib.rs"

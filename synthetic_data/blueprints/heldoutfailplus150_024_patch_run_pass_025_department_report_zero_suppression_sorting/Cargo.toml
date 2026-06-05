@@ -1,0 +1,6 @@
+[package]
+name = "department_report_zero_suppression_sorting"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

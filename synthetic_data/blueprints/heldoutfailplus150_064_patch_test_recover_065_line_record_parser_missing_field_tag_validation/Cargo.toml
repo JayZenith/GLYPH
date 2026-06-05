@@ -1,0 +1,6 @@
+[package]
+name = "line_record_parser_missing_field_tag_validation"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

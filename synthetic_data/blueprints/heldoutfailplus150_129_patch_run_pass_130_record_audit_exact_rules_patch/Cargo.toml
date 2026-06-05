@@ -1,0 +1,6 @@
+[package]
+name = "record_audit_exact_rules_patch"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

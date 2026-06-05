@@ -1,0 +1,4 @@
+[package]
+name = "record_parser_strict_validation_report"
+version = "0.1.0"
+edition = "2021"

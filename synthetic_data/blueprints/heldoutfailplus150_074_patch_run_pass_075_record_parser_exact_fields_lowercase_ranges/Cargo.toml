@@ -1,0 +1,6 @@
+[package]
+name = "record_parser_exact_fields_lowercase_ranges"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

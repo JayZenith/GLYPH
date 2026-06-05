@@ -1,0 +1,6 @@
+[package]
+name = "select_visible_task_ids_iterator_filters"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

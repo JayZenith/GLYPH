@@ -1,0 +1,8 @@
+[package]
+name = "featured_items_iterator_selection_recovery"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "featured_items_iterator_selection_recovery"
+path = "src/lib.rs"

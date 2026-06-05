@@ -1,0 +1,6 @@
+[package]
+name = "enum_policy_dispatch_recovery_56"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

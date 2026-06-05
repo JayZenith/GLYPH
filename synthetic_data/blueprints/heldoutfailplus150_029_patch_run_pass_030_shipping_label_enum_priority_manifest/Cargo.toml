@@ -1,0 +1,6 @@
+[package]
+name = "shipping_label_enum_priority_manifest"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
