@@ -153,24 +153,27 @@ def run_prompt(llm, tokenizer, sampling_cls, item, k, max_new_tokens, max_tool_r
             if not keep_going:
                 r.done = True
 
-    solves = 0
+    cargo_solves = 0
+    valid_solves = 0
     rollout_rows = []
     for r in rollouts:
         trace = r.prompt + r.accumulated.strip()
         m = score_output(r.prompt, r.accumulated.strip(), item, r.new_tokens, max_new_tokens)
         cargo_success = _cargo_verifier_success(trace)
-        solves += int(cargo_success)
+        valid_trace = bool(m["valid_trace"]) and cargo_success
+        cargo_solves += int(cargo_success)
+        valid_solves += int(valid_trace)
         if save_rollouts:
             rollout_rows.append({
                 "cargo_verifier_success": cargo_success,
                 "terminal_tool_success_metric": bool(m["terminal_tool_success"]),
-                "valid_trace": bool(m["valid_trace"]),
+                "valid_trace": valid_trace,
                 "clean_end": bool(m["clean_end"]),
                 "call_sequence": m["call_sequence"],
                 "new_tokens": r.new_tokens,
                 "trace": trace,
             })
-    return solves, rollout_rows
+    return cargo_solves, valid_solves, rollout_rows
 
 
 def main() -> int:
@@ -230,20 +233,28 @@ def main() -> int:
     sandbox_root = Path(args.cases_root) / "_sandboxes"
 
     for i, item in enumerate(prompts):
-        solves, rollout_rows = run_prompt(
+        cargo_solves, valid_solves, rollout_rows = run_prompt(
             llm, tokenizer, SamplingParams, item, args.samples, args.max_new_tokens,
             args.max_tool_rounds, args.temperature, executor, sandbox_root, args.save_rollouts,
         )
-        band = "rlvr-target" if 0 < solves < args.samples else ("solved" if solves else "capability-gap")
-        row = {"name": item["name"], "solves": solves, "k": args.samples,
-               "pass_at_k": solves / args.samples, "band": band,
-               "solve_metric": "cargo_verifier_success"}
+        band = "rlvr-target" if 0 < cargo_solves < args.samples else ("solved" if cargo_solves else "capability-gap")
+        row = {"name": item["name"], "solves": cargo_solves, "k": args.samples,
+               "pass_at_k": cargo_solves / args.samples, "band": band,
+               "solve_metric": "cargo_verifier_success",
+               "cargo_solves": cargo_solves,
+               "cargo_pass_at_k": cargo_solves / args.samples,
+               "valid_trace_solves": valid_solves,
+               "valid_trace_pass_at_k": valid_solves / args.samples}
         if args.save_rollouts:
             row["rollouts"] = rollout_rows
         results.append(row)
         write_results(output_path, results)
         done = len(completed) + i + 1
-        print(f"[{done}/{total}] {item['name']} -> {solves}/{args.samples} {band}", flush=True)
+        print(
+            f"[{done}/{total}] {item['name']} -> cargo {cargo_solves}/{args.samples}, "
+            f"valid {valid_solves}/{args.samples} {band}",
+            flush=True,
+        )
 
     write_results(output_path, results)
     tgt = sum(r["band"] == "rlvr-target" for r in results)
