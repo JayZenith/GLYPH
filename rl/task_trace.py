@@ -34,27 +34,24 @@ RUST_TOOL_NAMES = {
 RUST_TOOL_NAMES.discard(None)
 
 DEBUG_PARSE = False
-# Bounded, outcome-first reward for reliability lift. A real verifier pass still
-# earns partial reward, but the top reward is reserved for the heldout-style
-# valid trace: cargo verifier pass, no later tools, exactly one clean FINAL after
-# the passing result. Penalties stay small/capped so recovery traces with one or
-# two failed attempts remain positive instead of teaching the model to avoid
-# exploration.
+# Eval-aligned reward for reliability lift. The only positive outcome is the
+# heldout-style valid trace: cargo verifier pass, no later tools, exactly one
+# clean FINAL after the passing result, and no protocol errors. Invalid cargo
+# success is not rewarded; it only avoids some failure penalties.
 DEFAULT_REWARD_CONFIG = {
     # format floor
-    "structure_valid_bonus": 0.5,
+    "structure_valid_bonus": 0.0,
     "no_call_penalty": -5.0,
     "malformed_call_penalty": -4.0,
     "bad_cargo_project_path_penalty": -4.0,
     "gibberish_penalty": -5.0,
     "bad_final_hygiene_penalty": -2.0,
     # clean completion
-    "final_once_bonus": 0.2,
+    "final_once_bonus": 0.0,
     "missing_final_penalty": -3.0,
-    # Clean heldout-style solve dominates. A cargo pass without the exact stop
-    # contract is only a weak partial signal; heldout marks those traces wrong.
-    "verifier_success_bonus": 1.5,
-    "verifier_success_clean_final_bonus": 8.5,
+    # Only exact heldout-style success is positive.
+    "verifier_success_bonus": 0.0,
+    "verifier_success_clean_final_bonus": 10.0,
     # bounded anti-churn / anti-thrash shaping
     "tool_after_success_penalty": -6.0,
     "tool_budget_exhausted_penalty": -5.0,
@@ -319,12 +316,11 @@ def _outcome_reward(
     full_text: str,
     protocol_errors: list[str] | None = None,
 ) -> float:
-    """Primary signal: cargo verifier success, then heldout-style stopping.
+    """Primary signal: exact heldout-style success.
 
-    Any real cargo_test/cargo_run pass earns partial reward. The clean-success
-    bonus is only paid for the same stop behavior the heldout eval counts:
-    exactly one FINAL, clean ending, FINAL after the passing verifier result,
-    and no executed tools after that success.
+    Cargo success without the exact stop contract is not positive reward. This
+    avoids training a policy that gets tools to execute in RL while still failing
+    strict heldout eval.
     """
     success_idx: int | None = None
     success_pos = -1

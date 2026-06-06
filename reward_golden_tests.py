@@ -117,9 +117,9 @@ def score_with_raw_trace(assistant: str, results: list[str], raw: str) -> float:
 
 
 class RewardGoldenTests(unittest.TestCase):
-    """Reliability-lift reward. Verifier success dominates, but clean stopping
-    and fewer failed verifier retries are preferred. Penalties stay bounded so
-    recovery traces remain positive and usable.
+    """Reliability-lift reward. Only exact heldout-style success is positive;
+    invalid cargo success is allowed to be less bad than failed cargo, but it
+    cannot become a positive optimization target.
     """
 
     READ = call("read_file", "c1", file_path="src/lib.rs")
@@ -164,10 +164,10 @@ class RewardGoldenTests(unittest.TestCase):
         self.assertLess(more, self._solve_nostop())
 
     def test_cargo_only_is_weak_partial_credit(self) -> None:
-        # Heldout counts cargo success without clean FINAL as invalid. Keep it
-        # above non-solving traces, but far below exact valid-trace behavior.
+        # Heldout counts cargo success without clean FINAL as invalid. It may
+        # be less bad than a failed verifier trace, but it must not be positive.
         self.assertGreater(self._solve_nostop(), self._loop())
-        self.assertLess(self._solve_nostop(), self._solve_stop() / 4)
+        self.assertLess(self._solve_nostop(), 0.0)
         self.assertGreater(self._solve_stop(), 8.0)
 
     def test_format_floor_still_applies(self) -> None:

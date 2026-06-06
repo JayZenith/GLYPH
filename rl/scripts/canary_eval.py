@@ -130,6 +130,8 @@ def main() -> int:
     parser.add_argument("--cases-root", default="runs/rlvr1/rust_cases/eval_canary")
     parser.add_argument("--tool-timeout", type=int, default=30)
     parser.add_argument("--nsjail-path", default=None)
+    parser.add_argument("--min-exact-call-syntax-rate", type=float, default=1.0)
+    parser.add_argument("--min-valid-traces", type=int, default=1)
     args = parser.parse_args()
 
     model_path = args.model
@@ -202,6 +204,18 @@ def main() -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(payload, indent=2))
     print(f"Wrote {output_path}")
+    formal = payload["summary"]["formal"]
+    failures = []
+    if formal.get("exact_call_syntax_rate", 0.0) < args.min_exact_call_syntax_rate:
+        failures.append(
+            f"exact_call_syntax_rate={formal.get('exact_call_syntax_rate', 0.0):.4f} "
+            f"< {args.min_exact_call_syntax_rate:.4f}"
+        )
+    if formal.get("valid_traces", 0) < args.min_valid_traces:
+        failures.append(f"valid_traces={formal.get('valid_traces', 0)} < {args.min_valid_traces}")
+    if failures:
+        print("Canary failed: " + "; ".join(failures), file=sys.stderr)
+        return 2
     return 0
 
 
