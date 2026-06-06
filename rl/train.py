@@ -16,6 +16,26 @@ import tomli_w
 
 
 CONFIG_DIR = Path(__file__).resolve().parent / "configs" / "task_trace"
+GLYPH_CHAT_TEMPLATE = """{%- for message in messages %}
+{%- set role = message['role'] %}
+{%- set content = message['content'] %}
+{%- if role == 'system' %}
+{{ '<|im_start|>system\n' + content.rstrip() + '<|im_end|>\n' }}
+{%- elif role == 'user' %}
+{{ '<|im_start|>user\n' + content.rstrip() + '<|im_end|>\n' }}
+{%- elif role == 'assistant' %}
+{{ '<|im_start|>assistant\n' + content.rstrip() }}
+{%- if not content.rstrip().endswith('<|im_end|>') %}
+{{ '<|im_end|>' }}
+{%- endif %}
+{{ '\n' }}
+{%- elif role == 'tool' %}
+{{ '<|im_start|>tool\n' + content.rstrip() + '<|im_end|>\n' }}
+{%- endif %}
+{%- endfor %}
+{%- if add_generation_prompt %}
+{{ '<|im_start|>assistant\n' }}
+{%- endif %}"""
 
 
 # turns "0,2,3" into [0,2,3] for --prime-rl-gpu-ids
@@ -96,6 +116,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--teacher-model", default="JayZenith/SFT_V1")
     parser.add_argument("--teacher-port", type=int, default=8001)
     parser.add_argument("--teacher-device", type=int, default=0)
+    parser.add_argument("--disable-glyph-chat-template", action="store_true",
+                        help="Use the base tokenizer chat template instead of the CALL/RESULT/FINAL ChatML template.")
     # Anchor to the SFT reference. 0.01 was effectively no KL: the policy drifted
     # and collapsed (clean_end 0.75->0.33, terminal success 0.99->0.70). RL here
     # is a nudge, not a rewrite -- keep it close to SFT.
@@ -139,6 +161,48 @@ def load_templates() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
         load_toml(CONFIG_DIR / "orchestrator.toml"),
         load_toml(CONFIG_DIR / "inference.toml"),
     )
+
+
+def _safe_model_dir_name(model_name: str) -> str:
+    return "".join(ch if ch.isalnum() or ch in "._-" else "__" for ch in model_name)
+
+
+def materialize_glyph_chat_model(model_name: str, output_dir: Path) -> str:
+    """Create a local model view whose tokenizer renders Glyph ChatML.
+
+    Qwen's default template renders `role=tool` as a user `<tool_response>`
+    block. SFT/eval use literal `<|im_start|>tool` blocks, so RL must point
+    tokenizer-loading code at a local model view with the Glyph template.
+    """
+    local = Path(model_name)
+    source = local.resolve() if local.exists() else Path(snapshot_download(repo_id=model_name, repo_type="model"))
+    dest = output_dir / "glyph_chat_models" / _safe_model_dir_name(model_name)
+    dest.mkdir(parents=True, exist_ok=True)
+
+    for item in source.iterdir():
+        target = dest / item.name
+        if target.exists() or target.is_symlink():
+            continue
+        if item.is_dir():
+            target.symlink_to(item, target_is_directory=True)
+        else:
+            target.symlink_to(item)
+
+    tokenizer = AutoTokenizer.from_pretrained(str(source))
+    tokenizer.chat_template = GLYPH_CHAT_TEMPLATE
+    for name in (
+        "chat_template.jinja",
+        "tokenizer_config.json",
+        "special_tokens_map.json",
+        "tokenizer.json",
+    ):
+        target = dest / name
+        if target.exists() or target.is_symlink():
+            target.unlink()
+    tokenizer.save_pretrained(str(dest))
+    (dest / "chat_template.jinja").write_text(GLYPH_CHAT_TEMPLATE, encoding="utf-8")
+    return str(dest)
+
 
 # write CLI vlaue into config if user passes it
 def maybe_set(container: dict[str, Any], key: str, value: Any) -> None:
@@ -241,6 +305,10 @@ def build_config(args: argparse.Namespace, adapter_cfg: dict[str, Any] | None) -
         base_model = args.model
     rollout_model = args.rollout_init_model or base_model
     teacher_model_name = args.teacher_model or rollout_model
+    if not args.disable_glyph_chat_template:
+        base_model = materialize_glyph_chat_model(base_model, output_dir)
+        rollout_model = materialize_glyph_chat_model(rollout_model, output_dir)
+        teacher_model_name = materialize_glyph_chat_model(teacher_model_name, output_dir)
 
     trainer_model = trainer.setdefault("model", {})
     trainer_optim = trainer.setdefault("optim", {})

@@ -39,6 +39,7 @@ def _install_verifiers_stub() -> None:
 _install_verifiers_stub()
 from rl.task_trace import (  # noqa: E402
     REWARD_CONFIG,
+    _format_chatml_messages,
     _find_result_for,
     _rust_tool_reward,
     _verifier_outcomes,
@@ -341,6 +342,19 @@ class RlPromptFormatTests(unittest.TestCase):
 
         self.assertEqual([m["role"] for m in prompts[0]["prompt"]], ["system", "user"])
         self.assertEqual(prompts[0]["prompt"][1]["content"], "Fix the crate.")
+
+    def test_internal_chatml_render_matches_sft_eval_protocol(self) -> None:
+        messages = [
+            {"role": "system", "content": "sys"},
+            {"role": "user", "content": "fix"},
+            {"role": "assistant", "content": 'CALL read_file(id="c1")<|im_end|>'},
+            {"role": "tool", "content": "RESULT c1:\nstatus: success"},
+            {"role": "assistant", "content": "FINAL: done"},
+        ]
+        rendered = _format_chatml_messages(messages)
+        self.assertIn("<|im_start|>tool\nRESULT c1:\nstatus: success\n<|im_end|>", rendered)
+        self.assertNotIn("<tool_response>", rendered)
+        self.assertNotIn("<|im_start|>user\n<|im_start|>system", rendered)
 
 
 def main() -> int:
