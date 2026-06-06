@@ -31,10 +31,13 @@ from agent_runtime.rust.runtime import (
 
 @dataclass
 class Rollout:
+    item_index: int
+    item: dict
     prompt: str
     blueprint_root: str | None
     trace_prefix: str | None
     sandbox_path: str | None
+    expected_output: str | None
     remaining: int
     accumulated: str = ""
     new_tokens: int = 0
@@ -98,22 +101,61 @@ def _exec_round(rollout: Rollout, executor, expected_output: str | None) -> bool
     return True
 
 
-def run_prompt(llm, tokenizer, sampling_cls, item, k, max_new_tokens, max_tool_rounds,
-               temperature, executor, sandbox_root, save_rollouts: bool = False):
+def _make_rollouts_for_item(item_index: int, item: dict, k: int, max_new_tokens: int, sandbox_root) -> list[Rollout]:
     blueprint_root = item.get("blueprint_root")
     trace_prefix = item.get("trace_prefix") or blueprint_root
     expected_output = item.get("expected_output")
     prompt = build_prompt(item["user"], item.get("system"))
-    stop_ids = [tokenizer.eos_token_id,
-                tokenizer.convert_tokens_to_ids("<|im_end|>"),
-                tokenizer.convert_tokens_to_ids("<|im_start|>")]
 
     rollouts: list[Rollout] = []
     for _ in range(k):
         sandbox_path = None
         if blueprint_root:
             _, sandbox_path = ensure_sandbox_copy(blueprint_root, Path(sandbox_root))
-        rollouts.append(Rollout(prompt, blueprint_root, trace_prefix, sandbox_path, max_new_tokens))
+        rollouts.append(
+            Rollout(
+                item_index,
+                item,
+                prompt,
+                blueprint_root,
+                trace_prefix,
+                sandbox_path,
+                expected_output,
+                max_new_tokens,
+            )
+        )
+    return rollouts
+
+
+def _score_rollouts(item: dict, rollouts: list[Rollout], max_new_tokens: int, save_rollouts: bool):
+    cargo_solves = 0
+    valid_solves = 0
+    rollout_rows = []
+    for r in rollouts:
+        trace = r.prompt + r.accumulated.strip()
+        m = score_output(r.prompt, r.accumulated.strip(), item, r.new_tokens, max_new_tokens)
+        cargo_success = _cargo_verifier_success(trace)
+        valid_trace = bool(m["valid_trace"]) and cargo_success
+        cargo_solves += int(cargo_success)
+        valid_solves += int(valid_trace)
+        if save_rollouts:
+            rollout_rows.append({
+                "cargo_verifier_success": cargo_success,
+                "terminal_tool_success_metric": bool(m["terminal_tool_success"]),
+                "valid_trace": valid_trace,
+                "clean_end": bool(m["clean_end"]),
+                "call_sequence": m["call_sequence"],
+                "new_tokens": r.new_tokens,
+                "trace": trace,
+            })
+    return cargo_solves, valid_solves, rollout_rows
+
+
+def _run_rollout_batch(llm, tokenizer, sampling_cls, rollouts: list[Rollout], max_tool_rounds,
+                       temperature, executor):
+    stop_ids = [tokenizer.eos_token_id,
+                tokenizer.convert_tokens_to_ids("<|im_end|>"),
+                tokenizer.convert_tokens_to_ids("<|im_start|>")]
 
     for _ in range(max_tool_rounds + 1):
         active = [r for r in rollouts if not r.done and r.remaining > 0]
@@ -148,32 +190,33 @@ def run_prompt(llm, tokenizer, sampling_cls, item, k, max_new_tokens, max_tool_r
 
         # execute cargo for the active rollouts in parallel, mark finished ones
         with ThreadPoolExecutor(max_workers=len(active)) as pool:
-            cont = list(pool.map(lambda r: _exec_round(r, executor, expected_output), active))
+            cont = list(pool.map(lambda r: _exec_round(r, executor, r.expected_output), active))
         for r, keep_going in zip(active, cont):
             if not keep_going:
                 r.done = True
 
-    cargo_solves = 0
-    valid_solves = 0
-    rollout_rows = []
-    for r in rollouts:
-        trace = r.prompt + r.accumulated.strip()
-        m = score_output(r.prompt, r.accumulated.strip(), item, r.new_tokens, max_new_tokens)
-        cargo_success = _cargo_verifier_success(trace)
-        valid_trace = bool(m["valid_trace"]) and cargo_success
-        cargo_solves += int(cargo_success)
-        valid_solves += int(valid_trace)
-        if save_rollouts:
-            rollout_rows.append({
-                "cargo_verifier_success": cargo_success,
-                "terminal_tool_success_metric": bool(m["terminal_tool_success"]),
-                "valid_trace": valid_trace,
-                "clean_end": bool(m["clean_end"]),
-                "call_sequence": m["call_sequence"],
-                "new_tokens": r.new_tokens,
-                "trace": trace,
-            })
-    return cargo_solves, valid_solves, rollout_rows
+
+def run_prompt(llm, tokenizer, sampling_cls, item, k, max_new_tokens, max_tool_rounds,
+               temperature, executor, sandbox_root, save_rollouts: bool = False):
+    rollouts = _make_rollouts_for_item(0, item, k, max_new_tokens, sandbox_root)
+    _run_rollout_batch(llm, tokenizer, sampling_cls, rollouts, max_tool_rounds, temperature, executor)
+    return _score_rollouts(item, rollouts, max_new_tokens, save_rollouts)
+
+
+def run_prompt_batch(llm, tokenizer, sampling_cls, items, k, max_new_tokens, max_tool_rounds,
+                     temperature, executor, sandbox_root, save_rollouts: bool = False):
+    all_rollouts: list[Rollout] = []
+    by_item: dict[int, list[Rollout]] = {idx: [] for idx in range(len(items))}
+    for idx, item in enumerate(items):
+        item_rollouts = _make_rollouts_for_item(idx, item, k, max_new_tokens, sandbox_root)
+        all_rollouts.extend(item_rollouts)
+        by_item[idx].extend(item_rollouts)
+
+    _run_rollout_batch(llm, tokenizer, sampling_cls, all_rollouts, max_tool_rounds, temperature, executor)
+    return [
+        _score_rollouts(item, by_item[idx], max_new_tokens, save_rollouts)
+        for idx, item in enumerate(items)
+    ]
 
 
 def main() -> int:
@@ -193,6 +236,8 @@ def main() -> int:
     p.add_argument("--gpu-memory-utilization", type=float, default=0.85)
     p.add_argument("--max-model-len", type=int, default=12288)
     p.add_argument("--dtype", default="bfloat16")
+    p.add_argument("--prompt-batch-size", type=int, default=1,
+                   help="Number of distinct prompts to scan together. Effective rollout batch is prompt_batch_size * k.")
     p.add_argument("--save-rollouts", action="store_true",
                    help="Store per-rollout traces and strict cargo-verifier metrics.")
     args = p.parse_args()
@@ -232,29 +277,31 @@ def main() -> int:
     executor = create_executor(timeout=args.tool_timeout)
     sandbox_root = Path(args.cases_root) / "_sandboxes"
 
-    for i, item in enumerate(prompts):
-        cargo_solves, valid_solves, rollout_rows = run_prompt(
-            llm, tokenizer, SamplingParams, item, args.samples, args.max_new_tokens,
+    for start in range(0, len(prompts), args.prompt_batch_size):
+        batch = prompts[start:start + args.prompt_batch_size]
+        batch_results = run_prompt_batch(
+            llm, tokenizer, SamplingParams, batch, args.samples, args.max_new_tokens,
             args.max_tool_rounds, args.temperature, executor, sandbox_root, args.save_rollouts,
         )
-        band = "rlvr-target" if 0 < cargo_solves < args.samples else ("solved" if cargo_solves else "capability-gap")
-        row = {"name": item["name"], "solves": cargo_solves, "k": args.samples,
-               "pass_at_k": cargo_solves / args.samples, "band": band,
-               "solve_metric": "cargo_verifier_success",
-               "cargo_solves": cargo_solves,
-               "cargo_pass_at_k": cargo_solves / args.samples,
-               "valid_trace_solves": valid_solves,
-               "valid_trace_pass_at_k": valid_solves / args.samples}
-        if args.save_rollouts:
-            row["rollouts"] = rollout_rows
-        results.append(row)
+        for offset, (item, (cargo_solves, valid_solves, rollout_rows)) in enumerate(zip(batch, batch_results)):
+            band = "rlvr-target" if 0 < cargo_solves < args.samples else ("solved" if cargo_solves else "capability-gap")
+            row = {"name": item["name"], "solves": cargo_solves, "k": args.samples,
+                   "pass_at_k": cargo_solves / args.samples, "band": band,
+                   "solve_metric": "cargo_verifier_success",
+                   "cargo_solves": cargo_solves,
+                   "cargo_pass_at_k": cargo_solves / args.samples,
+                   "valid_trace_solves": valid_solves,
+                   "valid_trace_pass_at_k": valid_solves / args.samples}
+            if args.save_rollouts:
+                row["rollouts"] = rollout_rows
+            results.append(row)
+            done = len(completed) + start + offset + 1
+            print(
+                f"[{done}/{total}] {item['name']} -> cargo {cargo_solves}/{args.samples}, "
+                f"valid {valid_solves}/{args.samples} {band}",
+                flush=True,
+            )
         write_results(output_path, results)
-        done = len(completed) + i + 1
-        print(
-            f"[{done}/{total}] {item['name']} -> cargo {cargo_solves}/{args.samples}, "
-            f"valid {valid_solves}/{args.samples} {band}",
-            flush=True,
-        )
 
     write_results(output_path, results)
     tgt = sum(r["band"] == "rlvr-target" for r in results)

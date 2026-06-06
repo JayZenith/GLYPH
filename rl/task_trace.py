@@ -36,13 +36,14 @@ DEFAULT_REWARD_CONFIG = {
     "no_call_penalty": -2.0,
     "malformed_call_penalty": -1.0,
     # clean completion
-    "final_once_bonus": 0.5,
-    "missing_final_penalty": -0.5,
-    # solve dominates; clean solve is best
-    "verifier_success_bonus": 8.0,
-    "verifier_success_clean_final_bonus": 3.0,
+    "final_once_bonus": 0.2,
+    "missing_final_penalty": -1.0,
+    # Clean heldout-style solve dominates. A cargo pass without the exact stop
+    # contract is only a weak partial signal; heldout marks those traces wrong.
+    "verifier_success_bonus": 1.5,
+    "verifier_success_clean_final_bonus": 8.5,
     # bounded anti-churn / anti-thrash shaping
-    "tool_after_success_penalty": -2.0,
+    "tool_after_success_penalty": -3.0,
     "tool_budget_exhausted_penalty": -1.5,
     "failed_verifier_penalty": -0.25,
     "max_failed_verifier_penalty": -1.5,
@@ -132,6 +133,22 @@ def _completion_role_text(completion, role: str) -> str:
             if _message_role(m) == role
         )
     return "" if role == "tool" else _completion_text(completion)
+
+
+def _format_chatml_message(role: str, content: str) -> str:
+    return f"<|im_start|>{role}\n{content.rstrip()}\n<|im_end|>"
+
+
+def _format_chatml_messages(messages) -> str:
+    if isinstance(messages, str):
+        return messages
+    if isinstance(messages, list):
+        return "\n".join(
+            _format_chatml_message(_message_role(m), _message_content(m))
+            for m in messages
+            if _message_role(m)
+        )
+    return str(messages)
 
 
 def _strip_role_leak_tail(text: str) -> str:
@@ -404,11 +421,7 @@ class RustToolEnv(vf.MultiTurnEnv):
 
     @staticmethod
     def _messages_text(messages) -> str:
-        if isinstance(messages, str):
-            return messages
-        if isinstance(messages, list):
-            return "\n".join(_message_content(m) for m in messages)
-        return str(messages)
+        return _format_chatml_messages(messages)
 
     @staticmethod
     def _trajectory_chars(state: dict) -> int:
@@ -499,7 +512,7 @@ class RustToolEnv(vf.MultiTurnEnv):
                 {
                     "role": "tool",
                     "tool_call_id": cid,
-                    "content": tool_turn,
+                    "content": result_block,
                 }
             )
 
@@ -598,7 +611,7 @@ def load_environment(
         dataset=dataset,
         parser=parser,
         rubric=rubric,
-        message_type="completion",
+        message_type="chat",
         env_id=env_id,
         executor=executor,
         max_tool_rounds=max_tool_rounds,

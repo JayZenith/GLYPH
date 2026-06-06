@@ -1,7 +1,33 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
+
+CHATML_SEG_RE = re.compile(r"<\|im_start\|>(\w+)\n(.*?)<\|im_end\|>", re.DOTALL)
+DEFAULT_SYSTEM = "You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately."
+
+
+def _chatml_to_messages(prompt: str) -> list[dict[str, str]]:
+    """Convert stored ChatML prompts to chat messages for PRIME-RL.
+
+    Passing a ChatML string as the dataset prompt makes verifiers wrap the whole
+    thing inside a user message. That trains on nested role markers instead of
+    the SFT/eval protocol. Keep only non-empty system/user turns; generation
+    starts at the assistant turn.
+    """
+    segments = [
+        {"role": role, "content": body.strip()}
+        for role, body in CHATML_SEG_RE.findall(prompt)
+        if body.strip()
+    ]
+    messages = [m for m in segments if m["role"] in {"system", "user"}]
+    if messages:
+        return messages
+    return [
+        {"role": "system", "content": DEFAULT_SYSTEM},
+        {"role": "user", "content": prompt.strip()},
+    ]
 
 # Load RL prompt dataset and conver to format env expects
 # Ensures prompt starts with Qwen chat markers
@@ -64,9 +90,7 @@ def load_prompts(
                 item = json.loads(line)
 
                 if "prompt" in item:
-                    prompt = item["prompt"]
-                    if not prompt.startswith("<|im_start|>"):
-                        prompt = f"<|im_start|>system\n{prompt}\n<|im_end|>\n<|im_start|>assistant\n"
+                    prompt = _chatml_to_messages(str(item["prompt"]))
                     row = {k: v for k, v in item.items() if k != "prompt"}
                     row["prompt"] = prompt
                     prompts.append(row)
@@ -79,8 +103,7 @@ def load_prompts(
                     continue
 
                 prompt_part, assistant_segment = split
-                prompt_part += "<|im_start|>assistant\n"
-                prompts.append({"prompt": prompt_part})
+                prompts.append({"prompt": _chatml_to_messages(prompt_part)})
             except Exception:
                 stats["skipped_malformed"] += 1
 

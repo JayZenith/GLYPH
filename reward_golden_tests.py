@@ -7,6 +7,7 @@ import json
 import math
 import statistics
 import sys
+import tempfile
 import types
 import unittest
 from collections import Counter, defaultdict
@@ -42,6 +43,7 @@ from rl.task_trace import (  # noqa: E402
     _rust_tool_reward,
     _verifier_outcomes,
 )
+from rl.task_format import load_prompts  # noqa: E402
 
 
 def result_block(call_id: str, success: bool) -> str:
@@ -154,12 +156,14 @@ class RewardGoldenTests(unittest.TestCase):
             self.SOLVED + [result_block("c4", True)],
         )
         self.assertLess(more, self._solve_stop())
-        self.assertGreater(more, self._loop())
+        self.assertLess(more, self._solve_nostop())
 
-    def test_solving_rewarded_with_or_without_final(self) -> None:
-        # No incentive to abandon the solving the SFT model already does.
-        self.assertGreater(self._solve_nostop(), 4.0)
-        self.assertGreater(self._solve_stop(), 4.0)
+    def test_cargo_only_is_weak_partial_credit(self) -> None:
+        # Heldout counts cargo success without clean FINAL as invalid. Keep it
+        # above non-solving traces, but far below exact valid-trace behavior.
+        self.assertGreater(self._solve_nostop(), self._loop())
+        self.assertLess(self._solve_nostop(), self._solve_stop() / 4)
+        self.assertGreater(self._solve_stop(), 8.0)
 
     def test_format_floor_still_applies(self) -> None:
         # Emitting no tool call at all is still discouraged (format floor).
@@ -304,13 +308,50 @@ def summarize_rollouts(paths: list[Path], sample: int) -> None:
             print(f"  {count:4d} {pattern} examples={examples[pattern]}")
 
 
+class RlPromptFormatTests(unittest.TestCase):
+    def test_chatml_prompt_loads_as_messages(self) -> None:
+        row = {
+            "prompt": (
+                "<|im_start|>system\nsys\n<|im_end|>\n\n"
+                "<|im_start|>user\nfix crate\n<|im_end|>\n\n"
+                "<|im_start|>assistant\n"
+            ),
+            "expected_tool": "read_file",
+        }
+        with tempfile.NamedTemporaryFile("w", suffix=".jsonl", encoding="utf-8") as f:
+            f.write(json.dumps(row) + "\n")
+            f.flush()
+            prompts, stats = load_prompts(f.name)
+
+        self.assertEqual(stats["skipped_malformed"], 0)
+        self.assertEqual(
+            prompts[0]["prompt"],
+            [
+                {"role": "system", "content": "sys"},
+                {"role": "user", "content": "fix crate"},
+            ],
+        )
+
+    def test_plain_prompt_loads_as_system_user_messages(self) -> None:
+        row = {"prompt": "Fix the crate.", "expected_tool": "read_file"}
+        with tempfile.NamedTemporaryFile("w", suffix=".jsonl", encoding="utf-8") as f:
+            f.write(json.dumps(row) + "\n")
+            f.flush()
+            prompts, _ = load_prompts(f.name)
+
+        self.assertEqual([m["role"] for m in prompts[0]["prompt"]], ["system", "user"])
+        self.assertEqual(prompts[0]["prompt"][1]["content"], "Fix the crate.")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--sample", type=int, default=200, help="Rows to stream per rollout file.")
     parser.add_argument("--no-rollouts", action="store_true")
     args = parser.parse_args()
 
-    suite = unittest.defaultTestLoader.loadTestsFromTestCase(RewardGoldenTests)
+    suite = unittest.TestSuite()
+    suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(RewardGoldenTests))
+    suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(RlPromptFormatTests))
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     if not result.wasSuccessful():
         return 1
