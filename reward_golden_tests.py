@@ -135,6 +135,9 @@ class RewardGoldenTests(unittest.TestCase):
     def _solve_nostop(self):
         return score("\n".join([self.READ, self.PATCH, self.OK]), self.SOLVED)
 
+    def _solve_stop_with_generated_eos(self):
+        return score("\n".join([self.READ, self.PATCH, self.OK, "FINAL: done<|im_end|>"]), self.SOLVED)
+
     def _graceful(self):
         return score("\n".join([self.READ, self.PATCH, self.FAIL, "FINAL: tried"]), self.UNSOLVED)
 
@@ -148,6 +151,7 @@ class RewardGoldenTests(unittest.TestCase):
 
     def test_clean_final_is_preferred(self) -> None:
         self.assertGreater(self._solve_stop(), self._solve_nostop())
+        self.assertEqual(self._solve_stop_with_generated_eos(), self._solve_stop())
         self.assertGreater(self._graceful(), self._loop())
 
     def test_churn_after_success_is_penalized(self) -> None:

@@ -164,6 +164,11 @@ def _strip_role_leak_tail(text: str) -> str:
     return text[: min(markers)].rstrip() if markers else text
 
 
+def _normalize_assistant_for_reward(text: str) -> str:
+    """Match eval scoring, where assistant body text excludes ChatML end tags."""
+    return text.replace("<|im_end|>", "").strip()
+
+
 def _latest_assistant_segment(text: str) -> str:
     marker = "<|im_start|>assistant\n"
     if marker not in text:
@@ -344,6 +349,7 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
     expected_tool = info.get("expected_tool")
     validator: SimpleTraceValidator | None = kwargs.get("validator")
     raw_assistant_trace = assistant_text or text
+    reward_assistant_trace = _normalize_assistant_for_reward(raw_assistant_trace)
     assistant_trace = _strip_role_leak_tail(raw_assistant_trace)
     structure = _structure_reward(assistant_trace, tool_text, validator)
 
@@ -366,8 +372,8 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
     malformed = len(re.findall(r"\bCALL[A-Z]", raw_assistant_trace))
     reward += min(malformed, 4) * REWARD_CONFIG["malformed_call_penalty"]
 
-    reward += _finalization_reward(raw_assistant_trace)
-    reward += _outcome_reward(calls, tool_text, raw_assistant_trace, full_text)
+    reward += _finalization_reward(reward_assistant_trace)
+    reward += _outcome_reward(calls, tool_text, reward_assistant_trace, full_text)
 
     if state.get("tool_budget_exhausted"):
         reward += REWARD_CONFIG["tool_budget_exhausted_penalty"]
