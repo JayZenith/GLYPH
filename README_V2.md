@@ -77,10 +77,14 @@ python -m sft.eval_formal \
   --cases-root runs/heldout69_sft_half_a \
   --output results/SFT_HALF_A/eval_formal_heldout_69.json \
   --max-new-tokens 4000 \
-  --max-tool-rounds 20
+  --max-tool-rounds 20 \
+  --prompt-batch-size 4 \
+  --tool-workers 8
 ```
 
 Final claim metric is strict held-out `valid_trace`, not RL training reward.
+If VRAM is tight, drop `--prompt-batch-size` to `2` or omit it to recover the
+legacy serial path.
 
 ## Optional Pass@4 Diagnostics
 
@@ -198,7 +202,9 @@ python -m sft.eval_formal \
   --cases-root runs/heldout69_rlvr_pool_b_step25_next \
   --output results/RLVR_POOL_B_STEP25_NEXT/eval_formal_heldout_69.json \
   --max-new-tokens 4000 \
-  --max-tool-rounds 20
+  --max-tool-rounds 20 \
+  --prompt-batch-size 4 \
+  --tool-workers 8
 ```
 
 Compare only against the SFT_HALF_A baseline:

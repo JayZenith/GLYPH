@@ -12,6 +12,7 @@ from sft.evals import (
     assert_prompt_similarity_below,
     build_prompt,
     generate,
+    generate_batch,
     load_model,
     load_prompts,
     score_output,
@@ -75,7 +76,15 @@ def main() -> int:
                         help="If > 0, truncate streamed output to this many chars")
     parser.add_argument("--token-stream", action="store_true",
                         help="Print generated text token-by-token as each prompt runs")
+    parser.add_argument("--prompt-batch-size", type=int, default=1,
+                        help="Number of eval prompts to generate together. Default 1 preserves legacy serial behavior.")
+    parser.add_argument("--tool-workers", type=int, default=None,
+                        help="Max parallel Rust tool executions in batched mode. Defaults to min(8, pending calls).")
     args = parser.parse_args()
+    if args.prompt_batch_size < 1:
+        raise ValueError("--prompt-batch-size must be >= 1")
+    if args.token_stream and args.prompt_batch_size > 1:
+        raise ValueError("--token-stream is only supported with --prompt-batch-size 1")
 
     print("Loading SFT model...")
     sft_model, sft_tok = load_model(args.sft_model)
@@ -88,53 +97,76 @@ def main() -> int:
     if args.limit is not None:
         prompts = prompts[:args.limit]
     results = {"sft": []}
-    for item in prompts:
-        prompt = build_prompt(item["user"], item.get("system"))
-
-        def make_token_callback() -> None:
-            if not args.token_stream:
-                return None
-            started = False
-
-            def _cb(piece: str) -> None:
-                nonlocal started
-                if not started:
-                    print(f"\n===== {item['name']} | sft =====\n", end="", flush=True)
-                    started = True
-                cleaned = _sanitize_stream_piece(piece)
-                if cleaned:
-                    print(cleaned, end="", flush=True)
-
-            return _cb
-
-        print(f"Running {item['name']} on sft...")
-        sft_out, sft_n = generate(
-            sft_model,
-            sft_tok,
-            prompt,
-            args.max_new_tokens,
-            max_tool_rounds=args.max_tool_rounds,
-            token_callback=make_token_callback(),
-            execution={
+    for start in range(0, len(prompts), args.prompt_batch_size):
+        batch = prompts[start:start + args.prompt_batch_size]
+        batch_prompts = [build_prompt(item["user"], item.get("system")) for item in batch]
+        batch_executions = [
+            {
                 "blueprint_root": item.get("blueprint_root"),
                 "trace_prefix": item.get("trace_prefix"),
                 "sandbox_root": Path(args.cases_root) / "_sandboxes",
                 "timeout": args.tool_timeout,
                 "nsjail_path": args.nsjail_path,
                 "expected_output": item.get("expected_output"),
-            },
-        )
-        if args.token_stream:
-            print("\n", flush=True)
-        if args.stream_output:
-            shown = sft_out if args.stream_output_chars <= 0 else sft_out[:args.stream_output_chars]
-            print(f"\n===== {item['name']} | sft =====\n{shown}\n", flush=True)
-        results["sft"].append({
-            "name": item["name"],
-            "prompt": item["user"],
-            "output": sft_out,
-            "metrics": score_output(prompt, sft_out, item, sft_n, args.max_new_tokens),
-        })
+            }
+            for item in batch
+        ]
+        names = ", ".join(item["name"] for item in batch)
+        print(f"Running batch {start + 1}-{start + len(batch)}/{len(prompts)} on sft: {names}")
+
+        if args.prompt_batch_size == 1:
+            item = batch[0]
+
+            def make_token_callback() -> None:
+                if not args.token_stream:
+                    return None
+                started = False
+
+                def _cb(piece: str) -> None:
+                    nonlocal started
+                    if not started:
+                        print(f"\n===== {item['name']} | sft =====\n", end="", flush=True)
+                        started = True
+                    cleaned = _sanitize_stream_piece(piece)
+                    if cleaned:
+                        print(cleaned, end="", flush=True)
+
+                return _cb
+
+            output_rows = [
+                generate(
+                    sft_model,
+                    sft_tok,
+                    batch_prompts[0],
+                    args.max_new_tokens,
+                    max_tool_rounds=args.max_tool_rounds,
+                    token_callback=make_token_callback(),
+                    execution=batch_executions[0],
+                )
+            ]
+            if args.token_stream:
+                print("\n", flush=True)
+        else:
+            output_rows = generate_batch(
+                sft_model,
+                sft_tok,
+                batch_prompts,
+                args.max_new_tokens,
+                max_tool_rounds=args.max_tool_rounds,
+                executions=batch_executions,
+                tool_workers=args.tool_workers,
+            )
+
+        for item, prompt, (sft_out, sft_n) in zip(batch, batch_prompts, output_rows):
+            if args.stream_output:
+                shown = sft_out if args.stream_output_chars <= 0 else sft_out[:args.stream_output_chars]
+                print(f"\n===== {item['name']} | sft =====\n{shown}\n", flush=True)
+            results["sft"].append({
+                "name": item["name"],
+                "prompt": item["user"],
+                "output": sft_out,
+                "metrics": score_output(prompt, sft_out, item, sft_n, args.max_new_tokens),
+            })
 
     try:
         commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
