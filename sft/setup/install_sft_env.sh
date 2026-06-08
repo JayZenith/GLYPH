@@ -13,6 +13,12 @@ TORCH_INDEX_URL="${TORCH_INDEX_URL:-https://download.pytorch.org/whl/${CUDA_WHL_
 FLASH_ATTN_VERSION="${FLASH_ATTN_VERSION:-2.8.3}"
 BLACKWELL_FLASH_ATTN_WHEEL_URL="${BLACKWELL_FLASH_ATTN_WHEEL_URL:-https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.11/flash_attn-2.8.3%2Bcu12torch2.11cxx11abiTRUE-cp312-cp312-linux_x86_64.whl}"
 NVIDIA_PYPI_INDEX="${NVIDIA_PYPI_INDEX:-https://pypi.nvidia.com}"
+INSTALL_VLLM="${INSTALL_VLLM:-1}"
+USER_SET_VLLM_VERSION=0
+if [ -n "${VLLM_VERSION:-}" ]; then
+  USER_SET_VLLM_VERSION=1
+fi
+VLLM_VERSION="${VLLM_VERSION:-}"
 
 detect_gpu_name() {
   if ! command -v nvidia-smi >/dev/null 2>&1; then
@@ -53,6 +59,21 @@ if using_default_sft_stack && is_blackwell_gpu; then
   echo "Detected Blackwell-class GPU; using fallback stack: python=${SFT_PYTHON_TARGET}, torch=${TORCH_VERSION}, cuda=${CUDA_WHL_TAG}" >&2
 else # otherwise target Python 3.11
   SFT_PYTHON_TARGET="3.11"
+fi
+
+if [ "$INSTALL_VLLM" = "1" ] && [ -z "$VLLM_VERSION" ]; then
+  case "$TORCH_VERSION" in
+    2.5.1)
+      VLLM_VERSION="0.7.3"
+      ;;
+    *)
+      INSTALL_VLLM=0
+      cat >&2 <<EOF
+Skipping vLLM: no default vLLM pin is known for torch==${TORCH_VERSION}.
+Set VLLM_VERSION explicitly to install a compatible vLLM build, or set INSTALL_VLLM=0 to silence this message.
+EOF
+      ;;
+  esac
 fi
 
 retry_uv_pip_install() {
@@ -242,6 +263,16 @@ PYINFO
   exit 1
 fi
 
+if [ "$INSTALL_VLLM" = "1" ]; then
+  retry_uv_pip_install 3 \
+    --python "$VENV_PY" \
+    --extra-index-url "$NVIDIA_PYPI_INDEX" \
+    "torch==${TORCH_VERSION}" \
+    "transformers==4.57.5" \
+    "tokenizers==0.22.2" \
+    "vllm==${VLLM_VERSION}"
+fi
+
 cat <<EOF
 SFT env ready.
 Activate with:
@@ -252,6 +283,7 @@ Installed:
   torch==$TORCH_VERSION from $TORCH_INDEX_URL
   accelerate==1.10.1
   flash-attn wheel only
+  vllm==$VLLM_VERSION (INSTALL_VLLM=$INSTALL_VLLM, USER_SET_VLLM_VERSION=$USER_SET_VLLM_VERSION)
   rust toolchain via apt (cargo/rustc)
   pinned SFT deps from requirements-train.txt
 EOF
