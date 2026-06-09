@@ -139,7 +139,7 @@ def _message_content(message) -> str:
 def _completion_role_text(completion, role: str) -> str:
     if isinstance(completion, list):
         return "\n".join(
-            _message_content(m)
+            strip_terminal_chatml_end(_message_content(m)) if role == "assistant" else _message_content(m)
             for m in completion
             if _message_role(m) == role
         )
@@ -225,7 +225,7 @@ def _trajectory_generated_text(state: dict) -> str:
     for step in state.get("trajectory") or []:
         for message in step.get("completion") or []:
             if _message_role(message) == "assistant":
-                parts.append(_message_content(message))
+                parts.append(strip_terminal_chatml_end(_message_content(message)))
     return "\n".join(parts)
 
 

@@ -226,9 +226,9 @@ class RewardGoldenTests(unittest.TestCase):
         self.assertTrue(_role_marker_errors(leaked))
         self.assertLessEqual(score(leaked, self.SOLVED), 0.0)
 
-    def test_generated_chatml_boundaries_across_message_turns_are_invalid(self) -> None:
+    def test_malformed_calls_across_message_turns_are_invalid_after_boundary_strip(self) -> None:
         completion = [
-            {"role": "assistant", "content": self.READ + "<|im_end|>"},
+            {"role": "assistant", "content": self.READ + ")<|im_end|>"},
             {"role": "assistant", "content": self.PATCH + "<|im_end|>"},
             {"role": "assistant", "content": self.OK + "<|im_end|>"},
             {"role": "assistant", "content": "FINAL: done"},
