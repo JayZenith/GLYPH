@@ -10,6 +10,7 @@ VENV_DIR="${VENV_DIR:-$ROOT_DIR/.venv}"
 TORCH_VERSION="${TORCH_VERSION:-2.5.1}"
 CUDA_WHL_TAG="${CUDA_WHL_TAG:-cu124}"
 TORCH_INDEX_URL="${TORCH_INDEX_URL:-https://download.pytorch.org/whl/${CUDA_WHL_TAG}}"
+PYPI_INDEX_URL="${PYPI_INDEX_URL:-https://pypi.org/simple}"
 FLASH_ATTN_VERSION="${FLASH_ATTN_VERSION:-2.8.3}"
 BLACKWELL_FLASH_ATTN_WHEEL_URL="${BLACKWELL_FLASH_ATTN_WHEEL_URL:-https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.11/flash_attn-2.8.3%2Bcu12torch2.11cxx11abiTRUE-cp312-cp312-linux_x86_64.whl}"
 NVIDIA_PYPI_INDEX="${NVIDIA_PYPI_INDEX:-https://pypi.nvidia.com}"
@@ -90,6 +91,21 @@ retry_uv_pip_install() {
     sleep $((try * 5))
     try=$((try + 1))
   done
+}
+
+torch_install_spec() {
+  case "$TORCH_VERSION" in
+    *+*)
+      printf 'torch==%s\n' "$TORCH_VERSION"
+      ;;
+    *)
+      if [ -n "${CUDA_WHL_TAG:-}" ]; then
+        printf 'torch==%s+%s\n' "$TORCH_VERSION" "$CUDA_WHL_TAG"
+      else
+        printf 'torch==%s\n' "$TORCH_VERSION"
+      fi
+      ;;
+  esac
 }
 
 # if uv missing, install with user-level pip
@@ -187,13 +203,15 @@ uv venv --clear --python "$SELECTED_PYTHON" "$VENV_DIR"
 
 # Path to venv Python
 VENV_PY="$VENV_DIR/bin/python"
+TORCH_SPEC="$(torch_install_spec)"
 
 # Install pinned Torch from Torch CUDA wheel index
 retry_uv_pip_install 4 \
   --python "$VENV_PY" \
   --index-url "$TORCH_INDEX_URL" \
+  --extra-index-url "$PYPI_INDEX_URL" \
   --extra-index-url "$NVIDIA_PYPI_INDEX" \
-  "torch==${TORCH_VERSION}"
+  "$TORCH_SPEC"
 
 # install  pinned deps
 retry_uv_pip_install 3 \
@@ -266,8 +284,10 @@ fi
 if [ "$INSTALL_VLLM" = "1" ]; then
   retry_uv_pip_install 3 \
     --python "$VENV_PY" \
+    --index-url "$PYPI_INDEX_URL" \
+    --extra-index-url "$TORCH_INDEX_URL" \
     --extra-index-url "$NVIDIA_PYPI_INDEX" \
-    "torch==${TORCH_VERSION}" \
+    "$TORCH_SPEC" \
     "transformers==4.57.5" \
     "tokenizers==0.22.2" \
     "vllm==${VLLM_VERSION}"
@@ -280,7 +300,7 @@ Activate with:
 
 Installed:
   python=$SELECTED_PYTHON
-  torch==$TORCH_VERSION from $TORCH_INDEX_URL
+  $TORCH_SPEC from $TORCH_INDEX_URL
   accelerate==1.10.1
   flash-attn wheel only
   vllm==$VLLM_VERSION (INSTALL_VLLM=$INSTALL_VLLM, USER_SET_VLLM_VERSION=$USER_SET_VLLM_VERSION)
