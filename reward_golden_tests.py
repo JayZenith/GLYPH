@@ -75,6 +75,23 @@ def raw_trace(assistant: str, results: list[str]) -> str:
     return "\n".join(parts)
 
 
+def trajectory_from_assistant_lines(assistant: str, results: list[str]) -> list[dict]:
+    by_id = {}
+    for block in results:
+        first = block.splitlines()[0]
+        if first.startswith("RESULT ") and first.endswith(":"):
+            by_id[first.removeprefix("RESULT ").removesuffix(":")] = block
+
+    trajectory = []
+    for line in assistant.splitlines():
+        completion = [{"role": "assistant", "content": line}]
+        parsed = parse_calls(line)
+        if parsed and parsed[0].id in by_id:
+            completion.append({"role": "tool", "content": by_id[parsed[0].id]})
+        trajectory.append({"completion": completion})
+    return trajectory
+
+
 def score(assistant: str, results: list[str], expected_tool: str = "read_file") -> float:
     calls = [
         {"tool": c.tool, "id": c.id, "params": c.params}
@@ -87,6 +104,7 @@ def score(assistant: str, results: list[str], expected_tool: str = "read_file") 
                 "executed_tool_calls": calls,
                 "executed_result_blocks": results,
                 "raw_chatml_transcript": raw_trace(assistant, results),
+                "trajectory": trajectory_from_assistant_lines(assistant, results),
             },
             info={
                 "expected_tool": expected_tool,
@@ -108,7 +126,21 @@ def score_with_raw_trace(assistant: str, results: list[str], raw: str) -> float:
                 "executed_tool_calls": calls,
                 "executed_result_blocks": results,
                 "raw_chatml_transcript": raw,
+                "trajectory": trajectory_from_assistant_lines(assistant, results),
             },
+            info={
+                "expected_tool": "read_file",
+                "expected_args": {"file_path": "src/lib.rs"},
+            },
+        )
+    )
+
+
+def score_with_state(assistant: str, results: list[str], state: dict) -> float:
+    return asyncio.run(
+        _rust_tool_reward(
+            [{"role": "assistant", "content": assistant}],
+            state=state,
             info={
                 "expected_tool": "read_file",
                 "expected_args": {"file_path": "src/lib.rs"},
@@ -180,6 +212,45 @@ class RewardGoldenTests(unittest.TestCase):
         )
         self.assertLessEqual(dirty, 0.0)
 
+    def test_leading_prose_before_final_does_not_get_clean_solve_reward(self) -> None:
+        assistant = "\n".join([self.READ, self.PATCH, self.OK, "Fixed it.\nFINAL: done"])
+        calls = [
+            {"tool": c.tool, "id": c.id, "params": c.params}
+            for c in parse_calls(assistant)
+        ]
+        dirty = score_with_state(
+            assistant,
+            self.SOLVED,
+            {
+                "executed_tool_calls": calls,
+                "executed_result_blocks": self.SOLVED,
+                "raw_chatml_transcript": raw_trace(assistant, self.SOLVED),
+                "trajectory": [
+                    {"completion": [{"role": "assistant", "content": self.READ}, {"role": "tool", "content": self.SOLVED[0]}]},
+                    {"completion": [{"role": "assistant", "content": self.PATCH}, {"role": "tool", "content": self.SOLVED[1]}]},
+                    {"completion": [{"role": "assistant", "content": self.OK}, {"role": "tool", "content": self.SOLVED[2]}]},
+                    {"completion": [{"role": "assistant", "content": "Fixed it.\nFINAL: done"}]},
+                ],
+            },
+        )
+        self.assertLessEqual(dirty, 0.0)
+
+    def test_unexecuted_trailing_call_after_success_blocks_clean_solve_reward(self) -> None:
+        trailing = call("read_file", "c4", file_path="src/lib.rs")
+        assistant = "\n".join([self.READ, self.PATCH, self.OK, trailing, "FINAL: done"])
+        executed_calls = [
+            {"tool": c.tool, "id": c.id, "params": c.params}
+            for c in parse_calls("\n".join([self.READ, self.PATCH, self.OK]))
+        ]
+        state = {
+            "executed_tool_calls": executed_calls,
+            "executed_result_blocks": self.SOLVED,
+            "raw_chatml_transcript": raw_trace(assistant, self.SOLVED),
+            "trajectory": trajectory_from_assistant_lines(assistant, self.SOLVED),
+        }
+        reward = score_with_state(assistant, self.SOLVED, state)
+        self.assertLessEqual(reward, 0.0)
+
     def test_format_floor_still_applies(self) -> None:
         # Emitting no tool call at all is still discouraged (format floor).
         no_call = score("FINAL: done", [])
@@ -224,7 +295,17 @@ class RewardGoldenTests(unittest.TestCase):
     def test_generated_chatml_boundary_between_calls_is_invalid(self) -> None:
         leaked = "\n".join([self.READ + "<|im_end|>", self.PATCH, self.OK, "FINAL: done"])
         self.assertTrue(_role_marker_errors(leaked))
-        self.assertLessEqual(score(leaked, self.SOLVED), 0.0)
+        state = {
+            "executed_tool_calls": [
+                {"tool": c.tool, "id": c.id, "params": c.params}
+                for c in parse_calls("\n".join([self.READ, self.PATCH, self.OK]))
+            ],
+            "executed_result_blocks": self.SOLVED,
+            "raw_chatml_transcript": raw_trace(leaked, self.SOLVED),
+            "trajectory": trajectory_from_assistant_lines(leaked, self.SOLVED),
+            "malformed_call_errors": ["Generated chat role marker"],
+        }
+        self.assertLessEqual(score_with_state(leaked, self.SOLVED, state), 0.0)
 
     def test_malformed_calls_across_message_turns_are_invalid_after_boundary_strip(self) -> None:
         completion = [

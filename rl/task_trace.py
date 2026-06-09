@@ -229,6 +229,14 @@ def _trajectory_generated_text(state: dict) -> str:
     return "\n".join(parts)
 
 
+def _trajectory_latest_assistant_turn(state: dict) -> str:
+    for step in reversed(state.get("trajectory") or []):
+        for message in reversed(step.get("completion") or []):
+            if _message_role(message) == "assistant":
+                return strip_terminal_chatml_end(_message_content(message)).strip()
+    return ""
+
+
 def _trajectory_tool_text(state: dict) -> str:
     parts: list[str] = []
     for step in state.get("trajectory") or []:
@@ -270,11 +278,16 @@ def _heldout_style_success(
     full_text: str,
     success_pos: int,
     later_tools: list[dict],
+    latest_assistant_turn: str,
     protocol_errors: list[str] | None = None,
 ) -> bool:
     if protocol_errors:
         return False
     if success_pos < 0 or later_tools:
+        return False
+    # Match formal eval's clean_end: the final assistant block itself must be a
+    # FINAL block, not prose followed by FINAL on a later line.
+    if not latest_assistant_turn.strip().startswith("FINAL:"):
         return False
     if final_count(assistant_text) != 1:
         return False
@@ -331,6 +344,7 @@ def _outcome_reward(
     tool_text: str,
     assistant_text: str,
     full_text: str,
+    latest_assistant_turn: str,
     protocol_errors: list[str] | None = None,
 ) -> float:
     """Primary signal: exact heldout-style success.
@@ -365,14 +379,21 @@ def _outcome_reward(
         return fail_penalty
 
     reward = REWARD_CONFIG["verifier_success_bonus"] + fail_penalty
-    later_tools = [
-        call for call in calls[success_idx + 1 :]
-        if _find_result_for(call["id"], tool_text) is not None
-    ]
+    # Formal eval treats any later CALL as making the last call non-terminal,
+    # even if RL stopped before executing that CALL. Do not grant clean solve
+    # reward when the model emitted post-success tool use.
+    later_tools = calls[success_idx + 1 :]
     if later_tools:
         reward += REWARD_CONFIG["tool_after_success_penalty"]
 
-    if _heldout_style_success(assistant_text, full_text, success_pos, later_tools, protocol_errors):
+    if _heldout_style_success(
+        assistant_text,
+        full_text,
+        success_pos,
+        later_tools,
+        latest_assistant_turn,
+        protocol_errors,
+    ):
         reward += REWARD_CONFIG["verifier_success_clean_final_bonus"]
     return reward
 
@@ -423,6 +444,10 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
     raw_assistant_trace = assistant_text or text
     reward_assistant_trace = _normalize_assistant_for_reward(raw_assistant_trace)
     assistant_trace = _strip_role_leak_tail(raw_assistant_trace)
+    latest_assistant_turn = (
+        _trajectory_latest_assistant_turn(state)
+        or strip_terminal_chatml_end(_completion_role_text(completion, "assistant")).strip()
+    )
     structure = _structure_reward(assistant_trace, tool_text, validator)
 
     # Non-Rust prompt: structure enforcement only. Env still mocks tool results
@@ -430,10 +455,10 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
     if not expected_tool:
         return structure
 
-    # Only actual env-executed calls can earn tool/verifier reward. If state is
-    # unavailable, fall back to pre-boundary text only so fake transcript tails
-    # do not count.
-    calls = executed_calls or parse_call_blocks(assistant_trace)
+    # Score against every syntactically valid CALL the model emitted. Tool
+    # results still come only from env execution, but unexecuted trailing calls
+    # must be visible because formal eval treats them as post-success tool use.
+    calls = parse_call_blocks(assistant_trace) or executed_calls
     if not calls:
         protocol_penalty, _ = _protocol_reward_penalty(reward_assistant_trace, [], state)
         return REWARD_CONFIG["no_call_penalty"] + protocol_penalty + structure
@@ -452,7 +477,14 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
     reward += protocol_penalty
 
     reward += _finalization_reward(reward_assistant_trace)
-    reward += _outcome_reward(calls, tool_text, reward_assistant_trace, full_text, protocol_errors)
+    reward += _outcome_reward(
+        calls,
+        tool_text,
+        reward_assistant_trace,
+        full_text,
+        latest_assistant_turn,
+        protocol_errors,
+    )
     if protocol_errors:
         reward = min(reward, 0.0)
 
