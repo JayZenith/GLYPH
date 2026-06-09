@@ -82,7 +82,7 @@ retry_uv_pip_install() {
   shift
   local try=1
   while true; do
-    if uv pip install --system-certs "$@"; then
+    if uv pip install --system-certs --index-strategy unsafe-best-match "$@"; then
       return 0
     fi
     if [ "$try" -ge "$attempts" ]; then
