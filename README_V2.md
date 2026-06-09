@@ -141,9 +141,9 @@ python rl/train.py \
   --lora-rank 64 \
   --lora-alpha 128 \
   --lora-dropout 0.0 \
-  --lora-name glyph-signal-v3-pool-b-r64-a128 \
+  --lora-name glyph-signal-v3000-pool-b-r64-a128 \
   --data synthetic_data/rl_prompts_signal_v3_pool_b.jsonl \
-  --output outputs/RLVR_SIGNAL_V3_POOL_B_LORA_R64_A128 \
+  --output outputs/RLVR_SIGNAL_V3000_POOL_B_LORA_R64_A128 \
   --max-steps 40 \
   --batch-size 48 \
   --rollouts-per-example 8 \
@@ -194,28 +194,29 @@ LoRA policy, and this direct merge avoids silent full-weight export drift.
 ```bash
 python rl/scripts/merge_prime_lora.py \
   --base-model JayZenith/SFT_HALF_A \
-  --adapter-dir outputs/RLVR_SIGNAL_V3_POOL_B_LORA_R64_A128/run_default/broadcasts/step_25 \
-  --output outputs/RLVR_SIGNAL_V3_POOL_B_LORA_R64_A128/merged_step_25
+  --adapter-dir outputs/RLVR_SIGNAL_V3000_POOL_B_LORA_R64_A128/run_default/broadcasts/step_25 \
+  --output outputs/RLVR_SIGNAL_V3000_POOL_B_LORA_R64_A128/merged_step_25
 ```
 
 Upload `merged_step_25` to Hugging Face, then evaluate it exactly like the SFT
 baseline. This example assumes the step-25 merged model was pushed to
-`JayZenith/RLVR_POOL_B_STEP25_NEXT`.
+`JayZenith/RLVR_POOL_B_V3000_STEP25`.
 
 ```bash
-mkdir -p results/RLVR_POOL_B_STEP25_NEXT
+mkdir -p results/RLVR_POOL_B_V3000_STEP25
 
 python -m sft.eval_formal \
-  --sft-model JayZenith/RLVR_POOL_B_STEP25_NEXT \
+  --sft-model JayZenith/RLVR_POOL_B_V3000_STEP25 \
   --train-data synthetic_data/signal_v3_sft_half_a.jsonl \
   --prompt-file sft/evals/eval_prompts_heldout_69.yaml \
   --prompt-section post_eval_heldout_69 \
-  --cases-root runs/heldout69_rlvr_pool_b_step25_next \
-  --output results/RLVR_POOL_B_STEP25_NEXT/eval_formal_heldout_69.json \
+  --cases-root runs/heldout69_rlvr_pool_b_v3000_step25 \
+  --output results/RLVR_POOL_B_V3000_STEP25/eval_formal_heldout_69.json \
   --max-new-tokens 4000 \
   --max-tool-rounds 20 \
   --prompt-batch-size 4 \
   --tool-workers 8
+
 ```
 
 Compare only against the SFT_HALF_A baseline:

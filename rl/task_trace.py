@@ -43,6 +43,7 @@ DEFAULT_REWARD_CONFIG = {
     "structure_valid_bonus": 0.0,
     "no_call_penalty": -5.0,
     "malformed_call_penalty": -4.0,
+    "role_marker_penalty": -10.0,
     "bad_cargo_project_path_penalty": -4.0,
     "gibberish_penalty": -5.0,
     "bad_final_hygiene_penalty": -2.0,
@@ -179,6 +180,19 @@ def _normalize_assistant_for_reward(text: str) -> str:
     return strip_terminal_chatml_end(text).strip()
 
 
+def _role_marker_errors(text: str) -> list[str]:
+    stripped = text.rstrip()
+    if stripped.endswith("<|im_end|>"):
+        before_end = stripped[: -len("<|im_end|>")].rstrip()
+        last_final = before_end.rfind("FINAL:")
+        last_call = before_end.rfind("CALL ")
+        if last_final >= 0 and last_final > last_call:
+            stripped = before_end
+    if ROLE_LEAK_RE.search(stripped):
+        return ["Generated chat role marker"]
+    return []
+
+
 def _latest_assistant_segment(text: str) -> str:
     marker = "<|im_start|>assistant\n"
     if marker not in text:
@@ -287,6 +301,7 @@ def _cargo_project_path_errors(calls: list[dict]) -> list[str]:
 
 def _protocol_reward_penalty(assistant_text: str, calls: list[dict], state: dict) -> tuple[float, list[str]]:
     errors: list[str] = []
+    errors.extend(_role_marker_errors(assistant_text))
     errors.extend(call_syntax_errors(assistant_text))
     errors.extend(_cargo_project_path_errors(calls))
     if state.get("malformed_call_errors"):
@@ -294,6 +309,8 @@ def _protocol_reward_penalty(assistant_text: str, calls: list[dict], state: dict
     penalty = 0.0
     if any("CALL" in e or "argument" in e for e in errors):
         penalty += REWARD_CONFIG["malformed_call_penalty"]
+    if any("role marker" in e for e in errors):
+        penalty += REWARD_CONFIG["role_marker_penalty"]
     if any("project_path" in e for e in errors):
         penalty += REWARD_CONFIG["bad_cargo_project_path_penalty"]
     if GIBBERISH_RE.search(assistant_text) or "<|endoftext|>" in assistant_text or "\ufffd" in assistant_text:
@@ -436,6 +453,8 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
 
     reward += _finalization_reward(reward_assistant_trace)
     reward += _outcome_reward(calls, tool_text, reward_assistant_trace, full_text, protocol_errors)
+    if protocol_errors:
+        reward = min(reward, 0.0)
 
     if state.get("tool_budget_exhausted"):
         reward += REWARD_CONFIG["tool_budget_exhausted_penalty"]
@@ -523,7 +542,12 @@ class RustToolEnv(vf.MultiTurnEnv):
                 self._raw_trace_text(state, trajectory[-1]["completion"])
             )
         )
+        raw_latest = _latest_assistant_segment(self._raw_trace_text(state, trajectory[-1]["completion"]))
+        marker_errors = _role_marker_errors(raw_latest)
         text = strip_terminal_chatml_end(text)
+        if marker_errors:
+            state["malformed_call_errors"] = marker_errors
+            return True
         errors = call_syntax_errors(text)
         if errors:
             state["malformed_call_errors"] = errors
@@ -536,7 +560,12 @@ class RustToolEnv(vf.MultiTurnEnv):
         prior_trace = state.get("raw_chatml_transcript", "")
         incoming_text = self._messages_text(messages)
         raw_text = self._raw_trace_text(state, messages)
-        text = strip_terminal_chatml_end(_strip_role_leak_tail(_latest_assistant_segment(raw_text)))
+        raw_latest = _latest_assistant_segment(raw_text)
+        marker_errors = _role_marker_errors(raw_latest)
+        text = strip_terminal_chatml_end(_strip_role_leak_tail(raw_latest))
+        if marker_errors:
+            state["malformed_call_errors"] = marker_errors
+            return []
         errors = call_syntax_errors(text)
         if errors:
             state["malformed_call_errors"] = errors

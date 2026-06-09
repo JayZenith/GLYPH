@@ -41,6 +41,7 @@ from rl.task_trace import (  # noqa: E402
     REWARD_CONFIG,
     _format_chatml_messages,
     _find_result_for,
+    _role_marker_errors,
     _rust_tool_reward,
     _verifier_outcomes,
 )
@@ -214,6 +215,21 @@ class RewardGoldenTests(unittest.TestCase):
     def test_malformed_call_with_chatml_end_cannot_score_well(self) -> None:
         malformed = 'CALL read_file(id="c1", file_path="src/lib.rs"))<|im_end|>'
         self.assertLess(score(malformed, []), self._loop())
+
+    def test_generated_chatml_boundary_after_call_is_invalid(self) -> None:
+        leaked = self.READ + "<|im_end|>"
+        self.assertTrue(_role_marker_errors(leaked))
+        self.assertLessEqual(score(leaked, [result_block("c1", True)]), 0.0)
+
+    def test_generated_chatml_boundary_between_calls_is_invalid(self) -> None:
+        leaked = "\n".join([self.READ + "<|im_end|>", self.PATCH, self.OK, "FINAL: done"])
+        self.assertTrue(_role_marker_errors(leaked))
+        self.assertLessEqual(score(leaked, self.SOLVED), 0.0)
+
+    def test_rendered_terminal_chatml_end_after_final_is_allowed(self) -> None:
+        clean = "\n".join([self.READ, self.PATCH, self.OK, "FINAL: done<|im_end|>"])
+        self.assertFalse(_role_marker_errors(clean))
+        self.assertEqual(score(clean, self.SOLVED), self._solve_stop())
 
     def test_bad_cargo_project_path_blocks_top_reward(self) -> None:
         bad_cargo = call("cargo_test", "c3", project_path="/tmp/case/src/main.rs")
