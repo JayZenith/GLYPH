@@ -15,7 +15,7 @@ from agent_runtime.rust.results import format_result_block, parse_call_blocks
 from agent_runtime.rust.runtime import ensure_sandbox_copy, execute_rust_tool, rewrite_params_for_sandbox
 
 
-def load_model(model_path: str):
+def load_model(model_path: str, adapter_path: str | None = None):
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     try:
         model = AutoModelForCausalLM.from_pretrained(
@@ -33,6 +33,12 @@ def load_model(model_path: str):
             device_map="auto",
             attn_implementation="sdpa",
         )
+    if adapter_path:
+        try:
+            from peft import PeftModel
+        except ImportError as exc:
+            raise RuntimeError("Loading --sft-adapter requires peft to be installed") from exc
+        model = PeftModel.from_pretrained(model, adapter_path, is_trainable=False)
     model.eval()
     return model, tokenizer
 

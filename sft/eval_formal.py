@@ -53,6 +53,11 @@ def prepare_eval_items(items: list[dict], cases_root: Path) -> list[dict]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--sft-model", required=True)
+    parser.add_argument(
+        "--sft-adapter",
+        default=None,
+        help="Optional PEFT adapter to load on top of --sft-model. Use this for RLVR LoRA checkpoints.",
+    )
     parser.add_argument("--prompt-section", default="post_eval")
     parser.add_argument("--prompt-file", default=None,
                         help="Optional yaml file to load prompts from instead of sft/evals/eval_prompts.yaml")
@@ -87,7 +92,7 @@ def main() -> int:
         raise ValueError("--token-stream is only supported with --prompt-batch-size 1")
 
     print("Loading SFT model...")
-    sft_model, sft_tok = load_model(args.sft_model)
+    sft_model, sft_tok = load_model(args.sft_model, args.sft_adapter)
 
     prompts = load_prompts(args.prompt_section, args.prompt_file)
     prompts = prepare_eval_items(prompts, Path(args.cases_root))
