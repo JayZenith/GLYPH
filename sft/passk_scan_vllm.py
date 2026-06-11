@@ -152,7 +152,7 @@ def _score_rollouts(item: dict, rollouts: list[Rollout], max_new_tokens: int, sa
 
 
 def _run_rollout_batch(llm, tokenizer, sampling_cls, rollouts: list[Rollout], max_tool_rounds,
-                       temperature, executor):
+                       temperature, executor, lora_request=None):
     stop_ids = [tokenizer.eos_token_id,
                 tokenizer.convert_tokens_to_ids("<|im_end|>"),
                 tokenizer.convert_tokens_to_ids("<|im_start|>")]
@@ -175,7 +175,7 @@ def _run_rollout_batch(llm, tokenizer, sampling_cls, rollouts: list[Rollout], ma
             {"prompt_token_ids": tokenizer(r.cur_prompt, add_special_tokens=False)["input_ids"]}
             for r in active
         ]
-        outs = llm.generate(token_prompts, params, use_tqdm=False)
+        outs = llm.generate(token_prompts, params, use_tqdm=False, lora_request=lora_request)
         for r, out in zip(active, outs):
             comp = out.outputs[0]
             text = comp.text
@@ -197,14 +197,14 @@ def _run_rollout_batch(llm, tokenizer, sampling_cls, rollouts: list[Rollout], ma
 
 
 def run_prompt(llm, tokenizer, sampling_cls, item, k, max_new_tokens, max_tool_rounds,
-               temperature, executor, sandbox_root, save_rollouts: bool = False):
+               temperature, executor, sandbox_root, save_rollouts: bool = False, lora_request=None):
     rollouts = _make_rollouts_for_item(0, item, k, max_new_tokens, sandbox_root)
-    _run_rollout_batch(llm, tokenizer, sampling_cls, rollouts, max_tool_rounds, temperature, executor)
+    _run_rollout_batch(llm, tokenizer, sampling_cls, rollouts, max_tool_rounds, temperature, executor, lora_request)
     return _score_rollouts(item, rollouts, max_new_tokens, save_rollouts)
 
 
 def run_prompt_batch(llm, tokenizer, sampling_cls, items, k, max_new_tokens, max_tool_rounds,
-                     temperature, executor, sandbox_root, save_rollouts: bool = False):
+                     temperature, executor, sandbox_root, save_rollouts: bool = False, lora_request=None):
     all_rollouts: list[Rollout] = []
     by_item: dict[int, list[Rollout]] = {idx: [] for idx in range(len(items))}
     for idx, item in enumerate(items):
@@ -212,7 +212,7 @@ def run_prompt_batch(llm, tokenizer, sampling_cls, items, k, max_new_tokens, max
         all_rollouts.extend(item_rollouts)
         by_item[idx].extend(item_rollouts)
 
-    _run_rollout_batch(llm, tokenizer, sampling_cls, all_rollouts, max_tool_rounds, temperature, executor)
+    _run_rollout_batch(llm, tokenizer, sampling_cls, all_rollouts, max_tool_rounds, temperature, executor, lora_request)
     return [
         _score_rollouts(item, by_item[idx], max_new_tokens, save_rollouts)
         for idx, item in enumerate(items)
@@ -222,6 +222,8 @@ def run_prompt_batch(llm, tokenizer, sampling_cls, items, k, max_new_tokens, max
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--sft-model", default="JayZenith/SFT_V1")
+    p.add_argument("--sft-adapter", default=None,
+                   help="Optional PEFT LoRA adapter to serve on top of --sft-model via vLLM LoRA.")
     p.add_argument("--prompt-file", default="sft/evals/eval_prompts_heldout_69.yaml")
     p.add_argument("--prompt-section", default="post_eval_heldout_69")
     p.add_argument("--cases-root", default="runs/rlvr1/rust_cases/eval_heldout_69")
@@ -235,6 +237,7 @@ def main() -> int:
     p.add_argument("--no-resume", action="store_true")
     p.add_argument("--gpu-memory-utilization", type=float, default=0.85)
     p.add_argument("--max-model-len", type=int, default=12288)
+    p.add_argument("--max-lora-rank", type=int, default=64)
     p.add_argument("--dtype", default="bfloat16")
     p.add_argument("--prompt-batch-size", type=int, default=1,
                    help="Number of distinct prompts to scan together. Effective rollout batch is prompt_batch_size * k.")
@@ -264,6 +267,13 @@ def main() -> int:
 
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
+    lora_request = None
+    if args.sft_adapter:
+        from huggingface_hub import snapshot_download
+        from vllm.lora.request import LoRARequest
+
+        adapter_path = snapshot_download(args.sft_adapter, repo_type="model")
+        lora_request = LoRARequest("sft_adapter", 1, adapter_path)
 
     tokenizer = AutoTokenizer.from_pretrained(args.sft_model, trust_remote_code=True)
     llm = LLM(
@@ -273,6 +283,8 @@ def main() -> int:
         max_model_len=args.max_model_len,
         trust_remote_code=True,
         enforce_eager=False,
+        enable_lora=bool(args.sft_adapter),
+        max_lora_rank=args.max_lora_rank,
     )
     executor = create_executor(timeout=args.tool_timeout)
     sandbox_root = Path(args.cases_root) / "_sandboxes"
@@ -282,6 +294,7 @@ def main() -> int:
         batch_results = run_prompt_batch(
             llm, tokenizer, SamplingParams, batch, args.samples, args.max_new_tokens,
             args.max_tool_rounds, args.temperature, executor, sandbox_root, args.save_rollouts,
+            lora_request,
         )
         for offset, (item, (cargo_solves, valid_solves, rollout_rows)) in enumerate(zip(batch, batch_results)):
             band = "rlvr-target" if 0 < cargo_solves < args.samples else ("solved" if cargo_solves else "capability-gap")

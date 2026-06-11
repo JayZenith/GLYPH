@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="460" viewBox="0 0 900 460">
+  <rect width="900" height="460" fill="#ffffff"/>
+  <text x="450" y="36" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#1a1a1a">Held-out-69 pass@4: flat prompt-level, small rollout-level shift</text>
+  <line x1="90" y1="380" x2="840" y2="380" stroke="#cccccc"/>
+  <line x1="90" y1="80" x2="90" y2="380" stroke="#cccccc"/>
+  <g font-family="Arial, sans-serif" font-size="12" fill="#555555">
+    <line x1="86" y1="380" x2="840" y2="380" stroke="#eeeeee"/>
+    <text x="78" y="384" text-anchor="end">0.0</text>
+    <line x1="86" y1="320" x2="840" y2="320" stroke="#eeeeee"/>
+    <text x="78" y="324" text-anchor="end">0.2</text>
+    <line x1="86" y1="260" x2="840" y2="260" stroke="#eeeeee"/>
+    <text x="78" y="264" text-anchor="end">0.4</text>
+    <line x1="86" y1="200" x2="840" y2="200" stroke="#eeeeee"/>
+    <text x="78" y="204" text-anchor="end">0.6</text>
+    <line x1="86" y1="140" x2="840" y2="140" stroke="#eeeeee"/>
+    <text x="78" y="144" text-anchor="end">0.8</text>
+    <line x1="86" y1="80" x2="840" y2="80" stroke="#eeeeee"/>
+    <text x="78" y="84" text-anchor="end">1.0</text>
+  </g>
+  <g font-family="Arial, sans-serif">
+    <rect x="175" y="123.5" width="44" height="256.5" fill="#2a6fdb"/>
+    <rect x="224" y="123.5" width="44" height="256.5" fill="#2e9e5b"/>
+    <text x="197" y="113" text-anchor="middle" font-size="13" fill="#555555">59/69</text>
+    <text x="246" y="113" text-anchor="middle" font-size="13" fill="#555555">59/69</text>
+    <text x="222" y="414" text-anchor="middle" font-size="14" fill="#1a1a1a">Prompt pass@4</text>
+
+    <rect x="428" y="178.9" width="44" height="201.1" fill="#2a6fdb"/>
+    <rect x="477" y="173.5" width="44" height="206.5" fill="#2e9e5b"/>
+    <text x="450" y="168" text-anchor="middle" font-size="13" fill="#555555">185/276</text>
+    <text x="499" y="163" text-anchor="middle" font-size="13" fill="#555555">190/276</text>
+    <text x="475" y="414" text-anchor="middle" font-size="14" fill="#1a1a1a">Valid rollouts</text>
+
+    <rect x="681" y="245.2" width="44" height="134.8" fill="#2a6fdb"/>
+    <rect x="730" y="227.8" width="44" height="152.2" fill="#2e9e5b"/>
+    <text x="703" y="235" text-anchor="middle" font-size="13" fill="#555555">31/69</text>
+    <text x="752" y="218" text-anchor="middle" font-size="13" fill="#555555">35/69</text>
+    <text x="728" y="414" text-anchor="middle" font-size="14" fill="#1a1a1a">4/4 stable prompts</text>
+  </g>
+  <g font-family="Arial, sans-serif" font-size="13" fill="#1a1a1a">
+    <rect x="620" y="52" width="14" height="14" fill="#2a6fdb"/>
+    <text x="642" y="64">SFT_HALF_A</text>
+    <rect x="735" y="52" width="14" height="14" fill="#2e9e5b"/>
+    <text x="757" y="64">RLVR_V999 step10</text>
+  </g>
+</svg>

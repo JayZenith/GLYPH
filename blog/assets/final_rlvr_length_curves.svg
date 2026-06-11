@@ -1,35 +1,40 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="920" height="440" viewBox="0 0 920 440">
-<rect width="100%" height="100%" fill="#fbfaf7"/>
-<text x="75" y="36" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#1f2933">RLVR rollout lengths stayed volatile</text>
-<text x="75" y="56" font-family="Inter, Arial, sans-serif" font-size="13" fill="#667085">Longer rollouts often indicate recovery grind, not better held-out behavior.</text>
-<line x1="75" y1="368" x2="885" y2="368" stroke="#2d3748"/>
-<line x1="75" y1="68" x2="75" y2="368" stroke="#2d3748"/>
-<line x1="75" y1="368.0" x2="885" y2="368.0" stroke="#e5e0d8"/>
-<text x="65" y="372.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#5f6b7a">6.2e+02</text>
-<line x1="75" y1="308.0" x2="885" y2="308.0" stroke="#e5e0d8"/>
-<text x="65" y="312.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#5f6b7a">2e+03</text>
-<line x1="75" y1="248.0" x2="885" y2="248.0" stroke="#e5e0d8"/>
-<text x="65" y="252.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#5f6b7a">3.4e+03</text>
-<line x1="75" y1="188.0" x2="885" y2="188.0" stroke="#e5e0d8"/>
-<text x="65" y="192.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#5f6b7a">4.7e+03</text>
-<line x1="75" y1="128.0" x2="885" y2="128.0" stroke="#e5e0d8"/>
-<text x="65" y="132.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#5f6b7a">6.1e+03</text>
-<line x1="75" y1="68.0" x2="885" y2="68.0" stroke="#e5e0d8"/>
-<text x="65" y="72.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#5f6b7a">7.5e+03</text>
-<text x="75.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#5f6b7a">0</text>
-<text x="237.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#5f6b7a">9</text>
-<text x="399.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#5f6b7a">18</text>
-<text x="561.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#5f6b7a">27</text>
-<text x="723.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#5f6b7a">36</text>
-<text x="885.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#5f6b7a">45</text>
-<text x="480.0" y="420" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" fill="#344054">step</text>
-<text x="18" y="218.0" text-anchor="middle" transform="rotate(-90 18 218.0)" font-family="Inter, Arial, sans-serif" font-size="13" fill="#344054">tokens / sample</text>
-<path d="M75.0,347.3 L93.0,220.8 L111.0,312.8 L129.0,300.7 L147.0,175.8 L165.0,232.5 L183.0,187.7 L201.0,255.1 L219.0,203.4 L237.0,243.5 L255.0,88.7 L273.0,216.4 L291.0,292.0 L309.0,271.1 L327.0,272.2 L345.0,210.7 L363.0,267.5 L381.0,306.4 L399.0,269.6 L417.0,255.2 L435.0,208.2 L453.0,246.7 L471.0,332.6 L489.0,245.0 L507.0,190.1 L525.0,223.5 L543.0,223.9 L561.0,174.1 L579.0,260.4 L597.0,286.3 L615.0,232.9 L633.0,219.2 L651.0,233.8 L669.0,210.4 L687.0,228.0 L705.0,275.5 L723.0,260.7 L741.0,206.5 L759.0,237.3 L777.0,226.9 L795.0,257.0 L813.0,242.4 L831.0,255.9 L849.0,171.6 L867.0,276.7 L885.0,219.2" fill="none" stroke="#8f5a2a" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
-<circle cx="885.0" cy="219.2" r="3.5" fill="#8f5a2a"/>
-<rect x="665" y="76" width="13" height="13" fill="#8f5a2a" rx="2"/>
-<text x="687" y="87" font-family="Inter, Arial, sans-serif" font-size="13" fill="#1f2933">V1000 seq length</text>
-<path d="M75.0,288.8 L93.0,205.4 L111.0,227.6 L129.0,204.3 L147.0,304.6 L165.0,256.4 L183.0,237.6 L201.0,280.2 L219.0,200.5 L237.0,236.1 L255.0,176.8 L273.0,255.6 L291.0,322.7 L309.0,252.8 L327.0,236.6 L345.0,248.0 L363.0,277.8 L381.0,210.4 L399.0,175.6 L417.0,235.4 L435.0,206.8 L453.0,284.2 L471.0,201.3 L489.0,247.2 L507.0,307.9 L525.0,205.2 L543.0,174.9 L561.0,139.7 L579.0,266.2 L597.0,274.2 L615.0,239.1 L633.0,179.6 L651.0,222.2 L669.0,233.6 L687.0,243.1 L705.0,237.3 L723.0,308.6" fill="none" stroke="#7462a8" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
-<circle cx="723.0" cy="308.6" r="3.5" fill="#7462a8"/>
-<rect x="665" y="98" width="13" height="13" fill="#7462a8" rx="2"/>
-<text x="687" y="109" font-family="Inter, Arial, sans-serif" font-size="13" fill="#1f2933">V3000 seq length</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="430" viewBox="0 0 900 430">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="75" y="36" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#1a1a1a">V999 RLVR rollout length stayed volatile</text>
+<line x1="75" y1="350" x2="850" y2="350" stroke="#cccccc"/>
+<line x1="75" y1="70" x2="75" y2="350" stroke="#cccccc"/>
+<line x1="70" y1="350.0" x2="850" y2="350.0" stroke="#eeeeee"/>
+<text x="63" y="354.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#555">0</text>
+<line x1="70" y1="294.0" x2="850" y2="294.0" stroke="#eeeeee"/>
+<text x="63" y="298.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#555">1052</text>
+<line x1="70" y1="238.0" x2="850" y2="238.0" stroke="#eeeeee"/>
+<text x="63" y="242.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#555">2103</text>
+<line x1="70" y1="182.0" x2="850" y2="182.0" stroke="#eeeeee"/>
+<text x="63" y="186.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#555">3155</text>
+<line x1="70" y1="126.0" x2="850" y2="126.0" stroke="#eeeeee"/>
+<text x="63" y="130.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#555">4206</text>
+<line x1="70" y1="70.0" x2="850" y2="70.0" stroke="#eeeeee"/>
+<text x="63" y="74.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#555">5258</text>
+<text x="75.0" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#555">0</text>
+<text x="215.9" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#555">2</text>
+<text x="356.8" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#555">4</text>
+<text x="497.7" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#555">6</text>
+<text x="638.6" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#555">8</text>
+<text x="779.5" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#555">10</text>
+<text x="850.0" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#555">11</text>
+<polyline points="75.0,253.7 145.5,150.2 215.9,215.6 286.4,100.0 356.8,182.7 427.3,125.9 497.7,244.7 568.2,139.3 638.6,227.5 709.1,118.7 779.5,175.9 850.0,161.8" fill="none" stroke="#d6452c" stroke-width="3"/>
+<circle cx="75.0" cy="253.7" r="4" fill="#d6452c"/>
+<circle cx="145.5" cy="150.2" r="4" fill="#d6452c"/>
+<circle cx="215.9" cy="215.6" r="4" fill="#d6452c"/>
+<circle cx="286.4" cy="100.0" r="4" fill="#d6452c"/>
+<circle cx="356.8" cy="182.7" r="4" fill="#d6452c"/>
+<circle cx="427.3" cy="125.9" r="4" fill="#d6452c"/>
+<circle cx="497.7" cy="244.7" r="4" fill="#d6452c"/>
+<circle cx="568.2" cy="139.3" r="4" fill="#d6452c"/>
+<circle cx="638.6" cy="227.5" r="4" fill="#d6452c"/>
+<circle cx="709.1" cy="118.7" r="4" fill="#d6452c"/>
+<circle cx="779.5" cy="175.9" r="4" fill="#d6452c"/>
+<circle cx="850.0" cy="161.8" r="4" fill="#d6452c"/>
+<text x="462.5" y="410" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#555">orchestrator step</text>
+<text x="20" y="210.0" transform="rotate(-90 20 210.0)" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#555">tokens / sample</text>
 </svg>
