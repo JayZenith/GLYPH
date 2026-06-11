@@ -39,21 +39,34 @@ GLYPH_CHAT_TEMPLATE = """{%- for message in messages %}
 {%- endif %}"""
 
 
-def assert_glyph_template_parity() -> None:
+def assert_glyph_template_parity(tokenizer=None) -> None:
     """Hard-fail at launch if the RL chat template drifts from the SFT/eval
     trace format. Renders a sample conversation and byte-compares against the
-    format produced by sft/evals (build_prompt + tool injection)."""
-    from jinja2 import Template
+    format produced by sft/evals (build_prompt + tool injection).
 
+    When a tokenizer is given, renders through tokenizer.apply_chat_template —
+    the exact path vLLM and the trainer use. transformers renders templates
+    with trim_blocks/lstrip_blocks, which silently reformatted the previous
+    template (single newline between turns, no newline before <|im_end|>), so
+    a plain-jinja check is not sufficient on its own.
+    """
     messages = [
         {"role": "system", "content": "SYS"},
         {"role": "user", "content": "USR"},
         {"role": "assistant", "content": 'CALL read_file(id="c1", file_path="x")\n<|im_end|>'},
         {"role": "tool", "content": "RESULT c1:\nstatus: success"},
     ]
-    rendered = Template(GLYPH_CHAT_TEMPLATE).render(
-        messages=messages, add_generation_prompt=True
-    )
+    if tokenizer is not None:
+        rendered = tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+    else:
+        from jinja2.sandbox import ImmutableSandboxedEnvironment
+
+        env = ImmutableSandboxedEnvironment(trim_blocks=True, lstrip_blocks=True)
+        rendered = env.from_string(GLYPH_CHAT_TEMPLATE).render(
+            messages=messages, add_generation_prompt=True
+        )
     expected = (
         "<|im_start|>system\nSYS\n<|im_end|>\n\n"
         "<|im_start|>user\nUSR\n<|im_end|>\n\n"
@@ -212,7 +225,6 @@ def materialize_glyph_chat_model(model_name: str, output_dir: Path) -> str:
     block. SFT/eval use literal `<|im_start|>tool` blocks, so RL must point
     tokenizer-loading code at a local model view with the Glyph template.
     """
-    assert_glyph_template_parity()
     local = Path(model_name)
     source = local.resolve() if local.exists() else Path(snapshot_download(repo_id=model_name, repo_type="model"))
     dest = output_dir / "glyph_chat_models" / _safe_model_dir_name(model_name)
@@ -229,6 +241,7 @@ def materialize_glyph_chat_model(model_name: str, output_dir: Path) -> str:
 
     tokenizer = AutoTokenizer.from_pretrained(str(source))
     tokenizer.chat_template = GLYPH_CHAT_TEMPLATE
+    assert_glyph_template_parity(tokenizer)
     for name in (
         "chat_template.jinja",
         "tokenizer_config.json",
