@@ -254,16 +254,6 @@ RLVR_V999 step 5:       46/69
 RLVR_V999 step 10:      45/69
 ```
 
-The RLVR rollout curves did not tell a clean learning story either:
-
-![RLVR rollout reward curves](assets/final_rlvr_reward_curves.svg)
-
-![RLVR rollout length curves](assets/final_rlvr_length_curves.svg)
-
-For this task, longer rollouts often mean recovery grind, not better behavior.
-An RL reward spike only matters if it transfers to strict held-out
-`valid_trace`. Here it did not.
-
 ## The Final pass@4 Check
 
 The cheap decisive check was held-out-69 pass@4 with the final clean adapter
@@ -302,12 +292,8 @@ eval100_097_department_expense_summary_report:          1/4 -> 0/4
 eval100_099_filter_map_inventory_restock_report:        1/4 -> 0/4
 ```
 
-The original V1000 signal case, `eval100_039`, did show up again:
-
-```text
-SFT_HALF_A:        0/4
-RLVR_V999_STEP10: 1/4
-```
+The original V1000 signal case, `eval100_039`, shows up in that gains list at
+1/4 -- a single-rollout flip, nothing more.
 
 But the aggregate prompt-level result was flat. RLVR increased valid rollout
 count by five and made four more prompts stable at 4/4, while losing three
