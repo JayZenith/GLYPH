@@ -343,9 +343,10 @@ cost almost nothing.
    prompts where the policy had mixed pass/fail outcomes within the eval
    tool budget. Drop always-solved and always-failed prompts. No new
    compute needed to build the list.
-3. Match the training environment to the eval contract exactly, tool-round
-   budget included, so RL cannot reward trajectory shapes the eval cannot
-   finish.
+3. Keep the training and eval contracts identical end to end -- budgets,
+   prompts, stop behavior -- so checkpoint comparisons stay clean. (The
+   official held-out evals here ran with a 20-round tool budget, above the
+   15 used in training, so budget was not a confound in these results.)
 4. Let the policy actually learn: higher learning rate, much weaker
    distillation anchor, more unique prompts per step.
 5. Greedy canary eval every 5 steps on a small fixed held-out slice; stop
