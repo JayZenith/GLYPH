@@ -31,8 +31,10 @@ Held-out-69 pass@4, SFT vs `RLVR_V999_STEP10`:
 | Valid rollouts | 185/276 | 190/276 |
 | 4/4 stable prompts | 31/69 | 35/69 |
 
-Conclusion: RLVR did not improve prompt-level held-out reliability. It produced a
-small rollout-level shift, but gains and losses offset at pass@4.
+Conclusion: RLVR did not improve prompt-level held-out reliability. The rollout-level
+shift (+5/276) is within sampling noise (sigma ~8), and gains and losses offset at
+pass@4. The one reproducible effect was negative: run_only FINAL-hygiene drift caused
+by kind imbalance in the RL pool.
 
 ## Data
 
@@ -44,7 +46,7 @@ non-overlapping halves grouped by case id.
 | `synthetic_data/signal_v3_sft_half_a.jsonl` | SFT traces | 1,042 rows, 762 unique cases |
 | `synthetic_data/signal_v3_rl_pool_b.jsonl` | RL trace pool | 1,041 rows, 760 unique cases |
 | `synthetic_data/rl_prompts_signal_v3_pool_b.jsonl` | RL prompt manifest for `rl/train.py` | 760 prompts |
-| `synthetic_data/rl_prompts_signal_v3_pool_b_mixed.jsonl` | mixed-outcome RL prompt subset used for V999/V4000 | 760 prompts |
+| `synthetic_data/rl_prompts_signal_v3_pool_b_mixed.jsonl` | mixed-outcome RL prompt subset used for V999/V4000 | 703 prompts |
 | `synthetic_data/signal_v3_rl_pool_b_prompts.yaml` | pass@k-compatible prompt manifest | 760 prompts |
 | `synthetic_data/signal_v3_split_summary.json` | split audit | summary |
 | `synthetic_data/signal_v3_split_summary.md` | split audit | summary |

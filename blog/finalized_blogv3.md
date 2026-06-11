@@ -282,12 +282,25 @@ RLVR_V999_STEP10: 1/4
 
 But the aggregate prompt-level result was flat. RLVR increased valid rollout
 count by five and made four more prompts stable at 4/4, while losing three
-prompt-level pass@4 cases. That is not a win. It is a small sampled-reliability
-signal with offsetting regressions.
+prompt-level pass@4 cases. And the rollout-level shift does not clear the noise
+floor: at a ~68% success rate, one standard deviation on 276 rollouts is about
+8, so +5 is statistically indistinguishable from zero. That is not a win. It is
+not even a claimable signal.
+
+The one effect that did reproduce is negative. The two run_only losses
+(`eval100_097`, `eval100_099`) kept cargo passing 4/4 while validity fell to
+0/4: the policy drifted into copying multiline stdout into `FINAL`, failing
+hygiene. The same five run_only cases failed greedy at both step 5 and step 10.
+The mechanism is pool composition: run_only and test_only prompts are about 6%
+of the RL pool, so almost no training groups exist where the reward can punish
+that drift. Nothing in training defends behavior it never samples.
 
 ## The Final Clean RLVR Run Still Regressed Greedy
 
-After reward, protocol, parser, and export fixes, the final adapter checkpoints
+The final run had everything verified: a binary reward measured to emit exactly
+0 or 10 (with 10 equal to strict held-out validity on every rollout checked), a
+chat template byte-identical to the SFT/eval trace format with a launch-time
+parity assertion, and the safe adapter export path. The adapter checkpoints
 still lost on greedy held-out eval:
 
 ![RLVR held-out-69 did not beat SFT_HALF_A](assets/final_rlvr_scores.svg)
@@ -317,12 +330,21 @@ RLVR perturbed that policy enough to change recovery trajectories. Sometimes
 that flipped a case in. Sometimes it flipped cases out. Under pass@4, the prompt
 set stayed flat at `59/69`, but the sampled rollout count moved slightly upward.
 
+There is also a structural mismatch worth naming: training optimizes the
+temperature-0.8 sampling distribution, while the headline eval is greedy
+decode. A policy can genuinely shift its sampled distribution while its argmax
+path moves unpredictably -- which is exactly what checkpoint-to-checkpoint
+churn in the greedy solved set looks like. On a 69-prompt greedy eval with a
+noise floor of roughly plus or minus three cases, a true RL effect of one or
+two cases is smaller than the instrument can resolve.
+
 The model was not learning a broadly better repair policy. It was reshuffling
 near-boundary paths. The final measurement says:
 
 ```text
-RLVR produced case-level movement and a small rollout-level shift,
-not a held-out prompt-level improvement.
+RLVR produced case-level movement within the noise floor,
+no held-out prompt-level improvement, and one reproducible
+regression caused by training-pool kind imbalance.
 ```
 
 ## Where This Ends
@@ -332,8 +354,8 @@ The final readout:
 ```text
 SFT is the main result.
 Strict evals are non-negotiable.
-RLVR gained some sampled rollouts but did not improve prompt-level pass@4.
-Greedy held-out performance regressed.
+RLVR's rollout-level gain was within sampling noise; prompt-level pass@4 was flat.
+Greedy held-out performance regressed, partly from a diagnosed data-imbalance drift.
 Most apparent RL collapse was harness, reward, protocol, or export mismatch,
 not the policy.
 ```
