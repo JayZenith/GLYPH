@@ -238,6 +238,32 @@ RLVR changed which recovery loops converge under greedy decoding,
 while aggregate reliability regressed by one.
 ```
 
+## The Final Clean RLVR Run Still Regressed Greedy
+
+The final run had everything verified: a binary reward measured to emit exactly
+0 or 10 (with 10 equal to strict held-out validity on every rollout checked), a
+chat template byte-identical to the SFT/eval trace format with a launch-time
+parity assertion, and the safe adapter export path. The adapter checkpoints
+still lost on greedy held-out eval:
+
+![RLVR held-out-69 did not beat SFT_HALF_A](assets/final_rlvr_scores.svg)
+
+```text
+SFT_HALF_A:             51/69
+RLVR_V999 step 5:       46/69
+RLVR_V999 step 10:      45/69
+```
+
+The RLVR rollout curves did not tell a clean learning story either:
+
+![RLVR rollout reward curves](assets/final_rlvr_reward_curves.svg)
+
+![RLVR rollout length curves](assets/final_rlvr_length_curves.svg)
+
+For this task, longer rollouts often mean recovery grind, not better behavior.
+An RL reward spike only matters if it transfers to strict held-out
+`valid_trace`. Here it did not.
+
 ## The Final pass@4 Check
 
 The cheap decisive check was held-out-69 pass@4 with the final clean adapter
@@ -321,32 +347,6 @@ successes exactly 0, verified across every rollout. It is a training-coverage
 failure: the correct contract had almost no run_only groups to apply gradient
 to, so unrelated drift in that region went undefended. The fix is data
 balance, not reward design.
-
-## The Final Clean RLVR Run Still Regressed Greedy
-
-The final run had everything verified: a binary reward measured to emit exactly
-0 or 10 (with 10 equal to strict held-out validity on every rollout checked), a
-chat template byte-identical to the SFT/eval trace format with a launch-time
-parity assertion, and the safe adapter export path. The adapter checkpoints
-still lost on greedy held-out eval:
-
-![RLVR held-out-69 did not beat SFT_HALF_A](assets/final_rlvr_scores.svg)
-
-```text
-SFT_HALF_A:             51/69
-RLVR_V999 step 5:       46/69
-RLVR_V999 step 10:      45/69
-```
-
-The RLVR rollout curves did not tell a clean learning story either:
-
-![RLVR rollout reward curves](assets/final_rlvr_reward_curves.svg)
-
-![RLVR rollout length curves](assets/final_rlvr_length_curves.svg)
-
-For this task, longer rollouts often mean recovery grind, not better behavior.
-An RL reward spike only matters if it transfers to strict held-out
-`valid_trace`. Here it did not.
 
 ## What I Think Happened
 
