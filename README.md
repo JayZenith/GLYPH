@@ -250,8 +250,6 @@ prime_lora_adapter_export.json
 
 ### 4. Greedy Held-Out Eval for RLVR Adapters
 
-Step 5:
-
 ```bash
 mkdir -p results/RLVR_V999_STEP5
 
@@ -269,24 +267,7 @@ python -m sft.eval_formal \
   --tool-workers 16
 ```
 
-Step 10:
-
-```bash
-mkdir -p results/RLVR_V999_STEP10
-
-python -m sft.eval_formal \
-  --sft-model JayZenith/SFT_HALF_A \
-  --sft-adapter JayZenith/RLVR_V999_STEP10 \
-  --train-data synthetic_data/signal_v3_sft_half_a.jsonl \
-  --prompt-file sft/evals/eval_prompts_heldout_69.yaml \
-  --prompt-section post_eval_heldout_69 \
-  --cases-root runs/heldout69_rlvr_v999_step10_rounds20 \
-  --output results/RLVR_V999_STEP10/eval_formal_heldout_69_maxrounds20.json \
-  --max-new-tokens 4000 \
-  --max-tool-rounds 20 \
-  --prompt-batch-size 8 \
-  --tool-workers 16
-```
+For step 10, change only `--sft-adapter`, `--cases-root`, and `--output`.
 
 Results:
 
@@ -345,20 +326,7 @@ python -m sft.passk_scan_vllm \
   --save-rollouts
 ```
 
-Result:
-
-```text
-SFT_HALF_A valid pass@4 prompts:       59/69
-RLVR_V999_STEP10 valid pass@4 prompts: 59/69
-
-SFT_HALF_A valid rollouts:             185/276
-RLVR_V999_STEP10 valid rollouts:       190/276
-
-SFT_HALF_A 4/4 stable prompts:         31/69
-RLVR_V999_STEP10 4/4 stable prompts:   35/69
-```
-
-Prompt-level gains:
+Results are in the Final Status table above. Prompt-level gains:
 
 ```text
 eval100_014_patch_test_pass_015_layered_config_env_does_not_override_explicit_file
@@ -413,7 +381,7 @@ JayZenith/RLVR_V999_STEP10
 
 ## Final Takeaway
 
-SFT made a real Rust tool-use agent. RLVR produced case-level movement and a
-small rollout-level pass@4 shift, but not a prompt-level held-out win. The main
+SFT made a real Rust tool-use agent. RLVR produced case-level movement within
+sampling noise, not a held-out win. The main
 engineering lesson is that verifier RL is only meaningful when reward, protocol,
 checkpoint export, and eval all enforce the same whole-trace contract.
