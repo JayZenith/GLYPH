@@ -154,6 +154,31 @@ pre code { padding: 0; border: 0; background: transparent; color: inherit; font-
   letter-spacing: .08em;
   text-transform: uppercase;
 }
+.demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 860px;
+  margin: 22px 0 0;
+}
+.demo-controls button {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #050805;
+  color: var(--soft);
+  cursor: pointer;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 9px 13px;
+}
+.demo-controls button:hover,
+.demo-controls button.is-active {
+  border-color: rgba(34,197,94,.65);
+  color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(34,197,94,.12) inset;
+}
 .trace {
   position: relative;
   max-width: 860px;
@@ -237,6 +262,11 @@ pre code { padding: 0; border: 0; background: transparent; color: inherit; font-
   font-size: 14.5px;
   line-height: 1.55;
 }
+.live-demo.is-replaying .stream-line {
+  opacity: 0;
+  transform: translateY(4px);
+  animation: lineIn .18s ease forwards;
+}
 .stream-line:last-child { border-bottom: 0; }
 .role {
   color: var(--muted);
@@ -263,6 +293,9 @@ pre code { padding: 0; border: 0; background: transparent; color: inherit; font-
   animation: blink 1.1s steps(2, start) infinite;
 }
 @keyframes blink { 50% { opacity: 0; } }
+@keyframes lineIn {
+  to { opacity: 1; transform: translateY(0); }
+}
 blockquote {
   max-width: 800px;
   margin: 24px 0;
@@ -365,138 +398,111 @@ Otherwise, cargo can pass while the agent trace is still unusable.
   <div class="demo-chip"><strong>Kind</strong>patch_run_pass</div>
   <div class="demo-chip"><strong>Strict Result</strong>valid_trace = true</div>
 </div>
-<p>These are compact excerpts, not synthetic examples. They show what the scorer actually sees: assistant calls, tool results, verifier output, and whether the trace terminates cleanly.</p>
-<div class="live-demo">
+<p>Use the toggles to replay different captured outcomes in the same window. These are compact excerpts, not synthetic examples.</p>
+<div class="demo-controls" role="tablist" aria-label="Captured trace replays">
+  <button class="is-active" type="button" data-demo="sft-success">SFT success</button>
+  <button type="button" data-demo="rlvr-signal">RLVR signal</button>
+  <button type="button" data-demo="budget-fail">Budget exhaustion</button>
+  <button type="button" data-demo="dirty-final">Dirty FINAL</button>
+</div>
+<div class="live-demo" id="demo-window" aria-live="polite"></div>
+
+<template id="demo-sft-success">
   <div class="live-toolbar">
     <span><span class="live-dots"><i></i><i></i><i></i></span>SFT_HALF_A held-out replay</span>
     <span>6 tool calls / real cargo execution</span>
   </div>
   <div class="live-stream">
-    <div class="stream-line">
-      <span class="role system">system</span>
-      <code>Emit <span class="assistant">CALL tool(...)</span> blocks. Tools execute against a real Rust crate. Stop only after verifier success with a clean <span class="final">FINAL</span>.</code>
-    </div>
-    <div class="stream-line">
-      <span class="role user">user</span>
-      <code>In <span class="final">active_tags_filter_map_join</span>, fix the iterator pipeline in <span class="final">src/main.rs</span> so running the binary prints the expected active tags.</code>
-    </div>
-    <div class="stream-line">
-      <span class="role model">model</span>
-      <code>CALL read_file(id="c1", file_path=".../active_tags_filter_map_join/src/main.rs")</code>
-    </div>
-    <div class="stream-line">
-      <span class="role env">env</span>
-      <code><span class="ok">RESULT c1: success</span>
+    <div class="stream-line"><span class="role system">system</span><code>Emit <span class="assistant">CALL tool(...)</span> blocks. Tools execute against a real Rust crate. Stop only after verifier success with a clean <span class="final">FINAL</span>.</code></div>
+    <div class="stream-line"><span class="role user">user</span><code>In <span class="final">active_tags_filter_map_join</span>, fix the iterator pipeline in <span class="final">src/main.rs</span> so running the binary prints the expected active tags.</code></div>
+    <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id="c1", file_path=".../active_tags_filter_map_join/src/main.rs")</code></div>
+    <div class="stream-line"><span class="role env">env</span><code><span class="ok">RESULT c1: success</span>
 stdout:
-    .filter_map(|(name, enabled)| if !enabled { Some(*name) } else { None })</code>
-    </div>
-    <div class="stream-line">
-      <span class="role model">model</span>
-      <code>CALL apply_patch(id="c2", find="if !enabled", replace="if enabled")</code>
-    </div>
-    <div class="stream-line">
-      <span class="role env">env</span>
-      <code><span class="ok">RESULT c2: success</span>
-stdout: patch applied</code>
-    </div>
-    <div class="stream-line">
-      <span class="role model">model</span>
-      <code>CALL cargo_run(id="c3", project_path=".../active_tags_filter_map_join")</code>
-    </div>
-    <div class="stream-line">
-      <span class="role env">env</span>
-      <code><span class="bad">RESULT c3: failed</span>
+    .filter_map(|(name, enabled)| if !enabled { Some(*name) } else { None })</code></div>
+    <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id="c2", find="if !enabled", replace="if enabled")</code></div>
+    <div class="stream-line"><span class="role env">env</span><code><span class="ok">RESULT c2: success</span>
+stdout: patch applied</code></div>
+    <div class="stream-line"><span class="role model">model</span><code>CALL cargo_run(id="c3", project_path=".../active_tags_filter_map_join")</code></div>
+    <div class="stream-line"><span class="role env">env</span><code><span class="bad">RESULT c3: failed</span>
 stderr:
 error[E0308]: mismatched types
 expected `bool`, found `&amp;bool`
 help: consider dereferencing the borrow:
-    if *enabled { Some(*name) } else { None }</code>
-    </div>
-    <div class="stream-line">
-      <span class="role model">model</span>
-      <code>CALL read_file(id="c4", file_path=".../src/main.rs")
-CALL apply_patch(id="c5", find="if enabled", replace="if *enabled")</code>
-    </div>
-    <div class="stream-line">
-      <span class="role env">env</span>
-      <code><span class="ok">RESULT c5: success</span>
-stdout: patch applied</code>
-    </div>
-    <div class="stream-line">
-      <span class="role model">model</span>
-      <code>CALL cargo_run(id="c6", project_path=".../active_tags_filter_map_join")</code>
-    </div>
-    <div class="stream-line">
-      <span class="role env">env</span>
-      <code><span class="ok">RESULT c6: success</span>
+    if *enabled { Some(*name) } else { None }</code></div>
+    <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id="c4", file_path=".../src/main.rs")
+CALL apply_patch(id="c5", find="if enabled", replace="if *enabled")</code></div>
+    <div class="stream-line"><span class="role env">env</span><code><span class="ok">RESULT c5: success</span>
+stdout: patch applied</code></div>
+    <div class="stream-line"><span class="role model">model</span><code>CALL cargo_run(id="c6", project_path=".../active_tags_filter_map_join")</code></div>
+    <div class="stream-line"><span class="role env">env</span><code><span class="ok">RESULT c6: success</span>
 stdout:
-core,fast,safe</code>
-    </div>
-    <div class="stream-line">
-      <span class="role model">model</span>
-      <code class="cursor"><span class="final">FINAL:</span> Fixed the iterator pipeline so filter_map keeps active tags and dereferences the boolean flag, producing the expected output.</code>
-    </div>
-    <div class="stream-line">
-      <span class="role score">score</span>
-      <code><span class="ok">valid_trace = true</span> | terminal cargo_run success + clean FINAL + exact CALL syntax</code>
-    </div>
+core,fast,safe</code></div>
+    <div class="stream-line"><span class="role model">model</span><code class="cursor"><span class="final">FINAL:</span> Fixed the iterator pipeline so filter_map keeps active tags and dereferences the boolean flag, producing the expected output.</code></div>
+    <div class="stream-line"><span class="role score">score</span><code><span class="ok">valid_trace = true</span> | terminal cargo_run success + clean FINAL + exact CALL syntax</code></div>
   </div>
-</div>
-<div class="trace">
-  <div class="trace-head"><strong>RLVR_V1000 signal case</strong><span>one strict held-out solve, not a net win</span></div>
-<pre><code><span class="assistant">CALL apply_patch</span>(id="c11", file_path=".../select_event_codes/src/lib.rs",
+</template>
+<template id="demo-rlvr-signal">
+  <div class="live-toolbar">
+    <span><span class="live-dots"><i></i><i></i><i></i></span>RLVR_V1000 signal replay</span>
+    <span>strict solve, aggregate still down</span>
+  </div>
+  <div class="live-stream">
+    <div class="stream-line"><span class="role user">user</span><code>Recover <span class="final">select_event_codes_partial_then_full_fix</span>; tests require trimming, thresholding, and skipping banned/blank event codes.</code></div>
+    <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id="c11", file_path=".../select_event_codes/src/lib.rs",
   find="if code == &quot;skip&quot; || code.is_empty()",
-  replace="if code == &quot;skip&quot; || code == &quot;ban&quot; || code.is_empty()")
-
-<span class="tool">RESULT c11</span>: <span class="success">success</span>
-stdout: patch applied
-
-<span class="assistant">CALL cargo_test</span>(id="c12", project_path=".../select_event_codes_partial_then_full_fix")
-
-<span class="tool">RESULT c12</span>: <span class="success">success</span>
-stdout:
+  replace="if code == &quot;skip&quot; || code == &quot;ban&quot; || code.is_empty()")</code></div>
+    <div class="stream-line"><span class="role env">env</span><code><span class="ok">RESULT c11: success</span>
+stdout: patch applied</code></div>
+    <div class="stream-line"><span class="role model">model</span><code>CALL cargo_test(id="c12", project_path=".../select_event_codes_partial_then_full_fix")</code></div>
+    <div class="stream-line"><span class="role env">env</span><code><span class="ok">RESULT c12: success</span>
 running 3 tests
 test tests::keeps_only_positive_scores_at_or_above_threshold ... ok
 test tests::skips_banned_and_blank_codes ... ok
 test tests::trims_parts_and_accepts_zero_padded_scores ... ok
 
-test result: ok. 3 passed; 0 failed
-
-<span class="final">FINAL:</span> Fixed the iterator pipeline in src/lib.rs so it trims input, rejects blank and banned codes, and only uppercases valid positive-score codes; all tests now pass.</code></pre>
-</div>
-<div class="trace">
-  <div class="trace-head"><strong>Failure mode: budget exhaustion</strong><span>many tool calls, no clean FINAL</span></div>
-<pre><code><span class="assistant">CALL apply_patch</span>(id="c20", file_path=".../layered_config_merge_precedence/src/main.rs",
+test result: ok. 3 passed; 0 failed</code></div>
+    <div class="stream-line"><span class="role model">model</span><code class="cursor"><span class="final">FINAL:</span> Fixed the iterator pipeline so it trims input, rejects blank and banned codes, and only uppercases valid positive-score codes; all tests now pass.</code></div>
+    <div class="stream-line"><span class="role score">score</span><code><span class="ok">valid_trace = true</span> on this one case | checkpoint total: 50/69, not a net win</code></div>
+  </div>
+</template>
+<template id="demo-budget-fail">
+  <div class="live-toolbar">
+    <span><span class="live-dots"><i></i><i></i><i></i></span>Budget exhaustion replay</span>
+    <span>many tool calls / no clean FINAL</span>
+  </div>
+  <div class="live-stream">
+    <div class="stream-line"><span class="role user">user</span><code>Recover a layered config merge where the binary must print exact host, port, debug, and tag output.</code></div>
+    <div class="stream-line"><span class="role model">model</span><code>... repeated read_file / apply_patch / cargo_run cycles ...</code></div>
+    <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id="c20", file_path=".../layered_config_merge_precedence/src/main.rs",
   find="debug: layer.debug,",
-  replace="debug: layer.debug,")
-
-<span class="tool">RESULT c20</span>: <span class="success">success</span>
-stdout: patch applied
-
-<span class="assistant">CALL cargo_run</span>(id="c21", project_path=".../layered_config_merge_precedence")
-
-<span class="tool">RESULT c21</span>: <span class="fail">failed</span>
+  replace="debug: layer.debug,")</code></div>
+    <div class="stream-line"><span class="role env">env</span><code><span class="ok">RESULT c20: success</span>
+stdout: patch applied</code></div>
+    <div class="stream-line"><span class="role model">model</span><code>CALL cargo_run(id="c21", project_path=".../layered_config_merge_precedence")</code></div>
+    <div class="stream-line"><span class="role env">env</span><code><span class="bad">RESULT c21: failed</span>
 stdout:
 host=env.example.com
 port=9000
 debug=&lt;none&gt;
 tags=ops,blue
-stderr:
-expected exact output:
+
+expected:
 host=env.example.com
 port=9000
 debug=false
-tags=ops,blue
-
-metrics:
-failure_buckets = missing_final, dirty_final, final_before_tool_completion, task_failure
-call_count = 21</code></pre>
-</div>
-<div class="trace">
-  <div class="trace-head"><strong>Failure mode: cargo passed, final was dirty</strong><span>RLVR_V999 run_only drift</span></div>
-<pre><code><span class="assistant">CALL cargo_run</span>(id="c1", project_path=".../csv_record_validation_report")
-
-<span class="tool">RESULT c1</span>: <span class="success">success</span>
+tags=ops,blue</code></div>
+    <div class="stream-line"><span class="role score">score</span><code><span class="bad">valid_trace = false</span> | missing_final, dirty_final, final_before_tool_completion, task_failure | call_count = 21</code></div>
+  </div>
+</template>
+<template id="demo-dirty-final">
+  <div class="live-toolbar">
+    <span><span class="live-dots"><i></i><i></i><i></i></span>Dirty FINAL replay</span>
+    <span>cargo passed / strict trace failed</span>
+  </div>
+  <div class="live-stream">
+    <div class="stream-line"><span class="role user">user</span><code>Run an already-correct CSV validation report crate and stop cleanly after the verifier succeeds.</code></div>
+    <div class="stream-line"><span class="role model">model</span><code>CALL cargo_run(id="c1", project_path=".../csv_record_validation_report")</code></div>
+    <div class="stream-line"><span class="role env">env</span><code><span class="ok">RESULT c1: success</span>
 stdout:
 valid: 2
 invalid: 4
@@ -504,21 +510,18 @@ errors:
 line 2: bad age
 line 3: bad id
 line 4: bad active
-line 6: wrong field count
-
-<span class="final">FINAL:</span> valid: 2
+line 6: wrong field count</code></div>
+    <div class="stream-line"><span class="role model">model</span><code><span class="final">FINAL:</span> valid: 2
 invalid: 4
 errors:
 line 2: bad age
 line 3: bad id
 line 4: bad active
-line 6: wrong field count
-
-metrics:
-cargo verifier success = true
-valid_trace = false
-failure_buckets = bad_final_hygiene</code></pre>
-</div>
+line 6: wrong field count</code></div>
+    <div class="stream-line"><span class="role score">score</span><code>cargo verifier success = true
+<span class="bad">valid_trace = false</span> | failure_buckets = bad_final_hygiene</code></div>
+  </div>
+</template>
 </section>
 <section class="panel" style="--n:1"><h2 id="the-metric-had-to-match-the-agent-contract">The Metric Had To Match the Agent Contract</h2>
 <p>Early scoring was too loose. A metric called <code>terminal_tool_success</code> could
@@ -752,5 +755,32 @@ For tool-use agents, the contract is the whole trace, not just the verifier.
 </code></pre></section>
   </main>
   <footer class="footer"><div class="footer-inner">Code and artifacts: <a href="https://github.com/JayZenith/glyph">github.com/JayZenith/glyph</a>.</div></footer>
+  <script>
+    const demoWindow = document.getElementById('demo-window');
+    const demoButtons = Array.from(document.querySelectorAll('[data-demo]'));
+
+    function loadDemo(name) {
+      const template = document.getElementById(`demo-${name}`);
+      if (!demoWindow || !template) return;
+
+      demoWindow.classList.remove('is-replaying');
+      demoWindow.innerHTML = template.innerHTML;
+      const lines = Array.from(demoWindow.querySelectorAll('.stream-line'));
+      lines.forEach((line, index) => {
+        line.style.animationDelay = `${Math.min(index * 130, 1800)}ms`;
+      });
+      requestAnimationFrame(() => demoWindow.classList.add('is-replaying'));
+
+      demoButtons.forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.demo === name);
+      });
+    }
+
+    demoButtons.forEach((button) => {
+      button.addEventListener('click', () => loadDemo(button.dataset.demo));
+    });
+
+    loadDemo('sft-success');
+  </script>
 </body>
 </html>
