@@ -2,9 +2,7 @@
 
 This is where I am ending this round of Glyph.
 
-Glyph is a Rust tool-use agent. The model emits `CALL tool(...)` blocks, tools
-execute against real Rust crates, and then the model should stop with a clean
-`FINAL`.
+Glyph is a Rust tool-use agent. The model emits `CALL tool(...)` blocks, tools execute against real Rust crates, and then the model should stop with a clean `FINAL`.
 
 The contract is not just "make cargo pass." The contract is the whole trace:
 
@@ -21,18 +19,28 @@ FINAL: ...
 That is the core lesson:
 
 ```text
-Verifier RL is only as real as the contract it is optimizing.
-For tool-use agents, the contract is the whole trace, not just the verifier.
+Verifier RL only works if the verifier matches the full behavior you actually want.
+Otherwise, cargo can pass while the agent trace is still unusable.
 ```
 
-The result is not the RLVR win I wanted. SFT built the agent. RLVR changed the
-sampled distribution, but did not improve held-out prompt-level reliability.
+The result is not the RLVR win I wanted. SFT built the agent. RLVR changed the sampled distribution, but did not improve the held-out eval reliability on unseen Rust crates. Each prompt gives the model a crate path and a real tool-use task: patch code until `cargo_test` passes, patch code until `cargo_run` prints exact expected stdout, or simply run an already-correct crate and report the result.
 
-## The Metric Had To Be the Whole Trace
+The post-eval heldout mix is:
+```text
+16 patch_test_pass
+24 patch_test_recover
+9 patch_run_pass
+10 patch_run_recover
+5 run_only
+5 test_only
+```
+
+<!--strict pass@1 regressed 51/69 -> 45/69 and strict pass@4 stayed flat at 59/69. Under a looser "did cargo pass?" lens, pass@4 did move 60/69 -> 62/69, which is a small solving signal buried under FINAL-hygiene drift. -->
+
+## The Metric Had To Match the Agent Contract
 
 Early scoring was too loose. A metric called `terminal_tool_success` could
-credit a trace whose last successful tool was not a verifier. That is not a
-coding-agent success.
+credit a trace whose last successful tool was not a verifier. That is not a coding-agent success.
 
 The metric that mattered became strict `valid_trace`:
 
@@ -46,8 +54,7 @@ valid_trace =
   + no extra tool use after successful verification
 ```
 
-If the model passes tests but keeps patching, emits malformed calls, leaks role
-markers, or never finalizes, it is not a usable tool-use agent.
+If the model passes tests but keeps patching, emits malformed calls, leaks role markers, or never finalizes, it is not a usable tool-use agent.
 
 ## SFT Was the Main Result
 
@@ -64,13 +71,10 @@ verifiers, and solve most of the held-out set.
 Then I tried deeper SFT data. `SFT_V2` added variable-depth recovery. `SFT_V3`
 added deeper recovery plus oversampled clean PASS -> FINAL traces.
 
-![Strict held-out-69 scores for SFT models](assets/final_sft_scores.svg)
-
 ```text
-SFT_V1:     52/69
-SFT_V2:     48/69
-SFT_V3:     50/69
-SFT_HALF_A: 51/69
+SFT_V1: 52/69
+SFT_V2: 48/69
+SFT_V3: 50/69
 ```
 
 The broad held-out score did not improve. But on the original 17 held-out
@@ -86,24 +90,18 @@ That was the first tradeoff. Deeper recovery data added hard-tail capability,
 but disturbed broad reliability. More difficult traces were not automatically
 better. They shifted the policy.
 
-The clean `SFT_HALF_A` run looked normal:
-
-![SFT_HALF_A training curves](assets/final_sft_training_curves.svg)
-
-So RLVR started from a competent SFT policy, not a broken baseline.
-
 ## The Clean Split
 
-To make the RLVR experiment fair, I split `synthetic_data/signal_v3.jsonl` into
-two deterministic halves:
+That tradeoff is why `SFT_HALF_A` exists. At this point, I stopped trying to
+RLVR whichever old SFT checkpoint looked best. To make the experiment clean, I
+split `synthetic_data/signal_v3.jsonl` which was used to train SFT_V3 into two deterministic halves:
 
 ```text
 SFT_HALF_A: 1,042 rows, 762 unique case_ids
 RL_POOL_B:  1,041 rows, 760 unique case_ids
 ```
 
-The split was grouped by `case_id`, so oversampled traces for one case could not
-land on both sides.
+The split was grouped by `case_id`, so oversampled traces for one case could not land on both sides.
 
 Leakage checks:
 
@@ -115,20 +113,25 @@ trace overlap:   0
 `SFT_HALF_A` trained only on half A and scored:
 
 ```text
-SFT_HALF_A strict held-out-69: 51/69
+SFT_HALF_A strict held-out-69 (greedy pass@1 using strict valid_trace): 51/69
 ```
 
-That became the baseline. RLVR needed to beat `51/69` on the same strict
-held-out eval.
+![Strict held-out-69 scores for SFT models](assets/final_sft_scores.svg)
 
-## The Harness Was the Experiment
+The clean `SFT_HALF_A` run looked normal:
+
+![SFT_HALF_A training curves](assets/final_sft_training_curves.svg)
+
+That became the baseline. RLVR needed to beat `51/69` on the same strict
+held-out eval using non-overlapping pool B.
+
+## Debugging the RLVR Harness
 
 Several RLVR attempts failed before the final clean readout. I initially read
 the full-finetune regression as destructive RL, but I no longer think that is a
 clean conclusion. Those runs still had SFT/RLVR alignment problems: the reward,
 chat/tool rendering, and export path were not yet enforcing the exact same
-contract as the SFT data and held-out eval. Tiny target-set LoRA was basically
-flat. Larger LoRA runs were worth debugging, but the first scary regressions
+contract as the SFT data and held-out eval. Later LoRA runs were worth debugging, but the first scary regressions
 were not all model failures. They were harness failures.
 
 The same lesson showed up three ways:
@@ -139,8 +142,7 @@ RL rendering must match the SFT/eval tool protocol.
 RL checkpoint export must match the policy actually served during training.
 ```
 
-Reward first: cargo passing somewhere in the trace is not enough. Top reward
-had to mean held-out-style success: terminal verifier pass, exact CALL syntax,
+Reward first: cargo passing somewhere in the trace is not enough. The highest reward had to require held-out-style success: terminal verifier pass, exact CALL syntax,
 clean final, no role leakage, no repetition, and no tool use after success.
 
 Protocol next: the model was trained on literal ChatML-style tool turns:
@@ -154,7 +156,7 @@ RESULT ...
 <|im_end|>
 ```
 
-Any deviation is not formatting trivia. It changes the learned task.
+**Any deviation is not formatting trivia. It changes the learned task.**
 
 Export was the nastiest one. Two checkpoints appeared to collapse to `0/69`,
 but the traces were not random. They had one extra parenthesis:
@@ -164,7 +166,7 @@ CALL read_file(id="c1", file_path="..."))
 ```
 
 Strict eval rejected every malformed call, no tools ran, and the score went to
-zero. That looked like RL destroyed the model. It had not. The bad repos came
+zero. That looked like RL destroyed the model. **It had not**. The bad repos came
 from non-canonical full-weight exports. The served RL policy was base model plus
 the broadcast LoRA adapter; `weights/step_N` was not the clean served policy.
 
@@ -185,7 +187,7 @@ python -m sft.eval_formal \
 
 Only after those fixes did the RLVR result become worth interpreting.
 
-## One Held-Out Signal
+## The First Clean RLVR Readout
 
 The cleanest early case-level RLVR readout was `RLVR_V1000` step 25, evaluated
 through a direct local merge of the broadcast adapter:
@@ -201,16 +203,16 @@ But it did solve one held-out problem that `SFT_HALF_A` failed:
 
 ![V1000 case-level diff](assets/final_v1000_case_diff.svg)
 
-This case matters because it is exactly the kind of recovery loop SFT still
-struggled with: repeated plausible patches, real verifier feedback, and a
-budget that disappears if the model does not converge.
 
-The case:
+This case matters because it is exactly the kind of recovery loop SFT still struggled with: repeated plausible patches, real verifier feedback, and a limited tool budget that runs out if the model does not reach a solution.
+
+The eval case:
 
 ```text
 eval100_039_select_event_codes_partial_then_full_fix
 kind: patch_test_recover
 ```
+
 
 `SFT_HALF_A` got stuck in a repeated read -> patch -> test loop. It made 21
 tool calls, never passed the tests, exhausted the budget, and emitted no clean
@@ -219,26 +221,24 @@ final.
 `RLVR_V1000` made a better fourth patch, got `cargo_test` passing at call `c12`,
 and emitted a clean one-line `FINAL`.
 
-That is a real strict held-out solve. It is not lenient scoring or an export
-artifact. But the same checkpoint regressed two cases that SFT solved:
+That is a real strict held-out solve. It is not lenient scoring or an export artifact. But the same checkpoint regressed two cases that SFT solved:
 
 ```text
 eval100_048_dispatch_action_match_branch_repair
 eval100_085_log_window_filter_map_recover
 ```
 
-The gain and losses looked symmetric: near-boundary recovery loops where a
-slightly perturbed greedy trajectory diverged early and either converged or did
-not.
+The gain and losses looked like the same kind of effect: RLVR shifted fragile recovery paths. One previously failing case found a passing path, while two previously passing cases drifted into failing paths.
+
 
 The honest claim was:
 
 ```text
 RLVR changed which recovery loops converge under greedy decoding,
-while aggregate reliability regressed by one.
+while net aggregate reliability regressed by one: 51/69 -> 50/69.
 ```
 
-## The Final Clean RLVR Run Still Regressed Greedy
+## The Final Clean RLVR Preserved Cargo Solving but Regressed Strict Greedy Validity
 
 The final run had everything verified: a binary reward measured to emit exactly
 0 or 10 (with 10 equal to strict held-out validity on every rollout checked), a
@@ -295,12 +295,14 @@ eval100_099_filter_map_inventory_restock_report:        1/4 -> 0/4
 The original V1000 signal case, `eval100_039`, shows up in that gains list at
 1/4 -- a single-rollout flip, nothing more.
 
-But the aggregate prompt-level result was flat. RLVR increased valid rollout
-count by five and made four more prompts stable at 4/4, while losing three
+But the aggregate prompt-level result was flat. RLVR increased valid rollout count by five and made four more prompts stable at 4/4, while losing three
 prompt-level pass@4 cases. And the rollout-level shift does not clear the noise
 floor: at a ~68% success rate, one standard deviation on 276 rollouts is about
 8, so +5 is statistically indistinguishable from zero. That is not a win. It is
 not even a claimable signal.
+
+<!--Across 69 x 4 = 276 sampled attempts, RLVR produced 190 valid traces instead of 185, so 5 more successful rollouts even if number of prompts solved at least stayed 59/69.-->
+
 
 The one effect that did reproduce is negative. The two run_only losses
 (`eval100_097`, `eval100_099`) kept cargo passing 4/4 while validity fell to
@@ -325,12 +327,11 @@ V999 step 10:   50/69                  45/69
 RLVR did not degrade Rust solving at all. The entire strict regression is
 final-answer hygiene, concentrated in the run_only drift above. Cargo-only
 pass@4 even ticked up (60/69 -> 62/69 prompts, 203 -> 205 rollouts), but that
-sits inside the same noise floor as everything else, so it is not claimable
-either.
+sits inside the same noise floor as everything else, so it is not claimable either.
 
 This is not a reward-contract failure. The reward scored multiline-FINAL
-successes exactly 0, verified across every rollout. It is a training-coverage
-failure: the correct contract had almost no run_only groups to apply gradient
+successes exactly 0, verified across every rollout. It is a **training-coverage
+failure**: the correct contract had almost no `run_only` groups to apply gradient
 to, so unrelated drift in that region went undefended. The fix is data
 balance, not reward design.
 
@@ -339,17 +340,12 @@ balance, not reward design.
 SFT gave the model a strong prior for the exact tool protocol and a decent
 greedy repair strategy.
 
-RLVR perturbed that policy enough to change recovery trajectories. Sometimes
+RLVR shifted that policy enough to change recovery trajectories. Sometimes
 that flipped a case in. Sometimes it flipped cases out. Under pass@4, the prompt
 set stayed flat at `59/69`, but the sampled rollout count moved slightly upward.
 
-There is also a structural mismatch worth naming: training optimizes the
-temperature-0.8 sampling distribution, while the headline eval is greedy
-decode. A policy can genuinely shift its sampled distribution while its argmax
-path moves unpredictably -- which is exactly what checkpoint-to-checkpoint
-churn in the greedy solved set looks like. On a 69-prompt greedy eval with a
-noise floor of roughly plus or minus three cases, a true RL effect of one or
-two cases is smaller than the instrument can resolve.
+There is also a structural mismatch worth naming: training optimizes the temperature-0.8 sampling distribution, while the headline eval is greedy decode. A policy can genuinely shift its sampled distribution while its argmax path moves unpredictably, which is exactly what checkpoint-to-checkpoint churn in the greedy solved set looks like. On a 69-prompt greedy eval with a noise floor of roughly plus or minus three cases, a true RL effect of one or two cases is too small to separate from eval noise.
+
 
 The model was not learning a broadly better repair policy. It was reshuffling
 near-boundary paths. The final measurement says:
@@ -367,8 +363,10 @@ The final readout:
 ```text
 SFT is the main result.
 Strict evals are non-negotiable.
-RLVR's rollout-level gain was within sampling noise; prompt-level pass@4 was flat.
-Greedy held-out performance regressed, partly from a diagnosed data-imbalance drift.
+RLVR slightly improved sampled cargo-solving: cargo pass@4 moved 60/69 -> 62/69.
+But strict agent validity did not improve: strict pass@4 stayed 59/69,
+and greedy strict held-out regressed 51/69 -> 45/69.
+The gap came from final-answer hygiene drift, especially run_only cases.
 Most apparent RL collapse was harness, reward, protocol, or export mismatch,
 not the policy.
 ```
@@ -376,6 +374,6 @@ not the policy.
 I wanted a simple RLVR result. The useful finding is sharper:
 
 ```text
-Verifier RL is only as real as the contract it is optimizing.
+Verifier RL only works if the verifier matches the full behavior you actually want.
 For tool-use agents, the contract is the whole trace, not just the verifier.
 ```
