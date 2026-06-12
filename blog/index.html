@@ -233,6 +233,18 @@ pre code { padding: 0; border: 0; background: transparent; color: inherit; font-
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 13px;
 }
+.model-tag {
+  flex: 0 1 auto;
+  max-width: 48%;
+  border: 1px solid rgba(22, 163, 74, .42);
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: rgba(22, 163, 74, .08);
+  color: #dfffea;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .live-dots {
   display: inline-flex;
   gap: 6px;
@@ -410,9 +422,10 @@ Otherwise, cargo can pass while the agent trace is still unusable.
 <template id="demo-sft-success">
   <div class="live-toolbar">
     <span><span class="live-dots"><i></i><i></i><i></i></span>SFT_HALF_A held-out replay</span>
-    <span>6 tool calls / real cargo execution</span>
+    <span class="model-tag">model: SFT_HALF_A</span>
   </div>
   <div class="live-stream">
+    <div class="stream-line"><span class="role system">model</span><code>SFT_HALF_A | artifact: runs/SIGNAL_v3_HALF_A_SFT_E3_LR2E5/final | 6 tool calls</code></div>
     <div class="stream-line"><span class="role system">system</span><code>Emit <span class="assistant">CALL tool(...)</span> blocks. Tools execute against a real Rust crate. Stop only after verifier success with a clean <span class="final">FINAL</span>.</code></div>
     <div class="stream-line"><span class="role user">user</span><code>In <span class="final">active_tags_filter_map_join</span>, fix the iterator pipeline in <span class="final">src/main.rs</span> so running the binary prints the expected active tags.</code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id="c1", file_path=".../active_tags_filter_map_join/src/main.rs")</code></div>
@@ -444,9 +457,10 @@ core,fast,safe</code></div>
 <template id="demo-rlvr-signal">
   <div class="live-toolbar">
     <span><span class="live-dots"><i></i><i></i><i></i></span>RLVR_V1000 signal replay</span>
-    <span>strict solve, aggregate still down</span>
+    <span class="model-tag">model: RLVR_V1000 step25 direct merge</span>
   </div>
   <div class="live-stream">
+    <div class="stream-line"><span class="role system">model</span><code>RLVR_V1000 step25 direct merge | base: SFT_HALF_A | strict solve here, aggregate still down</code></div>
     <div class="stream-line"><span class="role user">user</span><code>Recover <span class="final">select_event_codes_partial_then_full_fix</span>; tests require trimming, thresholding, and skipping banned/blank event codes.</code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id="c11", file_path=".../select_event_codes/src/lib.rs",
   find="if code == &quot;skip&quot; || code.is_empty()",
@@ -468,9 +482,10 @@ test result: ok. 3 passed; 0 failed</code></div>
 <template id="demo-budget-fail">
   <div class="live-toolbar">
     <span><span class="live-dots"><i></i><i></i><i></i></span>Budget exhaustion replay</span>
-    <span>many tool calls / no clean FINAL</span>
+    <span class="model-tag">model: SFT_HALF_A</span>
   </div>
   <div class="live-stream">
+    <div class="stream-line"><span class="role system">model</span><code>SFT_HALF_A | many tool calls / no clean FINAL | call_count = 21</code></div>
     <div class="stream-line"><span class="role user">user</span><code>Recover a layered config merge where the binary must print exact host, port, debug, and tag output.</code></div>
     <div class="stream-line"><span class="role model">model</span><code>... repeated read_file / apply_patch / cargo_run cycles ...</code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id="c20", file_path=".../layered_config_merge_precedence/src/main.rs",
@@ -497,9 +512,10 @@ tags=ops,blue</code></div>
 <template id="demo-dirty-final">
   <div class="live-toolbar">
     <span><span class="live-dots"><i></i><i></i><i></i></span>Dirty FINAL replay</span>
-    <span>cargo passed / strict trace failed</span>
+    <span class="model-tag">model: RLVR_V999_STEP10 adapter</span>
   </div>
   <div class="live-stream">
+    <div class="stream-line"><span class="role system">model</span><code>RLVR_V999_STEP10 adapter on SFT_HALF_A | cargo passed / strict trace failed</code></div>
     <div class="stream-line"><span class="role user">user</span><code>Run an already-correct CSV validation report crate and stop cleanly after the verifier succeeds.</code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL cargo_run(id="c1", project_path=".../csv_record_validation_report")</code></div>
     <div class="stream-line"><span class="role env">env</span><code><span class="ok">RESULT c1: success</span>
