@@ -3,29 +3,32 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SFT Built the Agent. RLVR Moved Samples, Not Held-Out Reliability.</title>
+  <title>SFT Built the Agent. RLVR Undercovered What Kept It Reliable.</title>
   <meta name="description" content="A postmortem on Glyph, a Rust tool-use agent experiment built around SFT and PRIME-RL RLVR.">
   <style>
 :root {
   color-scheme: dark;
   --bg: #000;
-  --ink: #f4f4f5;
-  --muted: #a1a1aa;
-  --soft: #d4d4d8;
-  --line: #27272a;
-  --line-soft: #18181b;
-  --accent: #5eead4;
-  --accent-soft: rgba(94, 234, 212, .22);
-  --code: #09090b;
+  --ink: #f7f7f2;
+  --muted: #8d938d;
+  --soft: #d8ddd6;
+  --line: #242824;
+  --line-soft: #151815;
+  --accent: #75ff9f;
+  --accent-2: #b7ffcf;
+  --accent-soft: rgba(117, 255, 159, .18);
+  --code: #050805;
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
+::selection { background: var(--accent); color: #000; }
 body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  line-height: 1.68;
+  font-family: "Helvetica Neue", Helvetica, Arial, ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.62;
+  letter-spacing: -.005em;
 }
 a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 4px; }
 .progress {
@@ -40,13 +43,14 @@ a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset:
 .hero {
   max-width: 900px;
   margin: 0 auto;
-  padding: 82px 24px 38px;
+  padding: 72px 24px 34px;
   border-bottom: 1px solid var(--line);
 }
 .kicker {
   margin: 0 0 18px;
   color: var(--accent);
-  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: .15em;
   text-transform: uppercase;
@@ -55,16 +59,16 @@ h1 {
   margin: 0;
   max-width: 800px;
   color: #fff;
-  font-size: clamp(34px, 5vw, 56px);
+  font-size: clamp(32px, 4.7vw, 52px);
   line-height: 1.06;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
 }
 .hero-copy {
   max-width: 760px;
-  margin: 24px 0 0;
+  margin: 22px 0 0;
   color: var(--soft);
-  font-size: clamp(19px, 2vw, 23px);
-  line-height: 1.55;
+  font-size: clamp(18px, 2vw, 21px);
+  line-height: 1.56;
 }
 .hero-actions {
   display: flex;
@@ -76,9 +80,10 @@ h1 {
   display: inline-flex;
   align-items: center;
   min-height: 32px;
-  color: var(--soft);
-  font-size: 15px;
-  font-weight: 650;
+  color: var(--accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 700;
   text-decoration: none;
 }
 .pill:hover { color: #fff; }
@@ -89,47 +94,63 @@ h1 {
 }
 .panel {
   margin: 0;
-  padding: 46px 0;
+  padding: 42px 0;
   border-bottom: 1px solid var(--line-soft);
 }
 .article > .panel > h1 { display: none; }
 h2 {
+  position: relative;
   margin: 0 0 20px;
   color: #fff;
-  font-size: clamp(25px, 3.2vw, 34px);
+  font-size: clamp(24px, 3vw, 32px);
   line-height: 1.12;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.035em;
 }
-p, li { color: var(--soft); font-size: 20px; line-height: 1.72; }
-p { max-width: 760px; margin: 17px 0; }
+h2::before {
+  content: "";
+  display: block;
+  width: 42px;
+  height: 2px;
+  margin-bottom: 13px;
+  background: var(--accent);
+}
+p, li { color: var(--soft); font-size: 19px; line-height: 1.74; }
+p { max-width: 760px; margin: 16px 0; }
 ul, ol { max-width: 760px; padding-left: 1.35em; }
 strong { color: #fff; font-weight: 800; }
 .key {
-  color: #fff;
+  color: #000;
   font-weight: 800;
-  padding: 0 .04em;
-  background: linear-gradient(transparent 62%, var(--accent-soft) 62%);
+  padding: .03em .22em .05em;
+  border-radius: 3px;
+  background: var(--accent);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
-.key code { color: #fff; border-color: rgba(94, 234, 212, .38); }
+.key code {
+  color: #000;
+  border-color: rgba(0, 0, 0, .18);
+  background: rgba(0, 0, 0, .08);
+}
 code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   font-size: .9em;
   padding: .07em .28em;
   border: 1px solid var(--line);
   border-radius: 5px;
-  background: #050505;
+  background: #050805;
   color: #fafafa;
 }
 pre {
   max-width: 860px;
-  margin: 24px 0;
+  margin: 22px 0;
   padding: 20px 22px;
   overflow-x: auto;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 6px;
   background: var(--code);
   color: #f8fafc;
-  font-size: 15px;
+  font-size: 14.5px;
   line-height: 1.58;
 }
 pre code { padding: 0; border: 0; background: transparent; color: inherit; font-size: inherit; }
@@ -147,10 +168,10 @@ table {
   overflow-x: auto;
   margin: 24px 0;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 6px;
   border-collapse: separate;
   border-spacing: 0;
-  background: #050505;
+  background: #050805;
   font-size: 17px;
 }
 th, td { padding: 13px 15px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
@@ -159,19 +180,22 @@ td { color: var(--soft); }
 tr:last-child td { border-bottom: 0; }
 p:has(img) {
   max-width: 100%;
-  margin: 34px 0;
-  padding: 16px;
+  margin: 32px 0;
+  padding: 18px;
   border: 1px solid var(--line);
-  border-radius: 14px;
-  background: #050505;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(117,255,159,.07), transparent 32%),
+    #030503;
+  box-shadow: 0 0 0 1px rgba(117,255,159,.06) inset;
 }
 p:has(img) img { margin: 0; }
 img {
   display: block;
   width: min(100%, 860px);
   height: auto;
-  border-radius: 8px;
-  background: #050505;
+  border-radius: 4px;
+  background: #050805;
 }
 .footer { max-width: 900px; margin: 0 auto; padding: 0 24px 56px; color: var(--muted); }
 .footer-inner { padding-top: 24px; border-top: 1px solid var(--line); }
@@ -179,8 +203,8 @@ img {
   .hero { padding: 42px 18px 28px; }
   .article { padding: 8px 18px 48px; }
   .panel { padding: 34px 0; }
-  h1 { font-size: 36px; }
-  h2 { font-size: 26px; }
+  h1 { font-size: 34px; }
+  h2 { font-size: 25px; }
   p, li { font-size: 18px; }
   pre { font-size: 14px; }
 }
@@ -190,15 +214,15 @@ img {
   <div class="progress" id="progress"></div>
   <header class="hero">
     <p class="kicker">Glyph / Rust Tool-Use Agents / RLVR Postmortem</p>
-    <h1>SFT Built the Agent. RLVR Moved Samples, Not Held-Out Reliability.</h1>
-    <p class="hero-copy">This is where I am ending this round of Glyph: the SFT model worked, the RLVR dataset moved behavior, and the held-out eval still did not improve.</p>
+    <h1>SFT Built the Agent. RLVR Undercovered What Kept It Reliable.</h1>
+    <p class="hero-copy">This is where I am ending this round of Glyph: SFT learned the agent loop, but the RLVR pool underrepresented critical held-out behaviors, so the policy drifted away from parts of what made the SFT model reliable.</p>
     <div class="hero-actions">
       <a class="pill" href="https://github.com/JayZenith/glyph">GitHub repo</a>
       <a class="pill" href="finalized_blogv3.md">Markdown source</a>
     </div>
   </header>
   <main class="article">
-    <section class="panel lead-panel"><h1>SFT Built the Agent. RLVR Moved Samples, Not Held-Out Reliability.</h1>
+    <section class="panel lead-panel"><h1>SFT Built the Agent. RLVR Undercovered What Kept It Reliable.</h1>
 <p>This is where I am ending this round of Glyph.</p>
 <p>Code: <a href="https://github.com/JayZenith/glyph">https://github.com/JayZenith/glyph</a></p>
 <p>Glyph is a <span class="key">Rust tool-use agent</span>. The model emits <code>CALL tool(...)</code> blocks, tools execute against real Rust crates, and then the model should stop with a clean <code>FINAL</code>.</p>
