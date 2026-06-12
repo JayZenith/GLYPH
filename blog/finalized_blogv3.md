@@ -2,6 +2,8 @@
 
 This is where I am ending this round of Glyph.
 
+Code: <https://github.com/JayZenith/glyph>
+
 Glyph is a Rust tool-use agent. The model emits `CALL tool(...)` blocks, tools execute against real Rust crates, and then the model should stop with a clean `FINAL`.
 
 I built Glyph as an end-to-end Rust tool-use agent experiment stack around PRIME-RL: synthetic task generation, SFT trace construction, held-out evals, the real Rust tool harness, RLVR task integration, reward validation, checkpoint export, and final pass@k measurement.

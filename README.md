@@ -1,5 +1,7 @@
 # Glyph
 
+Repository: <https://github.com/JayZenith/glyph>
+
 Glyph is a Rust tool-use agent experiment.
 
 The model emits `CALL tool(...)` blocks, tools execute against real Rust crates,
