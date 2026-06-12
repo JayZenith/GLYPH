@@ -125,6 +125,68 @@ pre {
   line-height: 1.62;
 }
 pre code { padding: 0; border: 0; background: transparent; color: inherit; font-size: inherit; }
+.demo-panel {
+  border-color: rgba(34, 197, 94, .24);
+}
+.demo-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  max-width: 860px;
+  margin: 22px 0;
+}
+.demo-chip {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #050805;
+  color: var(--soft);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.demo-chip strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--accent);
+  font-family: "Helvetica Neue", Helvetica, Arial, ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.trace {
+  position: relative;
+  max-width: 860px;
+  margin-top: 24px;
+  border: 1px solid rgba(34, 197, 94, .28);
+  border-radius: 8px;
+  background: #020402;
+  overflow: hidden;
+}
+.trace-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+}
+.trace-head strong { color: var(--accent); }
+.trace pre {
+  margin: 0;
+  max-width: none;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 15px;
+}
+.trace .assistant { color: #38bdf8; }
+.trace .tool { color: #facc15; }
+.trace .success { color: #22c55e; }
+.trace .fail { color: #fb7185; }
+.trace .final { color: #86efac; }
 blockquote {
   max-width: 800px;
   margin: 24px 0;
@@ -178,6 +240,8 @@ img {
   h2 { font-size: 25px; }
   p, li { font-size: 18px; }
   pre { font-size: 15px; }
+  .demo-meta { grid-template-columns: 1fr; }
+  .trace pre { font-size: 13.5px; }
 }
 </style>
 </head>
@@ -216,6 +280,133 @@ Otherwise, cargo can pass while the agent trace is still unusable.
 5 run_only
 5 test_only
 </code></pre>
+</section>
+<section class="panel demo-panel"><h2 id="captured-demo-trace">Captured Demo Trace</h2>
+<p>This is the closest thing to a live demo inside the post: a real held-out eval trace copied from <code>new_results/SFT_HALF_A/eval_formal_heldout_69.json</code>. The model edits a Rust crate, gets a real compiler error from <code>cargo_run</code>, fixes the patch, passes the verifier, then stops with a clean <code>FINAL</code>.</p>
+<div class="demo-meta">
+  <div class="demo-chip"><strong>Case</strong>eval100_024_active_tags_filter_map_join</div>
+  <div class="demo-chip"><strong>Kind</strong>patch_run_pass</div>
+  <div class="demo-chip"><strong>Strict Result</strong>valid_trace = true</div>
+</div>
+<p>These are compact excerpts, not synthetic examples. They show what the scorer actually sees: assistant calls, tool results, verifier output, and whether the trace terminates cleanly.</p>
+<div class="trace">
+  <div class="trace-head"><strong>SFT_HALF_A replay</strong><span>6 tool calls / real cargo execution</span></div>
+<pre><code><span class="assistant">CALL read_file</span>(id="c1", file_path=".../active_tags_filter_map_join/src/main.rs")
+
+<span class="tool">RESULT c1</span>: <span class="success">success</span>
+stdout:
+    .filter_map(|(name, enabled)| if !enabled { Some(*name) } else { None })
+
+<span class="assistant">CALL apply_patch</span>(id="c2", find="if !enabled", replace="if enabled")
+
+<span class="tool">RESULT c2</span>: <span class="success">success</span>
+stdout: patch applied
+
+<span class="assistant">CALL cargo_run</span>(id="c3", project_path=".../active_tags_filter_map_join")
+
+<span class="tool">RESULT c3</span>: <span class="fail">failed</span>
+stderr:
+error[E0308]: mismatched types
+expected `bool`, found `&amp;bool`
+help: consider dereferencing the borrow
+  if *enabled { Some(*name) } else { None }
+
+<span class="assistant">CALL read_file</span>(id="c4", file_path=".../src/main.rs")
+
+<span class="tool">RESULT c4</span>: <span class="success">success</span>
+stdout:
+    .filter_map(|(name, enabled)| if enabled { Some(*name) } else { None })
+
+<span class="assistant">CALL apply_patch</span>(id="c5", find="if enabled", replace="if *enabled")
+
+<span class="tool">RESULT c5</span>: <span class="success">success</span>
+stdout: patch applied
+
+<span class="assistant">CALL cargo_run</span>(id="c6", project_path=".../active_tags_filter_map_join")
+
+<span class="tool">RESULT c6</span>: <span class="success">success</span>
+stdout:
+core,fast,safe
+
+<span class="final">FINAL:</span> Fixed the iterator pipeline so filter_map keeps active tags and dereferences the boolean flag, producing the expected output.</code></pre>
+</div>
+<div class="trace">
+  <div class="trace-head"><strong>RLVR_V1000 signal case</strong><span>one strict held-out solve, not a net win</span></div>
+<pre><code><span class="assistant">CALL apply_patch</span>(id="c11", file_path=".../select_event_codes/src/lib.rs",
+  find="if code == &quot;skip&quot; || code.is_empty()",
+  replace="if code == &quot;skip&quot; || code == &quot;ban&quot; || code.is_empty()")
+
+<span class="tool">RESULT c11</span>: <span class="success">success</span>
+stdout: patch applied
+
+<span class="assistant">CALL cargo_test</span>(id="c12", project_path=".../select_event_codes_partial_then_full_fix")
+
+<span class="tool">RESULT c12</span>: <span class="success">success</span>
+stdout:
+running 3 tests
+test tests::keeps_only_positive_scores_at_or_above_threshold ... ok
+test tests::skips_banned_and_blank_codes ... ok
+test tests::trims_parts_and_accepts_zero_padded_scores ... ok
+
+test result: ok. 3 passed; 0 failed
+
+<span class="final">FINAL:</span> Fixed the iterator pipeline in src/lib.rs so it trims input, rejects blank and banned codes, and only uppercases valid positive-score codes; all tests now pass.</code></pre>
+</div>
+<div class="trace">
+  <div class="trace-head"><strong>Failure mode: budget exhaustion</strong><span>many tool calls, no clean FINAL</span></div>
+<pre><code><span class="assistant">CALL apply_patch</span>(id="c20", file_path=".../layered_config_merge_precedence/src/main.rs",
+  find="debug: layer.debug,",
+  replace="debug: layer.debug,")
+
+<span class="tool">RESULT c20</span>: <span class="success">success</span>
+stdout: patch applied
+
+<span class="assistant">CALL cargo_run</span>(id="c21", project_path=".../layered_config_merge_precedence")
+
+<span class="tool">RESULT c21</span>: <span class="fail">failed</span>
+stdout:
+host=env.example.com
+port=9000
+debug=&lt;none&gt;
+tags=ops,blue
+stderr:
+expected exact output:
+host=env.example.com
+port=9000
+debug=false
+tags=ops,blue
+
+metrics:
+failure_buckets = missing_final, dirty_final, final_before_tool_completion, task_failure
+call_count = 21</code></pre>
+</div>
+<div class="trace">
+  <div class="trace-head"><strong>Failure mode: cargo passed, final was dirty</strong><span>RLVR_V999 run_only drift</span></div>
+<pre><code><span class="assistant">CALL cargo_run</span>(id="c1", project_path=".../csv_record_validation_report")
+
+<span class="tool">RESULT c1</span>: <span class="success">success</span>
+stdout:
+valid: 2
+invalid: 4
+errors:
+line 2: bad age
+line 3: bad id
+line 4: bad active
+line 6: wrong field count
+
+<span class="final">FINAL:</span> valid: 2
+invalid: 4
+errors:
+line 2: bad age
+line 3: bad id
+line 4: bad active
+line 6: wrong field count
+
+metrics:
+cargo verifier success = true
+valid_trace = false
+failure_buckets = bad_final_hygiene</code></pre>
+</div>
 </section>
 <section class="panel" style="--n:1"><h2 id="the-metric-had-to-match-the-agent-contract">The Metric Had To Match the Agent Contract</h2>
 <p>Early scoring was too loose. A metric called <code>terminal_tool_success</code> could
