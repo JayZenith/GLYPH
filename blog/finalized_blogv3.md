@@ -6,6 +6,8 @@ Glyph is a Rust tool-use agent. The model emits `CALL tool(...)` blocks, tools e
 
 I built Glyph as an end-to-end Rust tool-use agent experiment stack around PRIME-RL: synthetic task generation, SFT trace construction, held-out evals, the real Rust tool harness, RLVR task integration, reward validation, checkpoint export, and final pass@k measurement.
 
+I used Claude Code and Codex heavily as coding assistants during implementation and debugging, but the system design, experimental decisions, eval criteria, data generation, RLVR setup, analysis, and final conclusions are mine.
+
 The contract is not just "make cargo pass." The contract is the whole trace:
 
 ```text
@@ -27,7 +29,7 @@ Otherwise, cargo can pass while the agent trace is still unusable.
 
 The result is not the RLVR win I wanted. SFT built the agent. RLVR changed the sampled distribution, but did not improve the held-out eval reliability on unseen Rust crates. Each prompt gives the model a crate path and a real tool-use task: patch code until `cargo_test` passes, patch code until `cargo_run` prints exact expected stdout, or simply run an already-correct crate and report the result.
 
-The post-eval heldout mix is:
+The held-out eval mix is:
 ```text
 16 patch_test_pass
 24 patch_test_recover
@@ -224,7 +226,7 @@ final.
 `RLVR_V1000` made a better fourth patch, got `cargo_test` passing at call `c12`,
 and emitted a clean one-line `FINAL`.
 
-That is a real strict held-out solve. It is not lenient scoring or an export artifact. But the same checkpoint regressed two cases that SFT solved:
+That was a real held-out solve under the strict eval: the tools ran, cargo passed, and the trace ended with a clean FINAL. But the same checkpoint regressed two cases that SFT solved:
 
 ```text
 eval100_048_dispatch_action_match_branch_repair
