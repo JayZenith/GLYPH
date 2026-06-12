@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SFT Built the Agent. RLVR Undercovered What Kept It Reliable.</title>
+  <title>SFT Built the Agent. RLVR's Pool Didn't Cover What Kept It Reliable.</title>
   <meta name="description" content="A postmortem on Glyph, a Rust tool-use agent experiment built around SFT and PRIME-RL RLVR.">
   <style>
 :root {
@@ -184,11 +184,11 @@ img {
 <body>
   <header class="hero">
     <p class="kicker">Glyph / Rust Tool-Use Agents / RLVR Postmortem</p>
-    <h1>SFT Built the Agent. RLVR Undercovered What Kept It Reliable.</h1>
+    <h1>SFT Built the Agent. RLVR's Pool Didn't Cover What Kept It Reliable.</h1>
     <p class="hero-copy">This is where I am ending this round of Glyph: SFT learned the agent loop, but the RLVR pool underrepresented critical held-out behaviors, so the policy drifted away from parts of what made the SFT model reliable.</p>
   </header>
   <main class="article">
-    <section class="panel lead-panel"><h1>SFT Built the Agent. RLVR Undercovered What Kept It Reliable.</h1>
+    <section class="panel lead-panel"><h1>SFT Built the Agent. RLVR's Pool Didn't Cover What Kept It Reliable.</h1>
 <p>This is where I am ending this round of Glyph.</p>
 <p>Code: <a href="https://github.com/JayZenith/glyph">https://github.com/JayZenith/glyph</a></p>
 <p>Glyph is a <span class="key">Rust tool-use agent</span>. The model emits <code>CALL tool(...)</code> blocks, tools execute against real Rust crates, and then the model should stop with a clean <code>FINAL</code>.</p>
@@ -364,7 +364,7 @@ RLVR_V999 step 10:      45/69
 path: <code>SFT_HALF_A</code> versus <code>SFT_HALF_A + RLVR_V999_STEP10</code>, same prompts, same
 tool budget, same temperature, real cargo execution, separate sandbox per
 rollout.</p>
-<p><img alt="V999 held-out-69 pass@4" src="assets/final_v999_passk4.svg?v=pop1" /></p>
+<p><img alt="V999 held-out-69 pass@4" src="assets/final_v999_passk4.svg?v=pop2" /></p>
 <p>The result:</p>
 <pre><code class="language-text">SFT_HALF_A valid pass@4 prompts:       59/69
 RLVR_V999_STEP10 valid pass@4 prompts: 59/69
