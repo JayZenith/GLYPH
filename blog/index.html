@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SFT Worked. RLVR Moved the Distribution, But Did Not Win.</title>
+  <title>RLVR Fell Short: The Dataset Moved Samples, Not Held-Out Reliability.</title>
   <meta name="description" content="A postmortem on Glyph, a Rust tool-use agent experiment built around SFT and PRIME-RL RLVR.">
   <style>
 :root {
@@ -15,6 +15,7 @@
   --line: #27272a;
   --line-soft: #18181b;
   --accent: #5eead4;
+  --accent-soft: rgba(94, 234, 212, .14);
   --code: #09090b;
 }
 * { box-sizing: border-box; }
@@ -52,10 +53,10 @@ a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset:
 }
 h1 {
   margin: 0;
-  max-width: 860px;
+  max-width: 800px;
   color: #fff;
-  font-size: clamp(42px, 7vw, 76px);
-  line-height: .98;
+  font-size: clamp(36px, 5.5vw, 62px);
+  line-height: 1.03;
   letter-spacing: -0.03em;
 }
 .hero-copy {
@@ -103,6 +104,11 @@ p, li { color: var(--soft); font-size: 20px; line-height: 1.72; }
 p { max-width: 760px; margin: 17px 0; }
 ul, ol { max-width: 760px; padding-left: 1.35em; }
 strong { color: #fff; font-weight: 800; }
+.key {
+  color: #fff;
+  font-weight: 800;
+  background: linear-gradient(transparent 58%, var(--accent-soft) 58%);
+}
 code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   font-size: .9em;
@@ -177,7 +183,7 @@ img {
   <div class="progress" id="progress"></div>
   <header class="hero">
     <p class="kicker">Glyph / Rust Tool-Use Agents / RLVR Postmortem</p>
-    <h1>SFT Worked. RLVR Moved the Distribution, But Did Not Win.</h1>
+    <h1>RLVR Fell Short: The Dataset Moved Samples, Not Held-Out Reliability.</h1>
     <p class="hero-copy">This is where I am ending this round of Glyph.</p>
     <div class="hero-actions">
       <a class="pill" href="https://github.com/JayZenith/glyph">GitHub repo</a>
@@ -185,13 +191,13 @@ img {
     </div>
   </header>
   <main class="article">
-    <section class="panel lead-panel"><h1>SFT Worked. RLVR Moved the Distribution, But Did Not Win.</h1>
+    <section class="panel lead-panel"><h1>RLVR Fell Short: The Dataset Moved Samples, Not Held-Out Reliability.</h1>
 <p>This is where I am ending this round of Glyph.</p>
 <p>Code: <a href="https://github.com/JayZenith/glyph">https://github.com/JayZenith/glyph</a></p>
-<p>Glyph is a Rust tool-use agent. The model emits <code>CALL tool(...)</code> blocks, tools execute against real Rust crates, and then the model should stop with a clean <code>FINAL</code>.</p>
+<p>Glyph is a <span class="key">Rust tool-use agent</span>. The model emits <code>CALL tool(...)</code> blocks, tools execute against real Rust crates, and then the model should stop with a clean <code>FINAL</code>.</p>
 <p>I built Glyph as an end-to-end Rust tool-use agent experiment stack around PRIME-RL: synthetic task generation, SFT trace construction, held-out evals, the real Rust tool harness, RLVR task integration, reward validation, checkpoint export, and final pass@k measurement.</p>
 <p>I used Claude Code and Codex heavily as coding assistants during implementation and debugging, but the system design, experimental decisions, eval criteria, data generation, RLVR setup, analysis, and final conclusions are mine.</p>
-<p>The contract is not just "make cargo pass." The contract is the whole trace:</p>
+<p>The contract is not just "make cargo pass." The contract is the <span class="key">whole trace</span>:</p>
 <pre><code class="language-text">CALL read_file(...)
 RESULT ...
 CALL apply_patch(...)
@@ -204,7 +210,7 @@ FINAL: ...
 <pre><code class="language-text">Verifier RL only works if the verifier matches the full behavior you actually want.
 Otherwise, cargo can pass while the agent trace is still unusable.
 </code></pre>
-<p>The result is not the RLVR win I wanted. SFT built the agent. RLVR changed the sampled distribution, but did not improve the held-out eval reliability on unseen Rust crates.</p>
+<p>The result is <span class="key">not the RLVR win I wanted</span>. SFT built the agent. RLVR changed the sampled distribution, but did not improve the held-out eval reliability on unseen Rust crates.</p>
 <p>Each prompt gives the model a crate path and a real tool-use task: patch code until <code>cargo_test</code> passes, patch code until <code>cargo_run</code> prints exact expected stdout, or simply run an already-correct crate and report the result. The held-out eval mix is:</p>
 <pre><code class="language-text">16 patch_test_pass
 24 patch_test_recover
@@ -217,7 +223,7 @@ Otherwise, cargo can pass while the agent trace is still unusable.
 <section class="panel" style="--n:1"><h2 id="the-metric-had-to-match-the-agent-contract">The Metric Had To Match the Agent Contract</h2>
 <p>Early scoring was too loose. A metric called <code>terminal_tool_success</code> could
 credit a trace whose last successful tool was not a verifier. That is not a coding-agent success.</p>
-<p>The metric that mattered became strict <code>valid_trace</code>:</p>
+<p>The metric that mattered became strict <span class="key"><code>valid_trace</code></span>:</p>
 <pre><code class="language-text">valid_trace =
   terminal cargo_test or cargo_run success
   + clean FINAL after that verifier success
@@ -270,7 +276,7 @@ trace overlap:   0
 <p><img alt="Strict held-out-69 scores for SFT models" src="assets/final_sft_scores.svg" /></p>
 <p>The clean <code>SFT_HALF_A</code> run looked normal:</p>
 <p><img alt="SFT_HALF_A training curves" src="assets/final_sft_training_curves.svg" /></p>
-<p>That became the baseline. RLVR needed to beat <code>51/69</code> on the same strict
+<p>That became the baseline. RLVR needed to beat <span class="key"><code>51/69</code></span> on the same strict
 held-out eval using non-overlapping pool B.</p>
 </section>
 <section class="panel" style="--n:4"><h2 id="debugging-the-rlvr-harness">Debugging the RLVR Harness</h2>
@@ -295,7 +301,7 @@ CALL ...
 RESULT ...
 &lt;|im_end|&gt;
 </code></pre>
-<p><strong>Any deviation is not formatting trivia. It changes the learned task.</strong></p>
+<p><strong>Any deviation is not formatting trivia.</strong> <span class="key">It changes the learned task.</span></p>
 <p>Export was the nastiest one. Two checkpoints appeared to collapse to <code>0/69</code>,
 but the traces were not random. They had one extra parenthesis:</p>
 <pre><code class="language-text">CALL read_file(id=&quot;c1&quot;, file_path=&quot;...&quot;))
@@ -321,7 +327,7 @@ through a direct local merge of the broadcast adapter:</p>
 <pre><code class="language-text">SFT_HALF_A:                     51/69
 RLVR_V1000 step25 direct merge: 50/69
 </code></pre>
-<p>So it did not improve overall.</p>
+<p>So it <span class="key">did not improve overall</span>.</p>
 <p>But it did solve one held-out problem that <code>SFT_HALF_A</code> failed:</p>
 <p><img alt="V1000 case-level diff" src="assets/final_v1000_case_diff.svg" /></p>
 <p>This case matters because it is exactly the kind of recovery loop SFT still struggled with: repeated plausible patches, real verifier feedback, and a limited tool budget that runs out if the model does not reach a solution.</p>
@@ -387,7 +393,7 @@ eval100_099_filter_map_inventory_restock_report:        1/4 -&gt; 0/4
 <p>But the aggregate prompt-level result was flat. RLVR increased valid rollout count by five and made four more prompts stable at 4/4, while losing three
 prompt-level pass@4 cases. And the rollout-level shift does not clear the noise
 floor: at a ~68% success rate, one standard deviation on 276 rollouts is about
-8, so +5 is statistically indistinguishable from zero. That is not a win. It is
+8, so +5 is statistically indistinguishable from zero. <span class="key">That is not a win.</span> It is
 not even a claimable signal.</p>
 <p>The one effect that did reproduce is negative. The two run_only losses
 (<code>eval100_097</code>, <code>eval100_099</code>) kept cargo passing 4/4 while validity fell to
@@ -410,8 +416,8 @@ final-answer hygiene, concentrated in the run_only drift above. Cargo-only
 pass@4 even ticked up (60/69 -&gt; 62/69 prompts, 203 -&gt; 205 rollouts), but that
 sits inside the same noise floor as everything else, so it is not claimable either.</p>
 <p>This is not a reward-contract failure. The reward scored multiline-FINAL
-successes exactly 0, verified across every rollout. It is a <strong>training-coverage
-failure</strong>: the correct contract had almost no <code>run_only</code> groups to apply gradient
+successes exactly 0, verified across every rollout. It is a <span class="key">training-coverage
+failure</span>: the correct contract had almost no <code>run_only</code> groups to apply gradient
 to, so unrelated drift in that region went undefended. The fix is data
 balance, not reward design.</p>
 </section>
