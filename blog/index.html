@@ -31,15 +31,6 @@ body {
   letter-spacing: -.005em;
 }
 a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 4px; }
-.progress {
-  position: fixed;
-  inset: 0 0 auto;
-  height: 2px;
-  z-index: 50;
-  background: var(--accent);
-  transform: scaleX(0);
-  transform-origin: left;
-}
 .hero {
   max-width: 900px;
   margin: 0 auto;
@@ -70,23 +61,6 @@ h1 {
   font-size: clamp(18px, 2vw, 21px);
   line-height: 1.56;
 }
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 24px;
-}
-.pill {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  color: var(--accent);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 13px;
-  font-weight: 700;
-  text-decoration: none;
-}
-.pill:hover { color: #fff; }
 .article {
   max-width: 900px;
   margin: 0 auto;
@@ -208,14 +182,10 @@ img {
 </style>
 </head>
 <body>
-  <div class="progress" id="progress"></div>
   <header class="hero">
     <p class="kicker">Glyph / Rust Tool-Use Agents / RLVR Postmortem</p>
     <h1>SFT Built the Agent. RLVR Undercovered What Kept It Reliable.</h1>
     <p class="hero-copy">This is where I am ending this round of Glyph: SFT learned the agent loop, but the RLVR pool underrepresented critical held-out behaviors, so the policy drifted away from parts of what made the SFT model reliable.</p>
-    <div class="hero-actions">
-      <a class="pill" href="https://github.com/JayZenith/glyph">GitHub repo</a>
-    </div>
   </header>
   <main class="article">
     <section class="panel lead-panel"><h1>SFT Built the Agent. RLVR Undercovered What Kept It Reliable.</h1>
@@ -479,12 +449,5 @@ For tool-use agents, the contract is the whole trace, not just the verifier.
 </code></pre></section>
   </main>
   <footer class="footer"><div class="footer-inner">Code and artifacts: <a href="https://github.com/JayZenith/glyph">github.com/JayZenith/glyph</a>.</div></footer>
-  <script>
-    const bar = document.getElementById('progress');
-    addEventListener('scroll', () => {
-      const max = document.documentElement.scrollHeight - innerHeight;
-      bar.style.transform = `scaleX(${max > 0 ? scrollY / max : 0})`;
-    }, { passive: true });
-  </script>
 </body>
 </html>
