@@ -141,14 +141,14 @@ code {
 pre {
   max-width: 860px;
   margin: 22px 0;
-  padding: 20px 22px;
+  padding: 22px 24px;
   overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--code);
   color: #f8fafc;
-  font-size: 14.5px;
-  line-height: 1.58;
+  font-size: 16px;
+  line-height: 1.62;
 }
 pre code { padding: 0; border: 0; background: transparent; color: inherit; font-size: inherit; }
 blockquote {
@@ -203,7 +203,7 @@ img {
   h1 { font-size: 34px; }
   h2 { font-size: 25px; }
   p, li { font-size: 18px; }
-  pre { font-size: 14px; }
+  pre { font-size: 15px; }
 }
 </style>
 </head>
@@ -301,9 +301,9 @@ trace overlap:   0
 <p><code>SFT_HALF_A</code> trained only on half A and scored:</p>
 <pre><code class="language-text">SFT_HALF_A strict held-out-69 (greedy pass@1 using strict valid_trace): 51/69
 </code></pre>
-<p><img alt="Strict held-out-69 scores for SFT models" src="assets/final_sft_scores.svg?v=black2" /></p>
+<p><img alt="Strict held-out-69 scores for SFT models" src="assets/final_sft_scores.svg?v=pop1" /></p>
 <p>The clean <code>SFT_HALF_A</code> run looked normal:</p>
-<p><img alt="SFT_HALF_A training curves" src="assets/final_sft_training_curves.svg?v=black2" /></p>
+<p><img alt="SFT_HALF_A training curves" src="assets/final_sft_training_curves.svg?v=pop1" /></p>
 <p>That became the baseline. RLVR needed to beat <span class="key"><code>51/69</code></span> on the same strict
 held-out eval using non-overlapping pool B.</p>
 </section>
@@ -357,7 +357,7 @@ RLVR_V1000 step25 direct merge: 50/69
 </code></pre>
 <p>So it <span class="key">did not improve overall</span>.</p>
 <p>But it did solve one held-out problem that <code>SFT_HALF_A</code> failed:</p>
-<p><img alt="V1000 case-level diff" src="assets/final_v1000_case_diff.svg?v=black2" /></p>
+<p><img alt="V1000 case-level diff" src="assets/final_v1000_case_diff.svg?v=pop1" /></p>
 <p>This case matters because it is exactly the kind of recovery loop SFT still struggled with: repeated plausible patches, real verifier feedback, and a limited tool budget that runs out if the model does not reach a solution.</p>
 <p>The eval case:</p>
 <pre><code class="language-text">eval100_039_select_event_codes_partial_then_full_fix
@@ -384,7 +384,7 @@ while net aggregate reliability regressed by one: 51/69 -&gt; 50/69.
 chat template byte-identical to the SFT/eval trace format with a launch-time
 parity assertion, and the safe adapter export path. The adapter checkpoints
 still <span class="key">lost on greedy held-out eval</span>:</p>
-<p><img alt="RLVR held-out-69 did not beat SFT_HALF_A" src="assets/final_rlvr_scores.svg?v=black2" /></p>
+<p><img alt="RLVR held-out-69 did not beat SFT_HALF_A" src="assets/final_rlvr_scores.svg?v=pop1" /></p>
 <pre><code class="language-text">SFT_HALF_A:             51/69
 RLVR_V999 step 5:       46/69
 RLVR_V999 step 10:      45/69
@@ -395,7 +395,7 @@ RLVR_V999 step 10:      45/69
 path: <code>SFT_HALF_A</code> versus <code>SFT_HALF_A + RLVR_V999_STEP10</code>, same prompts, same
 tool budget, same temperature, real cargo execution, separate sandbox per
 rollout.</p>
-<p><img alt="V999 held-out-69 pass@4" src="assets/final_v999_passk4.svg?v=black2" /></p>
+<p><img alt="V999 held-out-69 pass@4" src="assets/final_v999_passk4.svg?v=pop1" /></p>
 <p>The result:</p>
 <pre><code class="language-text">SFT_HALF_A valid pass@4 prompts:       59/69
 RLVR_V999_STEP10 valid pass@4 prompts: 59/69

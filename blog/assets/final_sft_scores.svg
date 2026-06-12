@@ -1,33 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="900" height="420" viewBox="0 0 900 420">
 <rect width="100%" height="100%" fill="#000000"/>
-<text x="90" y="36" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#22c55e">Strict held-out-69 scores for SFT models</text>
-<line x1="90" y1="340" x2="860" y2="340" stroke="#525252" stroke-width="1"/>
-<line x1="90" y1="70" x2="90" y2="340" stroke="#525252" stroke-width="1"/>
-<line x1="85" y1="340.0" x2="860" y2="340.0" stroke="#1f2937" stroke-width="1"/>
-<text x="78" y="344.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">0</text>
-<line x1="85" y1="300.9" x2="860" y2="300.9" stroke="#1f2937" stroke-width="1"/>
-<text x="78" y="304.9" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">10</text>
-<line x1="85" y1="261.7" x2="860" y2="261.7" stroke="#1f2937" stroke-width="1"/>
-<text x="78" y="265.7" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">20</text>
-<line x1="85" y1="222.6" x2="860" y2="222.6" stroke="#1f2937" stroke-width="1"/>
-<text x="78" y="226.6" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">30</text>
-<line x1="85" y1="183.5" x2="860" y2="183.5" stroke="#1f2937" stroke-width="1"/>
-<text x="78" y="187.5" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">40</text>
-<line x1="85" y1="144.3" x2="860" y2="144.3" stroke="#1f2937" stroke-width="1"/>
-<text x="78" y="148.3" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">50</text>
-<line x1="85" y1="105.2" x2="860" y2="105.2" stroke="#1f2937" stroke-width="1"/>
-<text x="78" y="109.2" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">60</text>
-<rect x="90.0" y="136.5" width="174.5" height="203.5" rx="4" fill="#2f6f73"/>
+<text x="90" y="36" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="800" fill="#22c55e">Strict held-out-69 scores for SFT models</text>
+<line x1="90" y1="340" x2="860" y2="340" stroke="#6b7280" stroke-width="1"/>
+<line x1="90" y1="70" x2="90" y2="340" stroke="#6b7280" stroke-width="1"/>
+<line x1="85" y1="340.0" x2="860" y2="340.0" stroke="#253042" stroke-width="1"/>
+<text x="78" y="344.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">0</text>
+<line x1="85" y1="300.9" x2="860" y2="300.9" stroke="#253042" stroke-width="1"/>
+<text x="78" y="304.9" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">10</text>
+<line x1="85" y1="261.7" x2="860" y2="261.7" stroke="#253042" stroke-width="1"/>
+<text x="78" y="265.7" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">20</text>
+<line x1="85" y1="222.6" x2="860" y2="222.6" stroke="#253042" stroke-width="1"/>
+<text x="78" y="226.6" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">30</text>
+<line x1="85" y1="183.5" x2="860" y2="183.5" stroke="#253042" stroke-width="1"/>
+<text x="78" y="187.5" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">40</text>
+<line x1="85" y1="144.3" x2="860" y2="144.3" stroke="#253042" stroke-width="1"/>
+<text x="78" y="148.3" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">50</text>
+<line x1="85" y1="105.2" x2="860" y2="105.2" stroke="#253042" stroke-width="1"/>
+<text x="78" y="109.2" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">60</text>
+<rect x="90.0" y="136.5" width="174.5" height="203.5" rx="4" fill="#22c55e"/>
 <text x="177.2" y="126.5" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700" fill="#e5e7eb">52/69</text>
-<text x="177.2" y="364.0" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" fill="#d1d5db">SFT_V1</text>
-<rect x="288.5" y="152.2" width="174.5" height="187.8" rx="4" fill="#8f5a2a"/>
+<text x="177.2" y="364.0" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" fill="#d1d5db">SFT_V1</text>
+<rect x="288.5" y="152.2" width="174.5" height="187.8" rx="4" fill="#facc15"/>
 <text x="375.8" y="142.2" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700" fill="#e5e7eb">48/69</text>
-<text x="375.8" y="364.0" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" fill="#d1d5db">SFT_V2</text>
-<rect x="487.0" y="144.3" width="174.5" height="195.7" rx="4" fill="#5e6c84"/>
+<text x="375.8" y="364.0" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" fill="#d1d5db">SFT_V2</text>
+<rect x="487.0" y="144.3" width="174.5" height="195.7" rx="4" fill="#38bdf8"/>
 <text x="574.2" y="134.3" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700" fill="#e5e7eb">50/69</text>
-<text x="574.2" y="364.0" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" fill="#d1d5db">SFT_V3</text>
-<rect x="685.5" y="140.4" width="174.5" height="199.6" rx="4" fill="#b24b4b"/>
+<text x="574.2" y="364.0" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" fill="#d1d5db">SFT_V3</text>
+<rect x="685.5" y="140.4" width="174.5" height="199.6" rx="4" fill="#fb7185"/>
 <text x="772.8" y="130.4" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700" fill="#e5e7eb">51/69</text>
-<text x="772.8" y="364.0" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" fill="#d1d5db">SFT_HALF_A</text>
-<text x="90" y="404" font-family="Inter, Arial, sans-serif" font-size="13" fill="#a3a3a3">Metric: valid_trace = cargo verifier success plus clean FINAL and protocol hygiene.</text>
+<text x="772.8" y="364.0" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" fill="#d1d5db">SFT_HALF_A</text>
+<text x="90" y="404" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">Metric: valid_trace = cargo verifier success plus clean FINAL and protocol hygiene.</text>
 </svg>

@@ -1,39 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="920" height="440" viewBox="0 0 920 440">
 <rect width="100%" height="100%" fill="#000000"/>
-<text x="75" y="36" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#22c55e">SFT_HALF_A training curves</text>
-<text x="75" y="56" font-family="Inter, Arial, sans-serif" font-size="13" fill="#a3a3a3">Source: new_results/SFT_HALF_A/trainer_state.json</text>
-<line x1="75" y1="368" x2="885" y2="368" stroke="#525252"/>
-<line x1="75" y1="68" x2="75" y2="368" stroke="#525252"/>
-<line x1="75" y1="368.0" x2="885" y2="368.0" stroke="#1f2937"/>
-<text x="65" y="372.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">-0.42</text>
-<line x1="75" y1="308.0" x2="885" y2="308.0" stroke="#1f2937"/>
-<text x="65" y="312.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">0.81</text>
-<line x1="75" y1="248.0" x2="885" y2="248.0" stroke="#1f2937"/>
-<text x="65" y="252.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">2</text>
-<line x1="75" y1="188.0" x2="885" y2="188.0" stroke="#1f2937"/>
-<text x="65" y="192.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">3.3</text>
-<line x1="75" y1="128.0" x2="885" y2="128.0" stroke="#1f2937"/>
-<text x="65" y="132.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">4.5</text>
-<line x1="75" y1="68.0" x2="885" y2="68.0" stroke="#1f2937"/>
-<text x="65" y="72.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">5.7</text>
-<text x="75.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">1</text>
-<text x="237.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">57</text>
-<text x="399.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">113</text>
-<text x="561.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">168</text>
-<text x="723.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">224</text>
-<text x="885.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#a3a3a3">280</text>
-<text x="480.0" y="420" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" fill="#d1d5db">step</text>
-<text x="18" y="218.0" text-anchor="middle" transform="rotate(-90 18 218.0)" font-family="Inter, Arial, sans-serif" font-size="13" fill="#d1d5db">value</text>
-<path d="M75.0,323.5 L101.1,328.4 L130.2,336.9 L159.2,338.2 L188.2,341.1 L217.3,342.2 L246.3,342.4 L275.3,343.0 L304.4,343.1 L333.4,342.5 L362.4,343.5 L391.5,344.3 L420.5,344.7 L449.5,344.9 L478.5,344.7 L507.6,344.6 L536.6,344.8 L565.6,344.9 L594.7,344.8 L623.7,344.9 L652.7,345.2 L681.8,345.6 L710.8,345.5 L739.8,345.5 L768.9,345.4 L797.9,345.4 L826.9,345.6 L856.0,345.4 L885.0,345.7" fill="none" stroke="#2f6f73" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
-<circle cx="885.0" cy="345.7" r="3.5" fill="#2f6f73"/>
-<rect x="665" y="76" width="13" height="13" fill="#2f6f73" rx="2"/>
-<text x="687" y="87" font-family="Inter, Arial, sans-serif" font-size="13" fill="#e5e7eb">loss</text>
-<path d="M75.0,88.7 L101.1,187.6 L130.2,199.7 L159.2,216.5 L188.2,253.8 L217.3,240.8 L246.3,293.3 L275.3,271.6 L304.4,267.8 L333.4,196.7 L362.4,301.9 L391.5,276.6 L420.5,276.2 L449.5,274.7 L478.5,269.7 L507.6,261.0 L536.6,298.6 L565.6,294.8 L594.7,271.2 L623.7,287.2 L652.7,276.2 L681.8,308.9 L710.8,296.0 L739.8,264.4 L768.9,281.1 L797.9,280.4 L826.9,307.9 L856.0,286.5 L885.0,297.9" fill="none" stroke="#8f5a2a" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
-<circle cx="885.0" cy="297.9" r="3.5" fill="#8f5a2a"/>
-<rect x="665" y="98" width="13" height="13" fill="#8f5a2a" rx="2"/>
-<text x="687" y="109" font-family="Inter, Arial, sans-serif" font-size="13" fill="#e5e7eb">grad norm</text>
-<path d="M75.0,347.3 L101.1,249.9 L130.2,250.3 L159.2,251.2 L188.2,252.7 L217.3,254.8 L246.3,257.5 L275.3,260.6 L304.4,264.3 L333.4,268.4 L362.4,272.9 L391.5,277.7 L420.5,282.8 L449.5,288.0 L478.5,293.4 L507.6,298.9 L536.6,304.4 L565.6,309.8 L594.7,315.0 L623.7,320.1 L652.7,324.8 L681.8,329.3 L710.8,333.3 L739.8,337.0 L768.9,340.1 L797.9,342.7 L826.9,344.7 L856.0,346.2 L885.0,347.1" fill="none" stroke="#7462a8" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
-<circle cx="885.0" cy="347.1" r="3.5" fill="#7462a8"/>
-<rect x="665" y="120" width="13" height="13" fill="#7462a8" rx="2"/>
-<text x="687" y="131" font-family="Inter, Arial, sans-serif" font-size="13" fill="#e5e7eb">lr x 1e5</text>
+<text x="75" y="36" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="800" fill="#22c55e">SFT_HALF_A training curves</text>
+<text x="75" y="56" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">Source: new_results/SFT_HALF_A/trainer_state.json</text>
+<line x1="75" y1="368" x2="885" y2="368" stroke="#6b7280"/>
+<line x1="75" y1="68" x2="75" y2="368" stroke="#6b7280"/>
+<line x1="75" y1="368.0" x2="885" y2="368.0" stroke="#253042"/>
+<text x="65" y="372.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">-0.42</text>
+<line x1="75" y1="308.0" x2="885" y2="308.0" stroke="#253042"/>
+<text x="65" y="312.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">0.81</text>
+<line x1="75" y1="248.0" x2="885" y2="248.0" stroke="#253042"/>
+<text x="65" y="252.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">2</text>
+<line x1="75" y1="188.0" x2="885" y2="188.0" stroke="#253042"/>
+<text x="65" y="192.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">3.3</text>
+<line x1="75" y1="128.0" x2="885" y2="128.0" stroke="#253042"/>
+<text x="65" y="132.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">4.5</text>
+<line x1="75" y1="68.0" x2="885" y2="68.0" stroke="#253042"/>
+<text x="65" y="72.0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">5.7</text>
+<text x="75.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">1</text>
+<text x="237.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">57</text>
+<text x="399.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">113</text>
+<text x="561.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">168</text>
+<text x="723.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">224</text>
+<text x="885.0" y="392" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" fill="#a3a3a3">280</text>
+<text x="480.0" y="420" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" fill="#d1d5db">step</text>
+<text x="18" y="218.0" text-anchor="middle" transform="rotate(-90 18 218.0)" font-family="Inter, Arial, sans-serif" font-size="16" fill="#d1d5db">value</text>
+<path d="M75.0,323.5 L101.1,328.4 L130.2,336.9 L159.2,338.2 L188.2,341.1 L217.3,342.2 L246.3,342.4 L275.3,343.0 L304.4,343.1 L333.4,342.5 L362.4,343.5 L391.5,344.3 L420.5,344.7 L449.5,344.9 L478.5,344.7 L507.6,344.6 L536.6,344.8 L565.6,344.9 L594.7,344.8 L623.7,344.9 L652.7,345.2 L681.8,345.6 L710.8,345.5 L739.8,345.5 L768.9,345.4 L797.9,345.4 L826.9,345.6 L856.0,345.4 L885.0,345.7" fill="none" stroke="#22c55e" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="885.0" cy="345.7" r="4.2" fill="#22c55e"/>
+<rect x="665" y="76" width="13" height="13" fill="#22c55e" rx="2"/>
+<text x="687" y="87" font-family="Inter, Arial, sans-serif" font-size="16" fill="#e5e7eb">loss</text>
+<path d="M75.0,88.7 L101.1,187.6 L130.2,199.7 L159.2,216.5 L188.2,253.8 L217.3,240.8 L246.3,293.3 L275.3,271.6 L304.4,267.8 L333.4,196.7 L362.4,301.9 L391.5,276.6 L420.5,276.2 L449.5,274.7 L478.5,269.7 L507.6,261.0 L536.6,298.6 L565.6,294.8 L594.7,271.2 L623.7,287.2 L652.7,276.2 L681.8,308.9 L710.8,296.0 L739.8,264.4 L768.9,281.1 L797.9,280.4 L826.9,307.9 L856.0,286.5 L885.0,297.9" fill="none" stroke="#facc15" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="885.0" cy="297.9" r="4.2" fill="#facc15"/>
+<rect x="665" y="98" width="13" height="13" fill="#facc15" rx="2"/>
+<text x="687" y="109" font-family="Inter, Arial, sans-serif" font-size="16" fill="#e5e7eb">grad norm</text>
+<path d="M75.0,347.3 L101.1,249.9 L130.2,250.3 L159.2,251.2 L188.2,252.7 L217.3,254.8 L246.3,257.5 L275.3,260.6 L304.4,264.3 L333.4,268.4 L362.4,272.9 L391.5,277.7 L420.5,282.8 L449.5,288.0 L478.5,293.4 L507.6,298.9 L536.6,304.4 L565.6,309.8 L594.7,315.0 L623.7,320.1 L652.7,324.8 L681.8,329.3 L710.8,333.3 L739.8,337.0 L768.9,340.1 L797.9,342.7 L826.9,344.7 L856.0,346.2 L885.0,347.1" fill="none" stroke="#a78bfa" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="885.0" cy="347.1" r="4.2" fill="#a78bfa"/>
+<rect x="665" y="120" width="13" height="13" fill="#a78bfa" rx="2"/>
+<text x="687" y="131" font-family="Inter, Arial, sans-serif" font-size="16" fill="#e5e7eb">lr x 1e5</text>
 </svg>
