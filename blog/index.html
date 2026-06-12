@@ -245,6 +245,28 @@ pre code { padding: 0; border: 0; background: transparent; color: inherit; font-
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.replay-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.replay-facts div {
+  background: #030603;
+  padding: 10px 14px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+}
+.replay-facts strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--green);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
 .live-dots {
   display: inline-flex;
   gap: 6px;
@@ -363,6 +385,7 @@ img {
   pre { font-size: 15px; }
   .demo-meta { grid-template-columns: 1fr; }
   .trace pre { font-size: 13.5px; }
+  .replay-facts { grid-template-columns: 1fr; }
   .stream-line { grid-template-columns: 1fr; gap: 6px; font-size: 13.5px; }
 }
 </style>
@@ -424,9 +447,12 @@ Otherwise, cargo can pass while the agent trace is still unusable.
     <span><span class="live-dots"><i></i><i></i><i></i></span>SFT_HALF_A held-out replay</span>
     <span class="model-tag">model: SFT_HALF_A</span>
   </div>
+  <div class="replay-facts">
+    <div><strong>Model</strong>SFT_HALF_A</div>
+    <div><strong>Case</strong>eval100_024_patch_run_pass_005_active_tags_filter_map_join</div>
+    <div><strong>Result</strong>patch_run_pass · valid_trace = true</div>
+  </div>
   <div class="live-stream">
-    <div class="stream-line"><span class="role system">model</span><code>SFT_HALF_A | artifact: runs/SIGNAL_v3_HALF_A_SFT_E3_LR2E5/final | 6 tool calls</code></div>
-    <div class="stream-line"><span class="role score">case</span><code>eval100_024_patch_run_pass_005_active_tags_filter_map_join | kind: patch_run_pass | strict result: valid_trace = true</code></div>
     <div class="stream-line"><span class="role system">system</span><code>You are a Rust coding agent. Use tools when needed. After <span class="final">FINAL</span>, stop immediately.</code></div>
     <div class="stream-line"><span class="role user">user</span><code>In <span class="final">active_tags_filter_map_join</span>, fix the iterator pipeline in <span class="final">src/main.rs</span> so running the binary prints the expected active tags.</code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id="c1", file_path=".../active_tags_filter_map_join/src/main.rs")</code></div>
@@ -460,9 +486,12 @@ core,fast,safe</code></div>
     <span><span class="live-dots"><i></i><i></i><i></i></span>RLVR_V1000 signal replay</span>
     <span class="model-tag">model: RLVR_V1000 step25 direct merge</span>
   </div>
+  <div class="replay-facts">
+    <div><strong>Model</strong>RLVR_V1000 step25 direct merge</div>
+    <div><strong>Case</strong>eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix</div>
+    <div><strong>Result</strong>patch_test_recover · valid_trace = true</div>
+  </div>
   <div class="live-stream">
-    <div class="stream-line"><span class="role system">model</span><code>RLVR_V1000 step25 direct merge | base: SFT_HALF_A | strict solve here, aggregate still down</code></div>
-    <div class="stream-line"><span class="role score">case</span><code>eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix | kind: patch_test_recover | strict result: valid_trace = true</code></div>
     <div class="stream-line"><span class="role system">system</span><code>You are a Rust coding agent. Use tools when needed. After <span class="final">FINAL</span>, stop immediately.</code></div>
     <div class="stream-line"><span class="role user">user</span><code>Recover <span class="final">select_event_codes_partial_then_full_fix</span>; tests require trimming, thresholding, and skipping banned/blank event codes.</code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id="c11", file_path=".../select_event_codes/src/lib.rs",
@@ -487,9 +516,12 @@ test result: ok. 3 passed; 0 failed</code></div>
     <span><span class="live-dots"><i></i><i></i><i></i></span>Budget exhaustion replay</span>
     <span class="model-tag">model: SFT_HALF_A</span>
   </div>
+  <div class="replay-facts">
+    <div><strong>Model</strong>SFT_HALF_A</div>
+    <div><strong>Case</strong>eval100_087_patch_run_recover_023_layered_config_merge_precedence_23</div>
+    <div><strong>Result</strong>patch_run_recover · valid_trace = false</div>
+  </div>
   <div class="live-stream">
-    <div class="stream-line"><span class="role system">model</span><code>SFT_HALF_A | many tool calls / no clean FINAL | call_count = 21</code></div>
-    <div class="stream-line"><span class="role score">case</span><code>eval100_087_patch_run_recover_023_layered_config_merge_precedence_23 | kind: patch_run_recover | strict result: valid_trace = false</code></div>
     <div class="stream-line"><span class="role system">system</span><code>You are a Rust coding agent. Use tools when needed. After <span class="final">FINAL</span>, stop immediately.</code></div>
     <div class="stream-line"><span class="role user">user</span><code>Recover a layered config merge where the binary must print exact host, port, debug, and tag output.</code></div>
     <div class="stream-line"><span class="role model">model</span><code>... repeated read_file / apply_patch / cargo_run cycles omitted for length ...</code></div>
@@ -519,9 +551,12 @@ tags=ops,blue</code></div>
     <span><span class="live-dots"><i></i><i></i><i></i></span>Dirty FINAL replay</span>
     <span class="model-tag">model: RLVR_V999_STEP10 adapter</span>
   </div>
+  <div class="replay-facts">
+    <div><strong>Model</strong>RLVR_V999_STEP10 adapter on SFT_HALF_A</div>
+    <div><strong>Case</strong>eval100_095_run_only_001_csv_record_validation_report</div>
+    <div><strong>Result</strong>run_only · valid_trace = false</div>
+  </div>
   <div class="live-stream">
-    <div class="stream-line"><span class="role system">model</span><code>RLVR_V999_STEP10 adapter on SFT_HALF_A | cargo passed / strict trace failed</code></div>
-    <div class="stream-line"><span class="role score">case</span><code>eval100_095_run_only_001_csv_record_validation_report | kind: run_only | strict result: valid_trace = false</code></div>
     <div class="stream-line"><span class="role system">system</span><code>You are a Rust coding agent. Use tools when needed. After <span class="final">FINAL</span>, stop immediately.</code></div>
     <div class="stream-line"><span class="role user">user</span><code>Run an already-correct CSV validation report crate and stop cleanly after the verifier succeeds.</code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL cargo_run(id="c1", project_path=".../csv_record_validation_report")</code></div>
