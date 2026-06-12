@@ -4,24 +4,24 @@
 <line x1="75" y1="350" x2="850" y2="350" stroke="#525252"/>
 <line x1="75" y1="70" x2="75" y2="350" stroke="#525252"/>
 <line x1="70" y1="350.0" x2="850" y2="350.0" stroke="#1f2937"/>
-<text x="63" y="354.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#555">0</text>
+<text x="63" y="354.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#a3a3a3">0</text>
 <line x1="70" y1="294.0" x2="850" y2="294.0" stroke="#1f2937"/>
-<text x="63" y="298.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#555">2</text>
+<text x="63" y="298.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#a3a3a3">2</text>
 <line x1="70" y1="238.0" x2="850" y2="238.0" stroke="#1f2937"/>
-<text x="63" y="242.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#555">4</text>
+<text x="63" y="242.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#a3a3a3">4</text>
 <line x1="70" y1="182.0" x2="850" y2="182.0" stroke="#1f2937"/>
-<text x="63" y="186.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#555">6</text>
+<text x="63" y="186.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#a3a3a3">6</text>
 <line x1="70" y1="126.0" x2="850" y2="126.0" stroke="#1f2937"/>
-<text x="63" y="130.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#555">8</text>
+<text x="63" y="130.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#a3a3a3">8</text>
 <line x1="70" y1="70.0" x2="850" y2="70.0" stroke="#1f2937"/>
-<text x="63" y="74.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#555">10</text>
-<text x="75.0" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#555">0</text>
-<text x="215.9" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#555">2</text>
-<text x="356.8" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#555">4</text>
-<text x="497.7" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#555">6</text>
-<text x="638.6" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#555">8</text>
-<text x="779.5" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#555">10</text>
-<text x="850.0" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#555">11</text>
+<text x="63" y="74.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#a3a3a3">10</text>
+<text x="75.0" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#a3a3a3">0</text>
+<text x="215.9" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#a3a3a3">2</text>
+<text x="356.8" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#a3a3a3">4</text>
+<text x="497.7" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#a3a3a3">6</text>
+<text x="638.6" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#a3a3a3">8</text>
+<text x="779.5" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#a3a3a3">10</text>
+<text x="850.0" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#a3a3a3">11</text>
 <polyline points="75.0,99.2 145.5,170.2 215.9,134.2 286.4,210.0 356.8,151.7 427.3,245.0 497.7,122.5 568.2,200.5 638.6,113.8 709.1,201.2 779.5,175.0 850.0,186.7" fill="none" stroke="#2e9e5b" stroke-width="3"/>
 <circle cx="75.0" cy="99.2" r="4" fill="#2e9e5b"/>
 <circle cx="145.5" cy="170.2" r="4" fill="#2e9e5b"/>
@@ -35,6 +35,6 @@
 <circle cx="709.1" cy="201.2" r="4" fill="#2e9e5b"/>
 <circle cx="779.5" cy="175.0" r="4" fill="#2e9e5b"/>
 <circle cx="850.0" cy="186.7" r="4" fill="#2e9e5b"/>
-<text x="462.5" y="410" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#555">orchestrator step</text>
-<text x="20" y="210.0" transform="rotate(-90 20 210.0)" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#555">mean reward / rollout</text>
+<text x="462.5" y="410" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#a3a3a3">orchestrator step</text>
+<text x="20" y="210.0" transform="rotate(-90 20 210.0)" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#a3a3a3">mean reward / rollout</text>
 </svg>
