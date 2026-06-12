@@ -7,127 +7,272 @@
   <meta name="description" content="A postmortem on Glyph, a Rust tool-use agent experiment built around SFT and PRIME-RL RLVR.">
   <style>
 :root {
-  --bg: #0d1117;
-  --paper: #fbfcfe;
-  --panel: #ffffff;
-  --ink: #141820;
-  --muted: #5f6977;
-  --soft: #f0f4f8;
-  --line: #d9e0ea;
-  --code: #0b1220;
-  --code-border: #263246;
-  --accent: #19a7a8;
-  --accent-dark: #0d6f78;
-  --gold: #b9822b;
-  --red: #be3c2f;
-  --blue: #215fbe;
-  --shadow: 0 24px 70px rgba(5, 12, 24, .18);
+  color-scheme: dark;
+  --bg: #05070d;
+  --bg2: #0b1020;
+  --panel: rgba(13, 20, 35, 0.82);
+  --panel2: rgba(17, 27, 47, 0.92);
+  --ink: #edf4ff;
+  --muted: #aab8cb;
+  --dim: #7f8fa6;
+  --line: rgba(171, 198, 232, 0.18);
+  --line2: rgba(171, 198, 232, 0.10);
+  --cyan: #51f0e2;
+  --blue: #7bb7ff;
+  --violet: #a891ff;
+  --green: #7ee2a8;
+  --amber: #f2bd65;
+  --red: #ff7b72;
+  --code: #070b14;
+  --shadow: rgba(0, 0, 0, 0.42);
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
   background:
-    radial-gradient(circle at top left, rgba(25,167,168,.22), transparent 32rem),
-    linear-gradient(180deg, #0d1117 0, #151b24 34rem, #e9eef5 34rem, #e9eef5 100%);
+    radial-gradient(circle at 18% 0%, rgba(81, 240, 226, 0.18), transparent 28rem),
+    radial-gradient(circle at 88% 8%, rgba(168, 145, 255, 0.18), transparent 28rem),
+    radial-gradient(circle at 50% 45rem, rgba(123, 183, 255, 0.09), transparent 36rem),
+    linear-gradient(180deg, #05070d 0%, #0b1020 44rem, #080b12 100%);
   color: var(--ink);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  line-height: 1.7;
+  line-height: 1.72;
 }
-a { color: var(--blue); text-decoration-thickness: 1px; text-underline-offset: 3px; }
-.progress { position: fixed; inset: 0 0 auto; height: 4px; z-index: 20; background: linear-gradient(90deg, var(--accent), #7bc6ff); transform-origin: left; transform: scaleX(0); }
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.026) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,.5), transparent 70%);
+}
+a { color: var(--blue); text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.progress { position: fixed; inset: 0 0 auto; height: 3px; z-index: 50; background: linear-gradient(90deg, var(--cyan), var(--violet), var(--amber)); transform: scaleX(0); transform-origin: left; }
 .hero {
-  max-width: 1220px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 76px 36px 46px;
-  color: white;
+  padding: 86px 28px 58px;
 }
-.hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 44px; align-items: end; }
-.kicker { margin: 0 0 16px; color: #82e7e5; font-size: 13px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
-h1 { margin: 0; max-width: 850px; font-size: clamp(46px, 7vw, 88px); line-height: .96; letter-spacing: -0.02em; }
-.hero-copy { max-width: 790px; margin: 26px 0 0; color: #dce8f4; font-size: 21px; line-height: 1.55; }
-.hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
-.pill { display: inline-flex; align-items: center; min-height: 34px; padding: 6px 12px; border: 1px solid rgba(255,255,255,.22); border-radius: 999px; color: #eefaff; background: rgba(255,255,255,.08); backdrop-filter: blur(10px); font-size: 14px; font-weight: 700; text-decoration: none; }
-.score-card { border: 1px solid rgba(255,255,255,.16); border-radius: 18px; background: rgba(255,255,255,.08); box-shadow: 0 18px 60px rgba(0,0,0,.18); padding: 18px; backdrop-filter: blur(14px); }
-.score-card h2 { margin: 0 0 14px; color: #fff; font-size: 16px; letter-spacing: .04em; text-transform: uppercase; }
-.score-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 11px 0; border-top: 1px solid rgba(255,255,255,.14); color: #dce8f4; font-size: 14px; }
-.score-row strong { color: #fff; font-size: 20px; }
-.layout { max-width: 1220px; margin: 0 auto; display: grid; grid-template-columns: 245px minmax(0, 1fr); gap: 28px; padding: 0 36px 80px; align-items: start; }
-.rail { position: sticky; top: 18px; margin-top: 18px; padding: 16px; border: 1px solid rgba(255,255,255,.12); border-radius: 16px; background: rgba(255,255,255,.88); box-shadow: 0 18px 60px rgba(18, 28, 45, .10); backdrop-filter: blur(18px); }
-.rail-title { margin: 0 0 10px; color: var(--muted); font-size: 12px; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
-.rail a { display: grid; grid-template-columns: 28px 1fr; gap: 8px; padding: 8px 6px; border-radius: 8px; color: #263040; text-decoration: none; font-size: 13px; line-height: 1.25; }
-.rail a:hover { background: #eef7f8; color: var(--accent-dark); }
-.rail span { color: var(--accent-dark); font-weight: 850; }
-.article { min-width: 0; }
-.section { margin: 18px 0 28px; padding: 38px 44px; border: 1px solid rgba(27, 40, 58, .09); border-radius: 18px; background: var(--panel); box-shadow: var(--shadow); }
-.intro-section { border-top: 6px solid var(--accent); }
-.section h1 { display: none; }
-.section h2 { margin: 0 0 22px; font-size: clamp(29px, 3.1vw, 42px); line-height: 1.08; letter-spacing: -0.01em; }
-.section h2::before { content: counter(section, decimal-leading-zero); counter-increment: section; display: block; margin-bottom: 10px; color: var(--accent-dark); font-size: 13px; font-weight: 900; letter-spacing: .12em; }
+.hero-shell {
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background: linear-gradient(135deg, rgba(16, 25, 44, .9), rgba(8, 13, 24, .72));
+  box-shadow: 0 32px 100px var(--shadow), inset 0 1px rgba(255,255,255,.08);
+  overflow: hidden;
+}
+.hero-inner { padding: clamp(28px, 6vw, 64px); }
+.kicker {
+  display: inline-flex;
+  margin: 0 0 22px;
+  padding: 7px 11px;
+  border: 1px solid rgba(81,240,226,.30);
+  border-radius: 999px;
+  color: var(--cyan);
+  background: rgba(81,240,226,.08);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+h1 {
+  max-width: 960px;
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(46px, 8vw, 94px);
+  line-height: .94;
+  letter-spacing: -0.035em;
+}
+.hero-copy {
+  max-width: 850px;
+  margin: 28px 0 0;
+  color: #cbd8ea;
+  font-size: clamp(20px, 2vw, 24px);
+  line-height: 1.48;
+}
+.hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 999px;
+  background: rgba(255,255,255,.07);
+  color: #eaf6ff;
+  font-size: 14px;
+  font-weight: 750;
+  text-decoration: none;
+}
+.score-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
+  background: rgba(5, 8, 15, .44);
+}
+.score {
+  padding: 18px clamp(18px, 3vw, 32px);
+  border-right: 1px solid var(--line2);
+}
+.score:last-child { border-right: 0; }
+.score span { display: block; color: var(--dim); font-size: 12px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+.score strong { display: block; margin-top: 4px; color: #fff; font-size: clamp(24px, 3vw, 34px); line-height: 1; }
+.article {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 28px 90px;
+}
+.panel {
+  position: relative;
+  margin: 26px 0;
+  padding: clamp(26px, 5vw, 54px);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: linear-gradient(180deg, var(--panel), rgba(10, 16, 28, .84));
+  box-shadow: 0 22px 70px rgba(0,0,0,.26), inset 0 1px rgba(255,255,255,.055);
+  backdrop-filter: blur(14px);
+}
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  border-radius: 24px 0 0 24px;
+  background: linear-gradient(180deg, var(--cyan), transparent 72%);
+  opacity: .75;
+}
+.lead-panel { border-color: rgba(81,240,226,.28); }
+.article > .panel > h1 { display: none; }
+h2 {
+  max-width: 880px;
+  margin: 0 0 24px;
+  color: #ffffff;
+  font-size: clamp(31px, 4vw, 48px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+h2::before {
+  content: "0" counter(section);
+  counter-increment: section;
+  display: block;
+  margin-bottom: 12px;
+  color: var(--cyan);
+  font-size: 13px;
+  font-weight: 950;
+  letter-spacing: .16em;
+}
 .article { counter-reset: section; }
-p, li { font-size: 19.5px; line-height: 1.72; }
-p { margin: 18px 0; max-width: 830px; }
-ul, ol { max-width: 830px; padding-left: 1.35em; }
-strong { font-weight: 820; }
-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: .9em; padding: .08em .32em; border: 1px solid #d9e1ec; border-radius: 5px; background: #eef2f7; color: #111827; }
-pre { max-width: 980px; margin: 24px 0; padding: 22px 24px; overflow-x: auto; border: 1px solid var(--code-border); border-radius: 14px; background: linear-gradient(180deg, #101827, #0a101b); color: #f7fbff; box-shadow: 0 18px 45px rgba(8, 13, 24, .20); font-size: 16px; line-height: 1.58; }
+p, li { color: #d7e1ef; font-size: 20px; line-height: 1.74; }
+p { max-width: 850px; margin: 18px 0; }
+ul, ol { max-width: 850px; padding-left: 1.35em; }
+strong { color: #ffffff; font-weight: 850; }
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: .9em;
+  padding: .08em .34em;
+  border: 1px solid rgba(123,183,255,.20);
+  border-radius: 6px;
+  background: rgba(123,183,255,.10);
+  color: #dff0ff;
+}
+pre {
+  max-width: 960px;
+  margin: 26px 0;
+  padding: 22px 24px;
+  overflow-x: auto;
+  border: 1px solid rgba(123,183,255,.20);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #060a12, #0a0f1b);
+  color: #f6fbff;
+  box-shadow: inset 0 1px rgba(255,255,255,.06), 0 20px 60px rgba(0,0,0,.30);
+  font-size: 16px;
+  line-height: 1.58;
+}
 pre code { padding: 0; border: 0; background: transparent; color: inherit; font-size: inherit; }
-blockquote { max-width: 900px; margin: 28px 0; padding: 18px 22px; border-left: 6px solid var(--accent); border-radius: 0 12px 12px 0; background: #eefbfb; color: #17323a; }
-table { display: block; width: 100%; max-width: 980px; overflow-x: auto; margin: 26px 0; border: 1px solid var(--line); border-radius: 14px; border-collapse: separate; border-spacing: 0; background: white; font-size: 16.5px; }
-th, td { padding: 14px 16px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
-th { background: #eef3f8; color: #344051; font-size: 13px; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
-tr:nth-child(even) td { background: #fafcfe; }
+blockquote {
+  max-width: 900px;
+  margin: 28px 0;
+  padding: 20px 24px;
+  border: 1px solid rgba(81,240,226,.25);
+  border-left: 6px solid var(--cyan);
+  border-radius: 16px;
+  background: rgba(81,240,226,.08);
+  color: #efffff;
+}
+table {
+  display: block;
+  max-width: 960px;
+  width: 100%;
+  overflow-x: auto;
+  margin: 28px 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: rgba(4, 8, 16, .38);
+  font-size: 17px;
+}
+th, td { padding: 15px 17px; border-bottom: 1px solid var(--line2); text-align: left; vertical-align: top; }
+th { color: #eaf6ff; background: rgba(255,255,255,.075); font-size: 12px; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }
+td { color: #d7e1ef; }
+tr:nth-child(even) td { background: rgba(255,255,255,.025); }
 tr:last-child td { border-bottom: 0; }
 p:has(img) { max-width: 100%; margin: 34px 0; }
 p:has(img) img { margin: 0; }
-img { display: block; width: min(100%, 980px); height: auto; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: white; box-shadow: 0 20px 55px rgba(18, 28, 45, .12); }
-.footer { max-width: 1220px; margin: 0 auto; padding: 0 36px 60px; color: #e6edf6; }
-.footer-inner { padding: 22px 26px; border-radius: 16px; background: #121924; color: #dbe7f5; }
-.footer a { color: #8be1ff; }
-@media (max-width: 980px) { .hero-grid, .layout { grid-template-columns: 1fr; } .rail { position: static; display: none; } .score-card { max-width: 520px; } }
-@media (max-width: 700px) { .hero { padding: 42px 18px 30px; } .layout { padding: 0 14px 42px; } .section { padding: 26px 20px; border-radius: 14px; } p, li { font-size: 17.5px; } pre { font-size: 14px; } .top h1, h1 { font-size: 42px; } }
+img {
+  display: block;
+  width: min(100%, 980px);
+  height: auto;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(0,0,0,.34);
+}
+.footer { max-width: 1040px; margin: 0 auto; padding: 0 28px 60px; color: #c7d4e6; }
+.footer-inner { padding: 22px 26px; border: 1px solid var(--line); border-radius: 18px; background: rgba(8, 13, 24, .84); }
+.footer a { color: var(--cyan); }
+@media (max-width: 820px) {
+  .hero { padding: 34px 14px 26px; }
+  .hero-inner { padding: 26px 20px; }
+  .score-strip { grid-template-columns: 1fr 1fr; }
+  .score:nth-child(2) { border-right: 0; }
+  .score:nth-child(1), .score:nth-child(2) { border-bottom: 1px solid var(--line2); }
+  .article { padding: 0 14px 48px; }
+  .panel { padding: 26px 20px; border-radius: 18px; }
+  h1 { font-size: 44px; }
+  h2 { font-size: 30px; }
+  p, li { font-size: 18px; }
+  pre { font-size: 14px; }
+}
 </style>
 </head>
 <body>
   <div class="progress" id="progress"></div>
   <header class="hero">
-    <div class="hero-grid">
-      <div>
-        <p class="kicker">Glyph / Rust tool-use agents / RLVR postmortem</p>
+    <div class="hero-shell">
+      <div class="hero-inner">
+        <p class="kicker">Glyph / Rust Tool-Use Agents / RLVR Postmortem</p>
         <h1>SFT Worked. RLVR Moved the Distribution, But Did Not Win.</h1>
-        <p class="hero-copy">A complete account of the Glyph experiment: SFT built a real Rust tool-use agent, RLVR moved sampled cargo-solving slightly, and strict held-out agent validity still did not improve.</p>
+        <p class="hero-copy">The full story of a verifier-RL experiment: SFT learned the agent loop, RLVR nudged sampled cargo-solving, and strict held-out validity still failed to improve.</p>
         <div class="hero-actions">
           <a class="pill" href="https://github.com/JayZenith/glyph">GitHub repo</a>
           <a class="pill" href="finalized_blogv3.md">Markdown source</a>
-          <span class="pill">SFT_HALF_A: 51/69</span>
-          <span class="pill">V999 step10: 45/69 strict</span>
+          <span class="pill">PRIME-RL</span>
+          <span class="pill">Held-out-69</span>
         </div>
       </div>
-      <aside class="score-card" aria-label="Final score summary">
-        <h2>Final Readout</h2>
-        <div class="score-row"><span>Strict pass@4</span><strong>59 → 59</strong></div>
-        <div class="score-row"><span>Cargo pass@4</span><strong>60 → 62</strong></div>
-        <div class="score-row"><span>Greedy strict</span><strong>51 → 45</strong></div>
-        <div class="score-row"><span>Verdict</span><strong>No win</strong></div>
-      </aside>
+      <div class="score-strip" aria-label="Final score summary">
+        <div class="score"><span>Strict pass@4</span><strong>59 → 59</strong></div>
+        <div class="score"><span>Cargo pass@4</span><strong>60 → 62</strong></div>
+        <div class="score"><span>Greedy strict</span><strong>51 → 45</strong></div>
+        <div class="score"><span>Final verdict</span><strong>No win</strong></div>
+      </div>
     </div>
   </header>
-  <div class="layout">
-    <nav class="rail" aria-label="Sections">
-      <p class="rail-title">Sections</p>
-      <a href="#the-metric-had-to-match-the-agent-contract"><span>01</span>The Metric Had To Match the Agent Contract</a>
-<a href="#sft-was-the-main-result"><span>02</span>SFT Was the Main Result</a>
-<a href="#the-clean-split"><span>03</span>The Clean Split</a>
-<a href="#debugging-the-rlvr-harness"><span>04</span>Debugging the RLVR Harness</a>
-<a href="#the-first-clean-rlvr-readout"><span>05</span>The First Clean RLVR Readout</a>
-<a href="#the-final-clean-rlvr-preserved-cargo-solving-but-regressed-strict-greedy-validity"><span>06</span>The Final Clean RLVR Preserved Cargo Solving but Regressed Strict Greedy Validity</a>
-<a href="#the-final-pass-4-check"><span>07</span>The Final pass@4 Check</a>
-<a href="#decomposing-the-loss-solving-vs-finalizing"><span>08</span>Decomposing the Loss: Solving vs Finalizing</a>
-<a href="#what-i-think-happened"><span>09</span>What I Think Happened</a>
-<a href="#where-this-ends"><span>10</span>Where This Ends</a>
-    </nav>
-    <main class="article">
-      <section class="section intro-section"><h1>SFT Worked. RLVR Moved the Distribution, But Did Not Win.</h1>
+  <main class="article">
+    <section class="panel lead-panel"><h1>SFT Worked. RLVR Moved the Distribution, But Did Not Win.</h1>
 <p>This is where I am ending this round of Glyph.</p>
 <p>Code: <a href="https://github.com/JayZenith/glyph">https://github.com/JayZenith/glyph</a></p>
 <p>Glyph is a Rust tool-use agent. The model emits <code>CALL tool(...)</code> blocks, tools execute against real Rust crates, and then the model should stop with a clean <code>FINAL</code>.</p>
@@ -156,7 +301,7 @@ Otherwise, cargo can pass while the agent trace is still unusable.
 5 test_only
 </code></pre>
 </section>
-<section class="section" style="--i:1"><h2 id="the-metric-had-to-match-the-agent-contract">The Metric Had To Match the Agent Contract</h2>
+<section class="panel" style="--n:1"><h2 id="the-metric-had-to-match-the-agent-contract">The Metric Had To Match the Agent Contract</h2>
 <p>Early scoring was too loose. A metric called <code>terminal_tool_success</code> could
 credit a trace whose last successful tool was not a verifier. That is not a coding-agent success.</p>
 <p>The metric that mattered became strict <code>valid_trace</code>:</p>
@@ -170,7 +315,7 @@ credit a trace whose last successful tool was not a verifier. That is not a codi
 </code></pre>
 <p>If the model passes tests but keeps patching, emits malformed calls, leaks role markers, or never finalizes, it is not a usable tool-use agent.</p>
 </section>
-<section class="section" style="--i:2"><h2 id="sft-was-the-main-result">SFT Was the Main Result</h2>
+<section class="panel" style="--n:2"><h2 id="sft-was-the-main-result">SFT Was the Main Result</h2>
 <p>The first strong SFT model, <code>SFT_V1</code>, scored:</p>
 <pre><code class="language-text">SFT_V1 strict held-out-69: 52/69
 </code></pre>
@@ -193,7 +338,7 @@ SFT_V3: 5/17
 but disturbed broad reliability. More difficult traces were not automatically
 better. They shifted the policy.</p>
 </section>
-<section class="section" style="--i:3"><h2 id="the-clean-split">The Clean Split</h2>
+<section class="panel" style="--n:3"><h2 id="the-clean-split">The Clean Split</h2>
 <p>That tradeoff is why <code>SFT_HALF_A</code> exists. At this point, I stopped trying to
 RLVR whichever old SFT checkpoint looked best. To make the experiment clean, I
 split <code>synthetic_data/signal_v3.jsonl</code> which was used to train SFT_V3 into two deterministic halves.
@@ -215,7 +360,7 @@ trace overlap:   0
 <p>That became the baseline. RLVR needed to beat <code>51/69</code> on the same strict
 held-out eval using non-overlapping pool B.</p>
 </section>
-<section class="section" style="--i:4"><h2 id="debugging-the-rlvr-harness">Debugging the RLVR Harness</h2>
+<section class="panel" style="--n:4"><h2 id="debugging-the-rlvr-harness">Debugging the RLVR Harness</h2>
 <p>Several RLVR attempts failed before the final clean readout. I initially read
 the full-finetune regression as destructive RL, but I no longer think that is a
 clean conclusion. Those runs still had SFT/RLVR alignment problems: the reward,
@@ -257,7 +402,7 @@ the broadcast LoRA adapter; <code>weights/step_N</code> was not the clean served
 </code></pre>
 <p>Only after those fixes did the RLVR result become worth interpreting.</p>
 </section>
-<section class="section" style="--i:5"><h2 id="the-first-clean-rlvr-readout">The First Clean RLVR Readout</h2>
+<section class="panel" style="--n:5"><h2 id="the-first-clean-rlvr-readout">The First Clean RLVR Readout</h2>
 <p>The cleanest early case-level RLVR readout was <code>RLVR_V1000</code> step 25, evaluated
 through a direct local merge of the broadcast adapter:</p>
 <pre><code class="language-text">SFT_HALF_A:                     51/69
@@ -286,7 +431,7 @@ eval100_085_log_window_filter_map_recover
 while net aggregate reliability regressed by one: 51/69 -&gt; 50/69.
 </code></pre>
 </section>
-<section class="section" style="--i:6"><h2 id="the-final-clean-rlvr-preserved-cargo-solving-but-regressed-strict-greedy-validity">The Final Clean RLVR Preserved Cargo Solving but Regressed Strict Greedy Validity</h2>
+<section class="panel" style="--n:6"><h2 id="the-final-clean-rlvr-preserved-cargo-solving-but-regressed-strict-greedy-validity">The Final Clean RLVR Preserved Cargo Solving but Regressed Strict Greedy Validity</h2>
 <p>The final run had everything verified: a binary reward measured to emit exactly
 0 or 10 (with 10 equal to strict held-out validity on every rollout checked), a
 chat template byte-identical to the SFT/eval trace format with a launch-time
@@ -298,7 +443,7 @@ RLVR_V999 step 5:       46/69
 RLVR_V999 step 10:      45/69
 </code></pre>
 </section>
-<section class="section" style="--i:7"><h2 id="the-final-pass-4-check">The Final pass@4 Check</h2>
+<section class="panel" style="--n:7"><h2 id="the-final-pass-4-check">The Final pass@4 Check</h2>
 <p>The cheap decisive check was held-out-69 pass@4 with the final clean adapter
 path: <code>SFT_HALF_A</code> versus <code>SFT_HALF_A + RLVR_V999_STEP10</code>, same prompts, same
 tool budget, same temperature, real cargo execution, separate sandbox per
@@ -339,7 +484,7 @@ The mechanism is pool composition: run_only and test_only prompts are about 6%
 of the RL pool, so almost no training groups exist where the reward can punish
 that drift. Nothing in training defends behavior it never samples.</p>
 </section>
-<section class="section" style="--i:8"><h2 id="decomposing-the-loss-solving-vs-finalizing">Decomposing the Loss: Solving vs Finalizing</h2>
+<section class="panel" style="--n:8"><h2 id="decomposing-the-loss-solving-vs-finalizing">Decomposing the Loss: Solving vs Finalizing</h2>
 <p>Scoring the same greedy traces on cargo verifier success alone separates the
 two:</p>
 <pre><code class="language-text">                greedy cargo solved    greedy valid_trace
@@ -357,7 +502,7 @@ failure</strong>: the correct contract had almost no <code>run_only</code> group
 to, so unrelated drift in that region went undefended. The fix is data
 balance, not reward design.</p>
 </section>
-<section class="section" style="--i:9"><h2 id="what-i-think-happened">What I Think Happened</h2>
+<section class="panel" style="--n:9"><h2 id="what-i-think-happened">What I Think Happened</h2>
 <p>SFT gave the model a strong prior for the exact tool protocol and a decent
 greedy repair strategy.</p>
 <p>RLVR shifted that policy enough to change recovery trajectories. Sometimes
@@ -371,7 +516,7 @@ no held-out prompt-level improvement, and one reproducible
 regression caused by training-pool kind imbalance.
 </code></pre>
 </section>
-<section class="section" style="--i:10"><h2 id="where-this-ends">Where This Ends</h2>
+<section class="panel" style="--n:10"><h2 id="where-this-ends">Where This Ends</h2>
 <p>The final readout:</p>
 <pre><code class="language-text">SFT is the main result.
 Strict evals are non-negotiable.
@@ -386,8 +531,7 @@ not the policy.
 <pre><code class="language-text">Verifier RL only works if the verifier matches the full behavior you actually want.
 For tool-use agents, the contract is the whole trace, not just the verifier.
 </code></pre></section>
-    </main>
-  </div>
+  </main>
   <footer class="footer"><div class="footer-inner">Code and artifacts: <a href="https://github.com/JayZenith/glyph">github.com/JayZenith/glyph</a>.</div></footer>
   <script>
     const bar = document.getElementById('progress');
