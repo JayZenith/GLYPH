@@ -294,6 +294,7 @@ pre code {
   min-width: 0;
   overflow-wrap: anywhere;
 }
+.replay-facts .task-context { grid-column: 1 / -1; }
 .replay-facts strong {
   display: block;
   margin-bottom: 4px;
@@ -493,6 +494,7 @@ Otherwise, cargo can pass while the agent trace is still unusable.
     <div><strong>Model</strong>SFT_HALF_A</div>
     <div><strong>Case</strong>eval100_024_patch_run_pass_005_active_tags_filter_map_join</div>
     <div><strong>Result</strong>patch_run_pass · valid_trace = true</div>
+    <div class="task-context"><strong>Task</strong>In the Rust crate at runs/rlvr1/rust_cases/eval100_024_patch_run_pass_005_active_tags_filter_map_join, fix the iterator pipeline in src/main.rs so running the binary prints the expected list of active tags.</div>
   </div>
   <div class="live-stream">
     <div class="stream-line"><span class="role system">system</span><code>You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.</code></div>
@@ -598,6 +600,7 @@ core,fast,safe
     <div><strong>Model</strong>RLVR_V1000 step25 direct merge</div>
     <div><strong>Case</strong>eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix</div>
     <div><strong>Result</strong>patch_test_recover · valid_trace = true</div>
+    <div class="task-context"><strong>Task</strong>In the Rust crate at runs/rlvr1/rust_cases/eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix, fix the iterator-based event code selection logic in src/lib.rs so the tests pass. Keep the implementation compact and idiomatic.</div>
   </div>
   <div class="live-stream">
     <div class="stream-line"><span class="role system">system</span><code>You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.</code></div>
@@ -945,6 +948,7 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
     <div><strong>Model</strong>SFT_HALF_A</div>
     <div><strong>Case</strong>eval100_087_patch_run_recover_023_layered_config_merge_precedence_23</div>
     <div><strong>Result</strong>patch_run_recover · valid_trace = false</div>
+    <div class="task-context"><strong>Task</strong>In the Rust crate at runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23, fix the config merging logic in src/main.rs so the program prints the correct effective settings. Precedence should be defaults &lt; file &lt; env, explicit false values must not be ignored, and tags from higher-precedence layers should replace lower-precedence tags instead of being appended.</div>
   </div>
   <div class="live-stream">
     <div class="stream-line"><span class="role system">system</span><code>You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.</code></div>
@@ -1544,6 +1548,7 @@ tags=ops,blue&quot;
     <div><strong>Model</strong>RLVR_V999_STEP10 adapter on SFT_HALF_A</div>
     <div><strong>Case</strong>eval100_095_run_only_001_csv_record_validation_report</div>
     <div><strong>Result</strong>run_only · cargo success, valid_trace = false</div>
+    <div class="task-context"><strong>Task</strong>Run the Rust crate at runs/rlvr1/rust_cases/eval100_095_run_only_001_csv_record_validation_report and provide the exact stdout. Do not modify any files.</div>
   </div>
   <div class="live-stream">
     <div class="stream-line"><span class="role system">system</span><code>You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.</code></div>
