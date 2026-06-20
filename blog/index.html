@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
   <title>SFT Built the Agent. RLVR Shifted the Distribution But Didn't Win.</title>
   <meta name="description" content="A postmortem on Glyph, a Rust tool-use agent experiment built around SFT and PRIME-RL RLVR.">
   <style>
@@ -323,6 +324,25 @@ pre code {
   font-size: 13px;
   line-height: 1.55;
 }
+.crate-file code.hljs { color: #e5e7eb; }
+.hljs-keyword,
+.hljs-selector-tag { color: #f472b6; }
+.hljs-string,
+.hljs-char { color: #86efac; }
+.hljs-number,
+.hljs-symbol { color: #fb923c; }
+.hljs-title,
+.hljs-title.function_,
+.hljs-function .hljs-title { color: #38bdf8; }
+.hljs-type,
+.hljs-built_in { color: #facc15; }
+.hljs-literal,
+.hljs-params { color: #c4b5fd; }
+.hljs-comment,
+.hljs-quote { color: #7c867d; font-style: italic; }
+.hljs-meta,
+.hljs-attr,
+.hljs-variable { color: #67e8f9; }
 .replay-facts strong {
   display: block;
   margin-bottom: 4px;
@@ -367,6 +387,22 @@ pre code {
   animation: lineIn .18s ease forwards;
 }
 .stream-line:last-child { border-bottom: 0; }
+.stream-line.env-success {
+  background: rgba(34, 197, 94, .055);
+  box-shadow: inset 3px 0 #22c55e;
+}
+.stream-line.env-failure {
+  background: rgba(244, 63, 94, .075);
+  box-shadow: inset 3px 0 #f43f5e;
+}
+.stream-line.env-success .role.env,
+.stream-line.env-success .result-status { color: #4ade80; }
+.stream-line.env-failure .role.env,
+.stream-line.env-failure .result-status { color: #fb7185; }
+.result-status {
+  font-weight: 900;
+  text-transform: uppercase;
+}
 .role {
   color: var(--muted);
   font-weight: 800;
@@ -526,11 +562,11 @@ Otherwise, cargo can pass while the agent trace is still unusable.
   </div>
   <details class="crate-source" open>
     <summary>Initial crate source</summary>
-    <div class="crate-file"><strong>Cargo.toml</strong><pre><code>[package]
+    <div class="crate-file"><strong>Cargo.toml</strong><pre><code class="language-ini">[package]
 name = &quot;active_tags_filter_map_join&quot;
 version = &quot;0.1.0&quot;
 edition = &quot;2021&quot;</code></pre></div>
-    <div class="crate-file"><strong>src/main.rs</strong><pre><code>fn main() {
+    <div class="crate-file"><strong>src/main.rs</strong><pre><code class="language-rust">fn main() {
     let items = [
         (&quot;core&quot;, true),
         (&quot;draft&quot;, false),
@@ -553,8 +589,8 @@ edition = &quot;2021&quot;</code></pre></div>
     <div class="stream-line"><span class="role user">user</span><code>In the Rust crate at runs/rlvr1/rust_cases/eval100_024_patch_run_pass_005_active_tags_filter_map_join, fix the iterator pipeline in src/main.rs so running the binary prints the expected list of active tags.</code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id=&quot;c1&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_024_patch_run_pass_005_active_tags_filter_map_join/src/main.rs&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c1:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c1:
+status: <span class="result-status">success</span>
 stdout:
 fn main() {
     let items = [
@@ -576,15 +612,15 @@ fn main() {
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id=&quot;c2&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_024_patch_run_pass_005_active_tags_filter_map_join/src/main.rs&quot;, find=&quot;.filter_map(|(name, enabled)| if !enabled { Some(*name) } else { None })&quot;, replace=&quot;.filter_map(|(name, enabled)| if enabled { Some(*name) } else { None })&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c2:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c2:
+status: <span class="result-status">success</span>
 stdout:
 patch applied
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL cargo_run(id=&quot;c3&quot;, project_path=&quot;runs/rlvr1/rust_cases/eval100_024_patch_run_pass_005_active_tags_filter_map_join&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c3:
-status: failed
+    <div class="stream-line env-failure"><span class="role env">env</span><code>RESULT c3:
+status: <span class="result-status">failed</span>
 stderr:
 error[E0308]: mismatched types
   --&gt; src/main.rs:12:42
@@ -602,8 +638,8 @@ error: could not compile `active_tags_filter_map_join` (bin &quot;active_tags_fi
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id=&quot;c4&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_024_patch_run_pass_005_active_tags_filter_map_join/src/main.rs&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c4:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c4:
+status: <span class="result-status">success</span>
 stdout:
 fn main() {
     let items = [
@@ -625,15 +661,15 @@ fn main() {
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id=&quot;c5&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_024_patch_run_pass_005_active_tags_filter_map_join/src/main.rs&quot;, find=&quot;        .filter_map(|(name, enabled)| if enabled { Some(*name) } else { None })&quot;, replace=&quot;        .filter_map(|(name, enabled)| if *enabled { Some(*name) } else { None })&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c5:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c5:
+status: <span class="result-status">success</span>
 stdout:
 patch applied
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL cargo_run(id=&quot;c6&quot;, project_path=&quot;runs/rlvr1/rust_cases/eval100_024_patch_run_pass_005_active_tags_filter_map_join&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c6:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c6:
+status: <span class="result-status">success</span>
 stdout:
 core,fast,safe
 </code></div>
@@ -656,14 +692,14 @@ core,fast,safe
   </div>
   <details class="crate-source" open>
     <summary>Initial crate source</summary>
-    <div class="crate-file"><strong>Cargo.toml</strong><pre><code>[package]
+    <div class="crate-file"><strong>Cargo.toml</strong><pre><code class="language-ini">[package]
 name = &quot;select_event_codes&quot;
 version = &quot;0.1.0&quot;
 edition = &quot;2021&quot;
 
 [lib]
 path = &quot;src/lib.rs&quot;</code></pre></div>
-    <div class="crate-file"><strong>src/lib.rs</strong><pre><code>pub fn select_codes(entries: &amp;[&amp;str]) -&gt; Vec&lt;String&gt; {
+    <div class="crate-file"><strong>src/lib.rs</strong><pre><code class="language-rust">pub fn select_codes(entries: &amp;[&amp;str]) -&gt; Vec&lt;String&gt; {
     entries
         .iter()
         .filter_map(|entry| {
@@ -706,8 +742,8 @@ mod tests {
     <div class="stream-line"><span class="role user">user</span><code>In the Rust crate at runs/rlvr1/rust_cases/eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix, fix the iterator-based event code selection logic in src/lib.rs so the tests pass. Keep the implementation compact and idiomatic.</code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id=&quot;c1&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix/src/lib.rs&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c1:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c1:
+status: <span class="result-status">success</span>
 stdout:
 pub fn select_codes(entries: &amp;[&amp;str]) -&gt; Vec&lt;String&gt; {
     entries
@@ -749,15 +785,15 @@ mod tests {
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id=&quot;c2&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix/src/lib.rs&quot;, find=&quot;            let (code, score) = entry.split_once(&#x27;:&#x27;)?;\n            let score: i32 = score.parse().ok()?;\n            if score &gt;= 50 {\n                Some(code.to_ascii_uppercase())\n            } else {\n                None\n            }\n&quot;, replace=&quot;            let (code, score) = entry.split_once(&#x27;:&#x27;)?;\n            let code = code.trim();\n            let score: i32 = score.trim().parse().ok()?;\n            if score &gt;= 50 {\n                Some(code.to_ascii_uppercase())\n            } else {\n                None\n            }\n&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c2:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c2:
+status: <span class="result-status">success</span>
 stdout:
 patch applied
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL cargo_test(id=&quot;c3&quot;, project_path=&quot;runs/rlvr1/rust_cases/eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c3:
-status: failed
+    <div class="stream-line env-failure"><span class="role env">env</span><code>RESULT c3:
+status: <span class="result-status">failed</span>
 stdout:
 running 3 tests
 test tests::keeps_only_positive_scores_at_or_above_threshold ... ok
@@ -794,8 +830,8 @@ error: test failed, to rerun pass `--lib`
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id=&quot;c4&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix/src/lib.rs&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c4:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c4:
+status: <span class="result-status">success</span>
 stdout:
 pub fn select_codes(entries: &amp;[&amp;str]) -&gt; Vec&lt;String&gt; {
     entries
@@ -838,15 +874,15 @@ mod tests {
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id=&quot;c5&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix/src/lib.rs&quot;, find=&quot;            if score &gt;= 50 {\n                Some(code.to_ascii_uppercase())\n            } else {\n                None\n            }\n&quot;, replace=&quot;            if score &gt;= 50 &amp;&amp; !code.is_empty() {\n                Some(code.to_ascii_uppercase())\n            } else {\n                None\n            }\n&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c5:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c5:
+status: <span class="result-status">success</span>
 stdout:
 patch applied
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL cargo_test(id=&quot;c6&quot;, project_path=&quot;runs/rlvr1/rust_cases/eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c6:
-status: failed
+    <div class="stream-line env-failure"><span class="role env">env</span><code>RESULT c6:
+status: <span class="result-status">failed</span>
 stdout:
 running 3 tests
 test tests::keeps_only_positive_scores_at_or_above_threshold ... ok
@@ -882,8 +918,8 @@ error: test failed, to rerun pass `--lib`
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id=&quot;c7&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix/src/lib.rs&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c7:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c7:
+status: <span class="result-status">success</span>
 stdout:
 pub fn select_codes(entries: &amp;[&amp;str]) -&gt; Vec&lt;String&gt; {
     entries
@@ -926,15 +962,15 @@ mod tests {
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id=&quot;c8&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix/src/lib.rs&quot;, find=&quot;            let (code, score) = entry.split_once(&#x27;:&#x27;)?;\n            let code = code.trim();\n            let score: i32 = score.trim().parse().ok()?;\n&quot;, replace=&quot;            let (code, score) = entry.split_once(&#x27;:&#x27;)?;\n            let code = code.trim();\n            let score: i32 = score.trim().parse().ok()?;\n            if code == \&quot;skip\&quot; || code.is_empty() {\n                return None;\n            }\n&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c8:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c8:
+status: <span class="result-status">success</span>
 stdout:
 patch applied
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL cargo_test(id=&quot;c9&quot;, project_path=&quot;runs/rlvr1/rust_cases/eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c9:
-status: failed
+    <div class="stream-line env-failure"><span class="role env">env</span><code>RESULT c9:
+status: <span class="result-status">failed</span>
 stdout:
 running 3 tests
 test tests::keeps_only_positive_scores_at_or_above_threshold ... ok
@@ -963,8 +999,8 @@ error: test failed, to rerun pass `--lib`
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id=&quot;c10&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix/src/lib.rs&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c10:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c10:
+status: <span class="result-status">success</span>
 stdout:
 pub fn select_codes(entries: &amp;[&amp;str]) -&gt; Vec&lt;String&gt; {
     entries
@@ -1010,15 +1046,15 @@ mod tests {
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id=&quot;c11&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix/src/lib.rs&quot;, find=&quot;            if code == \&quot;skip\&quot; || code.is_empty() {\n                return None;\n            }\n&quot;, replace=&quot;            if code == \&quot;skip\&quot; || code == \&quot;ban\&quot; || code.is_empty() {\n                return None;\n            }\n&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c11:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c11:
+status: <span class="result-status">success</span>
 stdout:
 patch applied
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL cargo_test(id=&quot;c12&quot;, project_path=&quot;runs/rlvr1/rust_cases/eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c12:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c12:
+status: <span class="result-status">success</span>
 stdout:
 running 3 tests
 test tests::keeps_only_positive_scores_at_or_above_threshold ... ok
@@ -1051,11 +1087,11 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
   </div>
   <details class="crate-source" open>
     <summary>Initial crate source</summary>
-    <div class="crate-file"><strong>Cargo.toml</strong><pre><code>[package]
+    <div class="crate-file"><strong>Cargo.toml</strong><pre><code class="language-ini">[package]
 name = &quot;layered_config_merge_precedence_23&quot;
 version = &quot;0.1.0&quot;
 edition = &quot;2021&quot;</code></pre></div>
-    <div class="crate-file"><strong>src/main.rs</strong><pre><code>#[derive(Clone, Debug)]
+    <div class="crate-file"><strong>src/main.rs</strong><pre><code class="language-rust">#[derive(Clone, Debug)]
 struct Config {
     host: Option&lt;String&gt;,
     port: Option&lt;u16&gt;,
@@ -1115,8 +1151,8 @@ fn main() {
     <div class="stream-line"><span class="role user">user</span><code>In the Rust crate at runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23, fix the config merging logic in src/main.rs so the program prints the correct effective settings. Precedence should be defaults &lt; file &lt; env, explicit false values must not be ignored, and tags from higher-precedence layers should replace lower-precedence tags instead of being appended.</code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id=&quot;c1&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23/src/main.rs&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c1:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c1:
+status: <span class="result-status">success</span>
 stdout:
 #[derive(Clone, Debug)]
 struct Config {
@@ -1175,15 +1211,15 @@ fn main() {
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id=&quot;c2&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23/src/main.rs&quot;, find=&quot;fn merge(base: Config, layer: Config) -&gt; Config {\n    Config {\n        host: base.host.or(layer.host),\n        port: base.port.or(layer.port),\n        debug: base.debug.or(layer.debug),\n        tags: {\n            let mut tags = base.tags;\n            tags.extend(layer.tags);\n            tags\n        },\n    }\n}\n&quot;, replace=&quot;fn merge(base: Config, layer: Config) -&gt; Config {\n    Config {\n        host: layer.host.or(base.host),\n        port: layer.port.or(base.port),\n        debug: layer.debug.or(base.debug),\n        tags: {\n            let mut tags = base.tags;\n            for tag in &amp;layer.tags {\n                if !tags.contains(tag) {\n                    tags.push(tag.clone());\n                }\n            }\n            tags\n        },\n    }\n}\n&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c2:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c2:
+status: <span class="result-status">success</span>
 stdout:
 patch applied
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL cargo_run(id=&quot;c3&quot;, project_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c3:
-status: failed
+    <div class="stream-line env-failure"><span class="role env">env</span><code>RESULT c3:
+status: <span class="result-status">failed</span>
 stdout:
 host=env.example.com
 port=9000
@@ -1197,8 +1233,8 @@ tags=ops,blue&quot;
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id=&quot;c4&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23/src/main.rs&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c4:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c4:
+status: <span class="result-status">success</span>
 stdout:
 #[derive(Clone, Debug)]
 struct Config {
@@ -1261,15 +1297,15 @@ fn main() {
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id=&quot;c5&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23/src/main.rs&quot;, find=&quot;        debug: layer.debug.or(base.debug),\n&quot;, replace=&quot;        debug: layer.debug, // explicit false overrides true\n&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c5:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c5:
+status: <span class="result-status">success</span>
 stdout:
 patch applied
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL cargo_run(id=&quot;c6&quot;, project_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c6:
-status: failed
+    <div class="stream-line env-failure"><span class="role env">env</span><code>RESULT c6:
+status: <span class="result-status">failed</span>
 stdout:
 host=env.example.com
 port=9000
@@ -1283,8 +1319,8 @@ tags=ops,blue&quot;
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id=&quot;c7&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23/src/main.rs&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c7:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c7:
+status: <span class="result-status">success</span>
 stdout:
 #[derive(Clone, Debug)]
 struct Config {
@@ -1347,15 +1383,15 @@ fn main() {
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id=&quot;c8&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23/src/main.rs&quot;, find=&quot;        port: layer.port.or(base.port),\n&quot;, replace=&quot;        port: layer.port,\n&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c8:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c8:
+status: <span class="result-status">success</span>
 stdout:
 patch applied
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL cargo_run(id=&quot;c9&quot;, project_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c9:
-status: failed
+    <div class="stream-line env-failure"><span class="role env">env</span><code>RESULT c9:
+status: <span class="result-status">failed</span>
 stdout:
 host=env.example.com
 port=9000
@@ -1369,8 +1405,8 @@ tags=ops,blue&quot;
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id=&quot;c10&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23/src/main.rs&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c10:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c10:
+status: <span class="result-status">success</span>
 stdout:
 #[derive(Clone, Debug)]
 struct Config {
@@ -1433,15 +1469,15 @@ fn main() {
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id=&quot;c11&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23/src/main.rs&quot;, find=&quot;        debug: layer.debug, // explicit false overrides true\n&quot;, replace=&quot;        debug: layer.debug,\n&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c11:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c11:
+status: <span class="result-status">success</span>
 stdout:
 patch applied
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL cargo_run(id=&quot;c12&quot;, project_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c12:
-status: failed
+    <div class="stream-line env-failure"><span class="role env">env</span><code>RESULT c12:
+status: <span class="result-status">failed</span>
 stdout:
 host=env.example.com
 port=9000
@@ -1455,8 +1491,8 @@ tags=ops,blue&quot;
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id=&quot;c13&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23/src/main.rs&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c13:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c13:
+status: <span class="result-status">success</span>
 stdout:
 #[derive(Clone, Debug)]
 struct Config {
@@ -1519,15 +1555,15 @@ fn main() {
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id=&quot;c14&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23/src/main.rs&quot;, find=&quot;        tags: {\n            let mut tags = base.tags;\n            for tag in &amp;layer.tags {\n                if !tags.contains(tag) {\n                    tags.push(tag.clone());\n                }\n            }\n            tags\n        },\n&quot;, replace=&quot;        tags: layer.tags,\n&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c14:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c14:
+status: <span class="result-status">success</span>
 stdout:
 patch applied
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL cargo_run(id=&quot;c15&quot;, project_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c15:
-status: failed
+    <div class="stream-line env-failure"><span class="role env">env</span><code>RESULT c15:
+status: <span class="result-status">failed</span>
 stdout:
 host=env.example.com
 port=9000
@@ -1541,8 +1577,8 @@ tags=ops,blue&quot;
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id=&quot;c16&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23/src/main.rs&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c16:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c16:
+status: <span class="result-status">success</span>
 stdout:
 #[derive(Clone, Debug)]
 struct Config {
@@ -1597,15 +1633,15 @@ fn main() {
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id=&quot;c17&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23/src/main.rs&quot;, find=&quot;        debug: layer.debug,\n&quot;, replace=&quot;        debug: layer.debug,\n&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c17:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c17:
+status: <span class="result-status">success</span>
 stdout:
 patch applied
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL cargo_run(id=&quot;c18&quot;, project_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c18:
-status: failed
+    <div class="stream-line env-failure"><span class="role env">env</span><code>RESULT c18:
+status: <span class="result-status">failed</span>
 stdout:
 host=env.example.com
 port=9000
@@ -1619,8 +1655,8 @@ tags=ops,blue&quot;
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL read_file(id=&quot;c19&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23/src/main.rs&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c19:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c19:
+status: <span class="result-status">success</span>
 stdout:
 #[derive(Clone, Debug)]
 struct Config {
@@ -1675,15 +1711,15 @@ fn main() {
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL apply_patch(id=&quot;c20&quot;, file_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23/src/main.rs&quot;, find=&quot;        debug: layer.debug,\n&quot;, replace=&quot;        debug: layer.debug,\n&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c20:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c20:
+status: <span class="result-status">success</span>
 stdout:
 patch applied
 </code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL cargo_run(id=&quot;c21&quot;, project_path=&quot;runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c21:
-status: failed
+    <div class="stream-line env-failure"><span class="role env">env</span><code>RESULT c21:
+status: <span class="result-status">failed</span>
 stdout:
 host=env.example.com
 port=9000
@@ -1712,11 +1748,11 @@ tags=ops,blue&quot;
   </div>
   <details class="crate-source" open>
     <summary>Initial crate source</summary>
-    <div class="crate-file"><strong>Cargo.toml</strong><pre><code>[package]
+    <div class="crate-file"><strong>Cargo.toml</strong><pre><code class="language-ini">[package]
 name = &quot;csv_record_validation_report&quot;
 version = &quot;0.1.0&quot;
 edition = &quot;2021&quot;</code></pre></div>
-    <div class="crate-file"><strong>src/main.rs</strong><pre><code>fn parse_bool(s: &amp;str) -&gt; Option&lt;bool&gt; {
+    <div class="crate-file"><strong>src/main.rs</strong><pre><code class="language-rust">fn parse_bool(s: &amp;str) -&gt; Option&lt;bool&gt; {
     match s {
         &quot;true&quot; =&gt; Some(true),
         &quot;false&quot; =&gt; Some(false),
@@ -1777,8 +1813,8 @@ fn main() {
     <div class="stream-line"><span class="role user">user</span><code>Run the Rust crate at runs/rlvr1/rust_cases/eval100_095_run_only_001_csv_record_validation_report and provide the exact stdout. Do not modify any files.</code></div>
     <div class="stream-line"><span class="role model">model</span><code>CALL cargo_run(id=&quot;c1&quot;, project_path=&quot;runs/rlvr1/rust_cases/eval100_095_run_only_001_csv_record_validation_report&quot;)
 </code></div>
-    <div class="stream-line"><span class="role env">env</span><code>RESULT c1:
-status: success
+    <div class="stream-line env-success"><span class="role env">env</span><code>RESULT c1:
+status: <span class="result-status">success</span>
 stdout:
 valid: 2
 invalid: 4
@@ -2029,6 +2065,9 @@ For tool-use agents, the contract is the whole trace, not just the verifier.
 </code></pre></section>
   </main>
   <footer class="footer"><div class="footer-inner">Code and artifacts: <a href="https://github.com/JayZenith/glyph/tree/main">github.com/JayZenith/glyph/tree/main</a>.</div></footer>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/languages/rust.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/languages/ini.min.js"></script>
   <script>
     const demoWindow = document.getElementById('demo-window');
     const demoButtons = Array.from(document.querySelectorAll('[data-demo]'));
@@ -2039,6 +2078,12 @@ For tool-use agents, the contract is the whole trace, not just the verifier.
 
       demoWindow.classList.remove('is-replaying');
       demoWindow.innerHTML = template.innerHTML;
+      if (window.hljs) {
+        demoWindow.querySelectorAll('.crate-file code').forEach((block) => {
+          block.removeAttribute('data-highlighted');
+          window.hljs.highlightElement(block);
+        });
+      }
       const lines = Array.from(demoWindow.querySelectorAll('.stream-line'));
       lines.forEach((line, index) => {
         line.style.animationDelay = `${Math.min(index * 80, 1200)}ms`;
