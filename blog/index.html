@@ -429,7 +429,6 @@ img {
 <p>Code: <a href="https://github.com/JayZenith/glyph">https://github.com/JayZenith/glyph</a></p>
 <p>Glyph is a <span class="key">Rust tool-use agent</span>. The model emits <code>CALL tool(...)</code> blocks, tools execute against real Rust crates, and then the model should stop with a clean <code>FINAL</code>.</p>
 <p>I built Glyph as an end-to-end Rust tool-use agent experiment stack around PRIME-RL: synthetic task generation, SFT trace construction, held-out evals, the real Rust tool harness, RLVR task integration, reward validation, checkpoint export, and final pass@k measurement.</p>
-<p>I used Claude Code and Codex heavily as coding assistants during implementation and debugging, but the system design, experimental decisions, eval criteria, data generation, RLVR setup, analysis, and final conclusions are mine.</p>
 <p>The contract is not just "make cargo pass." The contract is the <span class="key">whole trace</span>:</p>
 <pre><code class="language-text">CALL read_file(...)
 RESULT ...
