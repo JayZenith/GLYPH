@@ -168,8 +168,7 @@ SFT_HALF_A: 1,042 rows, 762 unique case_ids
 RL_POOL_B:  1,041 rows, 760 unique case_ids
 ```
 
-The split was grouped by `case_id`, so oversampled traces for one case could not land on both sides.
-The unique case counts differ by two because the grouped split preserved case boundaries while rows include oversampled traces.
+The split was grouped by `case_id`, so oversampled traces for one case could not land on both sides. The counts are from `synthetic_data/signal_v3_split_summary`: the two-case difference is expected because the stratified split kept whole `case_id` groups intact instead of forcing equal unique-case counts.
 
 Leakage checks:
 

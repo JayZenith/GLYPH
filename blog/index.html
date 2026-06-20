@@ -689,8 +689,7 @@ The SFT and RLVR pool came from this synthetic trace dataset; the held-out eval 
 <pre><code class="language-text">SFT_HALF_A: 1,042 rows, 762 unique case_ids
 RL_POOL_B:  1,041 rows, 760 unique case_ids
 </code></pre>
-<p>The split was grouped by <code>case_id</code>, so oversampled traces for one case could not land on both sides.</p>
-<p>The unique case counts differ by two because the grouped split preserved case boundaries while rows include oversampled traces.</p>
+<p>The split was grouped by <code>case_id</code>, so oversampled traces for one case could not land on both sides. The counts are from <code>synthetic_data/signal_v3_split_summary</code>: the two-case difference is expected because the stratified split kept whole <code>case_id</code> groups intact instead of forcing equal unique-case counts.</p>
 <p>Leakage checks:</p>
 <pre><code class="language-text">case_id overlap: 0
 trace overlap:   0
