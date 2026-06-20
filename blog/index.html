@@ -295,6 +295,34 @@ pre code {
   overflow-wrap: anywhere;
 }
 .replay-facts .task-context { grid-column: 1 / -1; }
+.crate-source {
+  border-bottom: 1px solid var(--line);
+  background: #030603;
+}
+.crate-source summary {
+  padding: 11px 14px;
+  cursor: pointer;
+  color: var(--accent);
+  font: 700 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.crate-file { border-top: 1px solid var(--line); }
+.crate-file strong {
+  display: block;
+  padding: 8px 14px;
+  color: var(--muted);
+  font: 600 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.crate-file pre {
+  max-width: none;
+  margin: 0;
+  padding: 12px 14px 16px;
+  border: 0;
+  border-radius: 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
 .replay-facts strong {
   display: block;
   margin-bottom: 4px;
@@ -496,6 +524,30 @@ Otherwise, cargo can pass while the agent trace is still unusable.
     <div><strong>Result</strong>patch_run_pass · valid_trace = true</div>
     <div class="task-context"><strong>Task</strong>In the Rust crate at runs/rlvr1/rust_cases/eval100_024_patch_run_pass_005_active_tags_filter_map_join, fix the iterator pipeline in src/main.rs so running the binary prints the expected list of active tags.</div>
   </div>
+  <details class="crate-source" open>
+    <summary>Initial crate source</summary>
+    <div class="crate-file"><strong>Cargo.toml</strong><pre><code>[package]
+name = &quot;active_tags_filter_map_join&quot;
+version = &quot;0.1.0&quot;
+edition = &quot;2021&quot;</code></pre></div>
+    <div class="crate-file"><strong>src/main.rs</strong><pre><code>fn main() {
+    let items = [
+        (&quot;core&quot;, true),
+        (&quot;draft&quot;, false),
+        (&quot;fast&quot;, true),
+        (&quot;wip&quot;, false),
+        (&quot;safe&quot;, true),
+    ];
+
+    let output = items
+        .iter()
+        .filter_map(|(name, enabled)| if !enabled { Some(*name) } else { None })
+        .collect::&lt;Vec&lt;_&gt;&gt;()
+        .join(&quot;,&quot;);
+
+    println!(&quot;{}&quot;, output);
+}</code></pre></div>
+  </details>
   <div class="live-stream">
     <div class="stream-line"><span class="role system">system</span><code>You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.</code></div>
     <div class="stream-line"><span class="role user">user</span><code>In the Rust crate at runs/rlvr1/rust_cases/eval100_024_patch_run_pass_005_active_tags_filter_map_join, fix the iterator pipeline in src/main.rs so running the binary prints the expected list of active tags.</code></div>
@@ -602,6 +654,53 @@ core,fast,safe
     <div><strong>Result</strong>patch_test_recover · valid_trace = true</div>
     <div class="task-context"><strong>Task</strong>In the Rust crate at runs/rlvr1/rust_cases/eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix, fix the iterator-based event code selection logic in src/lib.rs so the tests pass. Keep the implementation compact and idiomatic.</div>
   </div>
+  <details class="crate-source" open>
+    <summary>Initial crate source</summary>
+    <div class="crate-file"><strong>Cargo.toml</strong><pre><code>[package]
+name = &quot;select_event_codes&quot;
+version = &quot;0.1.0&quot;
+edition = &quot;2021&quot;
+
+[lib]
+path = &quot;src/lib.rs&quot;</code></pre></div>
+    <div class="crate-file"><strong>src/lib.rs</strong><pre><code>pub fn select_codes(entries: &amp;[&amp;str]) -&gt; Vec&lt;String&gt; {
+    entries
+        .iter()
+        .filter_map(|entry| {
+            let (code, score) = entry.split_once(&#x27;:&#x27;)?;
+            let score: i32 = score.parse().ok()?;
+            if score &gt;= 50 {
+                Some(code.to_ascii_uppercase())
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::select_codes;
+
+    #[test]
+    fn keeps_only_positive_scores_at_or_above_threshold() {
+        let input = [&quot;alpha:75&quot;, &quot;beta:49&quot;, &quot;gamma:-4&quot;, &quot;delta:50&quot;];
+        assert_eq!(select_codes(&amp;input), vec![&quot;ALPHA&quot;, &quot;DELTA&quot;]);
+    }
+
+    #[test]
+    fn skips_banned_and_blank_codes() {
+        let input = [&quot;skip:90&quot;, &quot;:80&quot;, &quot;ok:77&quot;, &quot;ban:88&quot;, &quot;nice:51&quot;];
+        assert_eq!(select_codes(&amp;input), vec![&quot;OK&quot;, &quot;NICE&quot;]);
+    }
+
+    #[test]
+    fn trims_parts_and_accepts_zero_padded_scores() {
+        let input = [&quot;  mix  :050&quot;, &quot;keep:070&quot;, &quot; skip :099 &quot;];
+        assert_eq!(select_codes(&amp;input), vec![&quot;MIX&quot;, &quot;KEEP&quot;]);
+    }
+}</code></pre></div>
+  </details>
   <div class="live-stream">
     <div class="stream-line"><span class="role system">system</span><code>You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.</code></div>
     <div class="stream-line"><span class="role user">user</span><code>In the Rust crate at runs/rlvr1/rust_cases/eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix, fix the iterator-based event code selection logic in src/lib.rs so the tests pass. Keep the implementation compact and idiomatic.</code></div>
@@ -950,6 +1049,67 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
     <div><strong>Result</strong>patch_run_recover · valid_trace = false</div>
     <div class="task-context"><strong>Task</strong>In the Rust crate at runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23, fix the config merging logic in src/main.rs so the program prints the correct effective settings. Precedence should be defaults &lt; file &lt; env, explicit false values must not be ignored, and tags from higher-precedence layers should replace lower-precedence tags instead of being appended.</div>
   </div>
+  <details class="crate-source" open>
+    <summary>Initial crate source</summary>
+    <div class="crate-file"><strong>Cargo.toml</strong><pre><code>[package]
+name = &quot;layered_config_merge_precedence_23&quot;
+version = &quot;0.1.0&quot;
+edition = &quot;2021&quot;</code></pre></div>
+    <div class="crate-file"><strong>src/main.rs</strong><pre><code>#[derive(Clone, Debug)]
+struct Config {
+    host: Option&lt;String&gt;,
+    port: Option&lt;u16&gt;,
+    debug: Option&lt;bool&gt;,
+    tags: Vec&lt;String&gt;,
+}
+
+fn merge(base: Config, layer: Config) -&gt; Config {
+    Config {
+        host: base.host.or(layer.host),
+        port: base.port.or(layer.port),
+        debug: base.debug.or(layer.debug),
+        tags: {
+            let mut tags = base.tags;
+            tags.extend(layer.tags);
+            tags
+        },
+    }
+}
+
+fn joined(tags: &amp;[String]) -&gt; String {
+    tags.join(&quot;,&quot;)
+}
+
+fn main() {
+    let defaults = Config {
+        host: Some(&quot;localhost&quot;.to_string()),
+        port: Some(8080),
+        debug: Some(true),
+        tags: vec![&quot;base&quot;.to_string()],
+    };
+
+    let file_cfg = Config {
+        host: Some(&quot;file.example.com&quot;.to_string()),
+        port: None,
+        debug: Some(false),
+        tags: vec![&quot;file&quot;.to_string(), &quot;stable&quot;.to_string()],
+    };
+
+    let env_cfg = Config {
+        host: Some(&quot;env.example.com&quot;.to_string()),
+        port: Some(9000),
+        debug: None,
+        tags: vec![&quot;ops&quot;.to_string(), &quot;blue&quot;.to_string()],
+    };
+
+    let effective = merge(merge(defaults, file_cfg), env_cfg);
+
+    println!(&quot;host={}&quot;, effective.host.unwrap_or_else(|| &quot;&lt;none&gt;&quot;.to_string()));
+    println!(&quot;port={}&quot;, effective.port.map(|p| p.to_string()).unwrap_or_else(|| &quot;&lt;none&gt;&quot;.to_string()));
+    println!(&quot;debug={}&quot;, effective.debug.map(|d| d.to_string()).unwrap_or_else(|| &quot;&lt;none&gt;&quot;.to_string()));
+    println!(&quot;tags={}&quot;, joined(&amp;effective.tags));
+}</code></pre></div>
+  </details>
   <div class="live-stream">
     <div class="stream-line"><span class="role system">system</span><code>You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.</code></div>
     <div class="stream-line"><span class="role user">user</span><code>In the Rust crate at runs/rlvr1/rust_cases/eval100_087_patch_run_recover_023_layered_config_merge_precedence_23, fix the config merging logic in src/main.rs so the program prints the correct effective settings. Precedence should be defaults &lt; file &lt; env, explicit false values must not be ignored, and tags from higher-precedence layers should replace lower-precedence tags instead of being appended.</code></div>
@@ -1550,6 +1710,68 @@ tags=ops,blue&quot;
     <div><strong>Result</strong>run_only · cargo success, valid_trace = false</div>
     <div class="task-context"><strong>Task</strong>Run the Rust crate at runs/rlvr1/rust_cases/eval100_095_run_only_001_csv_record_validation_report and provide the exact stdout. Do not modify any files.</div>
   </div>
+  <details class="crate-source" open>
+    <summary>Initial crate source</summary>
+    <div class="crate-file"><strong>Cargo.toml</strong><pre><code>[package]
+name = &quot;csv_record_validation_report&quot;
+version = &quot;0.1.0&quot;
+edition = &quot;2021&quot;</code></pre></div>
+    <div class="crate-file"><strong>src/main.rs</strong><pre><code>fn parse_bool(s: &amp;str) -&gt; Option&lt;bool&gt; {
+    match s {
+        &quot;true&quot; =&gt; Some(true),
+        &quot;false&quot; =&gt; Some(false),
+        _ =&gt; None,
+    }
+}
+
+fn main() {
+    let input = &quot;1,Alice,30,true\n2,Bob,xx,false\nX,Carol,22,true\n4,Dan,41,maybe\n5,Eve,27,false\n6,Frank,18,true,extra&quot;;
+
+    let mut valid = 0usize;
+    let mut invalid = 0usize;
+    let mut errors = Vec::new();
+
+    for (idx, line) in input.lines().enumerate() {
+        let line_no = idx + 1;
+        let parts: Vec&lt;&amp;str&gt; = line.split(&#x27;,&#x27;).collect();
+        if parts.len() != 4 {
+            invalid += 1;
+            errors.push(format!(&quot;line {}: wrong field count&quot;, line_no));
+            continue;
+        }
+
+        if parts[0].parse::&lt;u32&gt;().is_err() {
+            invalid += 1;
+            errors.push(format!(&quot;line {}: bad id&quot;, line_no));
+            continue;
+        }
+        if parts[1].is_empty() {
+            invalid += 1;
+            errors.push(format!(&quot;line {}: bad name&quot;, line_no));
+            continue;
+        }
+        if parts[2].parse::&lt;u8&gt;().is_err() {
+            invalid += 1;
+            errors.push(format!(&quot;line {}: bad age&quot;, line_no));
+            continue;
+        }
+        if parse_bool(parts[3]).is_none() {
+            invalid += 1;
+            errors.push(format!(&quot;line {}: bad active&quot;, line_no));
+            continue;
+        }
+
+        valid += 1;
+    }
+
+    println!(&quot;valid: {}&quot;, valid);
+    println!(&quot;invalid: {}&quot;, invalid);
+    println!(&quot;errors:&quot;);
+    for err in errors {
+        println!(&quot;{}&quot;, err);
+    }
+}</code></pre></div>
+  </details>
   <div class="live-stream">
     <div class="stream-line"><span class="role system">system</span><code>You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.</code></div>
     <div class="stream-line"><span class="role user">user</span><code>Run the Rust crate at runs/rlvr1/rust_cases/eval100_095_run_only_001_csv_record_validation_report and provide the exact stdout. Do not modify any files.</code></div>
