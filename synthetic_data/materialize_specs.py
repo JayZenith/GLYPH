@@ -101,16 +101,16 @@ def _has_nonempty_section(cargo_toml: str, section_names: set[str]) -> bool:
 
 
 def _call_line(tool: str, call_id: str, params: dict) -> str:
-    def q(s: str) -> str:
-        return json.dumps(s, ensure_ascii=False)
+    payload = {"id": call_id, **params}
+    args = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     if tool == "read_file":
-        return f"CALL read_file(id={q(call_id)}, file_path={q(params['file_path'])})"
+        return f"CALL read_file {args}"
     if tool == "apply_patch":
-        return f"CALL apply_patch(id={q(call_id)}, file_path={q(params['file_path'])}, find={q(params['find'])}, replace={q(params['replace'])})"
+        return f"CALL apply_patch {args}"
     if tool == "cargo_test":
-        return f"CALL cargo_test(id={q(call_id)}, project_path={q(params['project_path'])})"
+        return f"CALL cargo_test {args}"
     if tool == "cargo_run":
-        return f"CALL cargo_run(id={q(call_id)}, project_path={q(params['project_path'])})"
+        return f"CALL cargo_run {args}"
     raise ValueError(f"unknown tool {tool}")
 
 

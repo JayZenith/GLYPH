@@ -14,6 +14,7 @@ tool churn, and heldout-style clean stopping.
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 
@@ -25,9 +26,9 @@ from dataclasses import dataclass
 # Full ChatML segment parser, used for stored rendered traces.
 SEG_RE = re.compile(r"<\|im_start\|>(\w+)\n(.*?)<\|im_end\|>", re.DOTALL)
 
-# One model-emitted tool request line:
-# CALL tool_name(id="c1", key="value")
-CALL_LINE_RE = re.compile(r"^\s*CALL\s+([A-Za-z_]\w*)\((.*)\)\s*$")
+# Model-emitted tool request lines use a readable header plus JSON args:
+# CALL tool_name {"id":"c1","key":"value"}
+TOOL_NAME_RE = re.compile(r"^[A-Za-z_]\w*$")
 
 # One runtime-emitted tool result block:
 # RESULT c1:
@@ -104,37 +105,6 @@ def strip_generated_assistant_stop(text: str) -> str:
 # CALL parsing
 # ---------------------------------------------------------------------------
 
-def _parse_arg_blob(blob: str) -> tuple[dict[str, str], list[str]]:
-    """Parse the inside of CALL(...), returning params plus syntax errors."""
-    params: dict[str, str] = {}
-    errors: list[str] = []
-    pos = 0
-    first = True
-    item_re = re.compile(r'(\w+)\s*=\s*"((?:[^"\\]|\\.)*)"')
-    while pos < len(blob):
-        if not first:
-            sep = re.match(r"\s*,\s*", blob[pos:])
-            if not sep:
-                errors.append("Malformed CALL argument separator")
-                return params, errors
-            pos += sep.end()
-        first = False
-        match = item_re.match(blob, pos)
-        if not match:
-            errors.append("Malformed CALL argument")
-            return params, errors
-        key, value = match.groups()
-        if key in params:
-            errors.append(f"Duplicate CALL argument: {key}")
-        try:
-            params[key] = bytes(value, "utf-8").decode("unicode_escape")
-        except UnicodeDecodeError:
-            errors.append(f"Invalid escape in CALL argument: {key}")
-            params[key] = value
-        pos = match.end()
-    return params, errors
-
-
 def parse_call_line(line: str) -> tuple[ProtocolCall | None, list[str]]:
     """Parse one CALL line.
 
@@ -146,17 +116,40 @@ def parse_call_line(line: str) -> tuple[ProtocolCall | None, list[str]]:
         return None, []
     if "`" in stripped or stripped.endswith(";"):
         return None, ["Malformed CALL line terminator"]
-    match = CALL_LINE_RE.fullmatch(stripped)
-    if not match:
+    try:
+        _, rest = stripped.split(None, 1)
+        tool_name, payload = rest.split(None, 1)
+    except ValueError:
         return None, ["Malformed CALL line"]
-    tool_name, arg_blob = match.groups()
-    params, errors = _parse_arg_blob(arg_blob)
+    if not TOOL_NAME_RE.fullmatch(tool_name):
+        return None, ["Malformed CALL tool name"]
+    duplicate_keys: list[str] = []
+
+    def reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        obj: dict[str, object] = {}
+        for key, value in pairs:
+            if key in obj:
+                duplicate_keys.append(key)
+            obj[key] = value
+        return obj
+
+    try:
+        decoded = json.loads(payload, object_pairs_hook=reject_duplicate_keys)
+    except json.JSONDecodeError as exc:
+        return None, [f"Malformed CALL JSON: {exc.msg} at column {exc.colno}"]
+    if duplicate_keys:
+        return None, [f"Duplicate CALL argument: {duplicate_keys[0]}"]
+    if not isinstance(decoded, dict):
+        return None, ["CALL JSON payload must be an object"]
+    params = dict(decoded)
     call_id = params.pop("id", None)
-    if not call_id:
-        errors.append("Missing CALL id")
-        call_id = ""
-    if errors:
-        return None, errors
+    if call_id is None or call_id == "":
+        return None, ["Missing CALL id"]
+    if not isinstance(call_id, str):
+        return None, ["CALL id must be a string"]
+    for key, value in params.items():
+        if not isinstance(value, str):
+            return None, [f"CALL argument must be a string: {key}"]
     return ProtocolCall(tool=tool_name, id=call_id, params=params), []
 
 

@@ -386,7 +386,7 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
     reward = 0.0
     # Malformed call keyword (e.g. "CALLTYPE" instead of "CALL ") breaks the
     # parser so no tool executes. Penalize per occurrence (capped) to train the
-    # exact `CALL <tool>(...)` form.
+    # exact `CALL <tool> {...}` form.
     malformed = len(re.findall(r"\bCALL[A-Z]", raw_assistant_trace))
     reward += min(malformed, 4) * REWARD_CONFIG["malformed_call_penalty"]
     protocol_penalty, protocol_errors = _protocol_reward_penalty(
@@ -421,7 +421,7 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
 # Watches model output for CALLs, rewrites paths into sandbox paths, executes tools, appends RESULT blocks, etc.
 # until no pending calls or max rounds
 class RustToolEnv(vf.MultiTurnEnv):
-    """Run the model in chat format; when it emits a `CALL ...` block, execute
+    """Run the model in chat format; when it emits a `CALL <tool> {...}` block, execute
     the tool for real and append a `RESULT cN:` block before the next round.
     Stops when no pending calls remain or `max_tool_rounds` is reached.
 

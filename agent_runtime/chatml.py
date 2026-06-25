@@ -99,7 +99,7 @@ def assert_glyph_template_parity(tokenizer: Any | None = None) -> None:
     messages = [
         {"role": "system", "content": "SYS"},
         {"role": "user", "content": "USR"},
-        {"role": "assistant", "content": 'CALL read_file(id="c1", file_path="x")\n<|im_end|>'},
+        {"role": "assistant", "content": 'CALL read_file {"id":"c1","file_path":"x"}\n<|im_end|>'},
         {"role": "tool", "content": "RESULT c1:\nstatus: success"},
     ]
 

@@ -6,18 +6,18 @@ This is where I am ending this round of Glyph.
 
 Code: <https://github.com/JayZenith/glyph/tree/main>
 
-Glyph is a Rust tool-use agent. The model emits `CALL tool(...)` blocks, tools execute against real Rust crates, and then the model should stop with a clean `FINAL`.
+Glyph is a Rust tool-use agent. The model emits `CALL tool {...}` blocks, tools execute against real Rust crates, and then the model should stop with a clean `FINAL`.
 
 I built Glyph as an end-to-end Rust tool-use agent experiment stack around PRIME-RL: synthetic task generation, SFT trace construction, held-out evals, the real Rust tool harness, RLVR task integration, reward validation, checkpoint export, and final pass@k measurement.
 
 The contract is not just "make cargo pass." The contract is the whole trace:
 
 ```text
-CALL read_file(...)
+CALL read_file {"id":"c1","file_path":"..."}
 RESULT ...
-CALL apply_patch(...)
+CALL apply_patch {"id":"c2","file_path":"...","find":"...","replace":"..."}
 RESULT ...
-CALL cargo_test(...) or CALL cargo_run(...)
+CALL cargo_test {"id":"c3","project_path":"..."} or CALL cargo_run {"id":"c3","project_path":"..."}
 RESULT status: success
 FINAL: ...
 ```
@@ -95,7 +95,7 @@ Export was the nastiest one. Two checkpoints appeared to collapse to `0/69`,
 but the traces were not random. They had one extra parenthesis:
 
 ```text
-CALL read_file(id="c1", file_path="..."))
+CALL read_file {"id":"c1","file_path":"...",}
 ```
 
 Strict eval rejected every malformed call, no tools ran, and the score went to

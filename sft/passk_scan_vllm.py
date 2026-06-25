@@ -56,10 +56,15 @@ def write_results(path: Path, results: list[dict]) -> None:
 
 
 def _cargo_verifier_success(trace: str) -> bool:
-    for _tool, call_id in re.findall(r'CALL\s+(cargo_run|cargo_test)\(.*?\bid\s*=\s*"([^"]+)"', trace, re.DOTALL):
+    assistant = assistant_text(trace)
+    tools = tool_text(trace)
+    for call in parse_call_blocks(assistant):
+        if call["tool"] not in {"cargo_run", "cargo_test"}:
+            continue
+        call_id = call["id"]
         match = re.search(
             r"RESULT\s+" + re.escape(call_id) + r":\n(.*?)(?=\n<\|im_end\|>|\nRESULT\s+[A-Za-z0-9_\-]+:|\Z)",
-            trace,
+            tools,
             re.DOTALL,
         )
         if match and re.search(r"^status:\s*success\b", match.group(1), re.MULTILINE):

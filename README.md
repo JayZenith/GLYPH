@@ -6,7 +6,7 @@ Readable blog version: [blog/index.html](blog/index.html)
 
 Glyph is a Rust tool-use agent experiment.
 
-The model emits `CALL tool(...)` blocks, tools execute against real Rust crates,
+The model emits `CALL tool {...}` blocks, tools execute against real Rust crates,
 and the model should stop with a clean `FINAL`. The final result is not an RLVR
 win. SFT built the strongest aggregate agent; RLVR changed the sampled
 distribution but did not improve held-out prompt-level reliability.

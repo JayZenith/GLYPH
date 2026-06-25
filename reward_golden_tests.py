@@ -59,8 +59,8 @@ def result_block(call_id: str, success: bool) -> str:
 
 
 def call(tool: str, call_id: str, **params: str) -> str:
-    args = ", ".join([f'id="{call_id}"', *[f'{k}="{v}"' for k, v in params.items()]])
-    return f"CALL {tool}({args})"
+    payload = json.dumps({"id": call_id, **params}, separators=(",", ":"))
+    return f"CALL {tool} {payload}"
 
 
 def raw_trace(assistant: str, results: list[str]) -> str:
@@ -181,6 +181,28 @@ class RewardGoldenTests(unittest.TestCase):
     def _loop(self):
         return score("\n".join([self.READ, self.PATCH, self.FAIL]), self.UNSOLVED)
 
+    def test_json_call_parser(self) -> None:
+        parsed = parse_calls('CALL read_file {"id":"c1","file_path":"src/lib.rs"}')
+        self.assertEqual(len(parsed), 1)
+        self.assertEqual(parsed[0].tool, "read_file")
+        self.assertEqual(parsed[0].id, "c1")
+        self.assertEqual(parsed[0].params, {"file_path": "src/lib.rs"})
+
+    def test_legacy_parenthesized_call_is_invalid(self) -> None:
+        legacy = 'CALL read_file(id="c1", file_path="src/lib.rs")'
+        self.assertEqual(parse_calls(legacy), [])
+        self.assertTrue(call_syntax_errors(legacy))
+
+    def test_missing_call_id_is_invalid(self) -> None:
+        missing = 'CALL read_file {"file_path":"src/lib.rs"}'
+        self.assertEqual(parse_calls(missing), [])
+        self.assertTrue(any("Missing CALL id" in err for err in call_syntax_errors(missing)))
+
+    def test_duplicate_json_call_argument_is_invalid(self) -> None:
+        duplicate = 'CALL read_file {"id":"c1","file_path":"a","file_path":"b"}'
+        self.assertEqual(parse_calls(duplicate), [])
+        self.assertTrue(any("Duplicate CALL argument" in err for err in call_syntax_errors(duplicate)))
+
     def test_solving_dominates(self) -> None:
         # Solving beats every non-solving outcome even with finalization shaping.
         self.assertGreater(self._solve_stop(), self._graceful())
@@ -282,13 +304,13 @@ class RewardGoldenTests(unittest.TestCase):
         self.assertGreater(one_fail_then_pass, 6.0)
 
     def test_malformed_call_syntax_cannot_parse_or_score_well(self) -> None:
-        malformed = 'CALL read_file(id="c1", file_path="src/lib.rs"))'
+        malformed = 'CALL read_file {"id":"c1","file_path":"src/lib.rs",}'
         self.assertEqual(parse_calls(malformed), [])
         self.assertTrue(call_syntax_errors(malformed))
         self.assertLess(score(malformed + "\nFINAL: done", []), self._loop())
 
     def test_malformed_call_with_chatml_end_cannot_score_well(self) -> None:
-        malformed = 'CALL read_file(id="c1", file_path="src/lib.rs"))<|im_end|>'
+        malformed = 'CALL read_file {"id":"c1","file_path":"src/lib.rs",}<|im_end|>'
         self.assertLess(score(malformed, []), self._loop())
 
     def test_malformed_calls_across_message_turns_are_invalid_with_generated_boundaries(self) -> None:
@@ -504,7 +526,7 @@ class RlPromptFormatTests(unittest.TestCase):
         messages = [
             {"role": "system", "content": "sys"},
             {"role": "user", "content": "fix"},
-            {"role": "assistant", "content": 'CALL read_file(id="c1")<|im_end|>'},
+            {"role": "assistant", "content": 'CALL read_file {"id":"c1"}<|im_end|>'},
             {"role": "tool", "content": "RESULT c1:\nstatus: success"},
             {"role": "assistant", "content": "FINAL: done"},
         ]
