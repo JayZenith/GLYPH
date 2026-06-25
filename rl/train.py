@@ -36,12 +36,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Launch PRIME-RL.")
     parser.add_argument("--model", default="JayZenith/SFT_V1",
                         help="HF repo id for trainer and rollout initialization.")
-    parser.add_argument("--adapter", default=None,
-                        help="HF repo id for a PEFT adapter to initialize LoRA training.")
-    parser.add_argument("--base-model",
-                        help="Override adapter base model. Only used with --adapter.")
     parser.add_argument("--lora-rank", type=int,
-                        help="Train a fresh LoRA adapter on --model/--base-model.")
+                        help="Train a LoRA adapter on --model.")
     parser.add_argument("--lora-alpha", type=float,
                         help="LoRA alpha for --lora-rank. Defaults to 2 * rank.")
     parser.add_argument("--lora-dropout", type=float, default=0.0)
@@ -50,12 +46,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lora-modules-to-save", default="")
     parser.add_argument("--lora-name",
                         help="Served adapter name for fresh LoRA mode.")
-    parser.add_argument("--rollout-init-model",
-                        help="HF repo id for rollout inference. Defaults to the base model.")
-    parser.add_argument("--disable-orchestrator-lora", action="store_true",
-                        help="Do not attach LoRA metadata to the orchestrator student model.")
-    parser.add_argument("--served-model-name", action="append",
-                        help="Extra served model alias for vLLM.")
     parser.add_argument("--data", type=Path, default=Path("synthetic_data/rl_prompts_1062.jsonl"), help="Prompt dataset path.")
     parser.add_argument("--output", type=Path, default=Path("outputs/prime_rl"))
     parser.add_argument("--max-steps", type=int)
@@ -101,8 +91,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--teacher-base-url",
                         help="External teacher inference base URL. Defaults to http://127.0.0.1:<teacher-port>.")
     parser.add_argument("--teacher-port", type=int, default=8001)
-    parser.add_argument("--disable-glyph-chat-template", action="store_true",
-                        help="Use the base tokenizer chat template instead of the CALL/RESULT/FINAL ChatML template.")
     # Anchor to the SFT reference. 0.01 was effectively no KL: the policy drifted
     # and collapsed (clean_end 0.75->0.33, terminal success 0.99->0.70). RL here
     # is a nudge, not a rewrite -- keep it close to SFT.
@@ -121,21 +109,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gpus-per-node", type=int,
                         help="Visible GPU count exposed to PRIME-RL for this run.")
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--dump-config", type=Path)
     return parser.parse_args()
-
-
-def resolve_adapter_dir(adapter: str) -> Path:
-    local_path = Path(adapter)
-    if local_path.exists():
-        return local_path.resolve()
-    return Path(snapshot_download(repo_id=adapter, repo_type="model"))
-
-
-def load_adapter_config(adapter_dir: Path) -> dict[str, Any]:
-    path = adapter_dir / "adapter_config.json"
-    with path.open("r", encoding="utf-8") as f:
-        return json.load(f)
 
 
 # Reads one TOML file into Python dict
@@ -242,33 +216,19 @@ def add_chat_boundary_stop_tokens(sampling: dict[str, Any], model_name: str) -> 
     extra_body["stop_token_ids"] = sorted({*existing, *stop_ids})
     extra_body["stop"] = ["<|im_end|>", "<|im_start|>"]
 
-# loads 3 TOML files and deletes trainer["buffer"] as this wrapper wants
-# PRIME-RL's current config shape, not old buffer block
-def build_config(args: argparse.Namespace, adapter_cfg: dict[str, Any] | None) -> dict[str, Any]:
+def build_config(args: argparse.Namespace) -> dict[str, Any]:
     trainer, orchestrator, inference = load_templates()
     trainer.pop("buffer", None)
     orchestrator.pop("model", None)
 
-    # resolve paths and  model names
     output_dir = args.output.resolve()
     data_path = args.data.resolve() if args.data else None
-    if args.adapter and args.lora_rank is not None:
-        raise ValueError("Use either --adapter or --lora-rank, not both.")
-    use_lora = adapter_cfg is not None or args.lora_rank is not None
+    use_lora = args.lora_rank is not None
     adapter_name = None
     auto_lora_name = None
-    if adapter_cfg is not None:
-        base_model = args.base_model or adapter_cfg["base_model_name_or_path"]
-        rank = int(adapter_cfg["r"])
-        alpha = float(adapter_cfg["lora_alpha"])
-        dropout = float(adapter_cfg.get("lora_dropout", 0.0))
-        target_modules = list(adapter_cfg["target_modules"])
-        modules_to_save = list(adapter_cfg.get("modules_to_save") or [])
-        adapter_label = str(args.adapter).replace("/", "__")
-        adapter_name = f"{adapter_label}-r{rank}-a{int(alpha)}"
-        auto_lora_name = f"r{rank}-a{float(alpha)}"
-    elif args.lora_rank is not None:
-        base_model = args.base_model or args.model
+
+    base_model = args.model
+    if use_lora:
         rank = args.lora_rank
         alpha = float(args.lora_alpha if args.lora_alpha is not None else 2 * rank)
         dropout = float(args.lora_dropout)
@@ -276,14 +236,10 @@ def build_config(args: argparse.Namespace, adapter_cfg: dict[str, Any] | None) -
         modules_to_save = [m.strip() for m in args.lora_modules_to_save.split(",") if m.strip()]
         adapter_name = args.lora_name or f"glyph-rlvr-r{rank}-a{int(alpha)}"
         auto_lora_name = f"r{rank}-a{float(alpha)}"
-    else:
-        base_model = args.model
-    rollout_model = args.rollout_init_model or base_model
-    teacher_model_name = args.teacher_model or rollout_model
-    if not args.disable_glyph_chat_template:
-        base_model = materialize_glyph_chat_model(base_model, output_dir)
-        rollout_model = materialize_glyph_chat_model(rollout_model, output_dir)
-        teacher_model_name = materialize_glyph_chat_model(teacher_model_name, output_dir)
+
+    teacher_model_name = args.teacher_model or base_model
+    base_model = materialize_glyph_chat_model(base_model, output_dir)
+    teacher_model_name = materialize_glyph_chat_model(teacher_model_name, output_dir)
 
     trainer_model = trainer.setdefault("model", {})
     trainer_optim = trainer.setdefault("optim", {})
@@ -329,8 +285,8 @@ def build_config(args: argparse.Namespace, adapter_cfg: dict[str, Any] | None) -
 
     # set rollout model and related configs
     orch_student_model = orch_student.setdefault("model", {})
-    orch_student_model["name"] = rollout_model
-    if use_lora and not args.disable_orchestrator_lora:
+    orch_student_model["name"] = base_model
+    if use_lora:
         orch_student_model["lora"] = {
             "name": adapter_name,
             "rank": rank,
@@ -349,8 +305,8 @@ def build_config(args: argparse.Namespace, adapter_cfg: dict[str, Any] | None) -
         set_filter_enforcement(orchestrator, "repetition", True)
     maybe_set(orch_sampling, "temperature", args.temperature)
     maybe_set(orch_sampling, "max_completion_tokens", args.max_completion_tokens)
-    add_invalid_token_logit_bias(orch_sampling, rollout_model)
-    add_chat_boundary_stop_tokens(orch_sampling, rollout_model)
+    add_invalid_token_logit_bias(orch_sampling, base_model)
+    add_chat_boundary_stop_tokens(orch_sampling, base_model)
 
     # env args
     if data_path is not None:
@@ -377,15 +333,14 @@ def build_config(args: argparse.Namespace, adapter_cfg: dict[str, Any] | None) -
     # Inference
     infer_model = inference.setdefault("model", {})
     infer_server = inference.setdefault("server", {})
-    infer_model["name"] = rollout_model
+    infer_model["name"] = base_model
     maybe_set(infer_model, "max_model_len", args.max_model_len)
     maybe_set(infer_server, "port", args.port)
     maybe_set(inference, "gpu_memory_utilization", args.gpu_memory_utilization)
     served_aliases: list[str] = []
-    candidates = [rollout_model, base_model]
+    candidates = [base_model]
     if use_lora:
         candidates += [adapter_name, auto_lora_name]
-    candidates += list(args.served_model_name or [])
     for name in candidates:
         if name and name not in served_aliases:
             served_aliases.append(name)
@@ -481,36 +436,11 @@ def patch_prime_orchestrator_httpx_import() -> None:
 
 def main() -> None:
     args = parse_args()
-    if args.adapter:
-        adapter_dir = resolve_adapter_dir(args.adapter)
-        adapter_cfg = load_adapter_config(adapter_dir)
-    else:
-        adapter_dir = None
-        adapter_cfg = None
-    raw_config = build_config(args, adapter_cfg)
-    raw_config["metadata"] = {
-        "mode": "lora" if adapter_cfg else "full_finetune",
-        "init_model": args.adapter or args.model,
-    }
-    if args.lora_rank is not None:
-        raw_config["metadata"]["mode"] = "lora"
-        raw_config["metadata"]["init_model"] = args.model
-        raw_config["metadata"]["fresh_lora"] = True
-    if adapter_dir is not None:
-        raw_config["metadata"]["init_adapter_resolved_dir"] = str(adapter_dir)
-    if args.rollout_init_model:
-        raw_config["metadata"]["rollout_init_model_source"] = args.rollout_init_model
-    if args.dump_config:
-        args.dump_config.parent.mkdir(parents=True, exist_ok=True)
-        args.dump_config.write_text(json.dumps(raw_config, indent=2) + "\n", encoding="utf-8")
+    raw_config = build_config(args)
 
     print(json.dumps(raw_config, indent=2))
     if args.dry_run:
         return
-
-    if adapter_dir is not None:
-        os.environ["PRIME_RL_INIT_ADAPTER"] = str(adapter_dir)
-        os.environ["PRIME_RL_INFERENCE_FULL_WEIGHTS"] = "1"
 
     cwd = str(Path.cwd())
     rl_dir = str(Path.cwd() / "rl")
@@ -529,9 +459,7 @@ def main() -> None:
         managed_gpu_ids = [0, 1]
     patch_gpu_mapping(managed_gpu_ids)
 
-    validated_config = dict(raw_config)
-    validated_config.pop("metadata", None)
-    config = RLConfig.model_validate(validated_config)
+    config = RLConfig.model_validate(raw_config)
     rl_mod.rl_local(config)
 
 
