@@ -7,16 +7,14 @@ from collections import Counter, defaultdict
 from agent_runtime.protocol import (
     GIBBERISH_RE,
     REPETITION_RE,
+    RESULT_ID_RE,
+    ROLE_LEAK_RE,
+    SEG_RE,
     call_syntax_errors,
     final_hygiene_errors,
     parse_calls,
 )
 from agent_runtime.rust.results import parse_call_blocks
-
-
-SEG_RE = re.compile(r"<\|im_start\|>(\w+)\n(.*?)<\|im_end\|>", re.DOTALL)
-RESULT_ID_RE = re.compile(r"^\s*RESULT\s+([A-Za-z0-9_\-]+):", re.MULTILINE)
-ROLE_LEAK_RE = re.compile(r"(<\|im_start\|>|<\|im_end\|>|^\s*(system|user|assistant|tool)\s*$)", re.MULTILINE)
 
 
 def _segments(text: str) -> list[tuple[str, str]]:
