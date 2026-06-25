@@ -45,9 +45,6 @@ ROLE_LEAK_RE = re.compile(
     re.MULTILINE,
 )
 
-CHATML_END = "<|im_end|>"
-
-
 # ---------------------------------------------------------------------------
 # Result types
 # ---------------------------------------------------------------------------
@@ -95,19 +92,6 @@ def assistant_text(text: str) -> str:
 
 def tool_text(text: str) -> str:
     return _joined_role_text(text, "tool")
-
-
-def strip_terminal_chatml_end(text: str) -> str:
-    """Remove one allowed trailing ChatML end marker from assistant content.
-
-    This is for assistant text that was already extracted or passed in plain,
-    e.g. "FINAL: ok<|im_end|>" -> "FINAL: ok". It does not parse roles, and it
-    does not add or repair missing markers.
-    """
-    stripped = text.rstrip()
-    if stripped.endswith(CHATML_END):
-        stripped = stripped[: -len(CHATML_END)].rstrip()
-    return stripped
 
 
 # ---------------------------------------------------------------------------
@@ -247,7 +231,6 @@ def final_hygiene_errors(assistant_text: str) -> list[str]:
         return errors
     final_pos = assistant_text.rfind("FINAL:")
     tail = assistant_text[final_pos + len("FINAL:"):].strip()
-    tail = re.sub(r"\s*<\|im_end\|>\s*$", "", tail).strip()
     body = tail
     if not body:
         errors.append("Empty FINAL")

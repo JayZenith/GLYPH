@@ -173,7 +173,7 @@ class RewardGoldenTests(unittest.TestCase):
     def _solve_nostop(self):
         return score("\n".join([self.READ, self.PATCH, self.OK]), self.SOLVED)
 
-    def _solve_stop_with_generated_eos(self):
+    def _solve_stop_with_generated_chatml_end(self):
         return score("\n".join([self.READ, self.PATCH, self.OK, "FINAL: done<|im_end|>"]), self.SOLVED)
 
     def _graceful(self):
@@ -189,7 +189,7 @@ class RewardGoldenTests(unittest.TestCase):
 
     def test_clean_final_is_preferred(self) -> None:
         self.assertGreater(self._solve_stop(), self._solve_nostop())
-        self.assertEqual(self._solve_stop_with_generated_eos(), self._solve_stop())
+        self.assertLess(self._solve_stop_with_generated_chatml_end(), self._solve_stop())
         self.assertGreater(self._graceful(), self._loop())
 
     def test_churn_after_success_is_penalized(self) -> None:
@@ -312,7 +312,7 @@ class RewardGoldenTests(unittest.TestCase):
         }
         self.assertLessEqual(score_with_state(leaked, self.SOLVED, state), 0.0)
 
-    def test_malformed_calls_across_message_turns_are_invalid_after_boundary_strip(self) -> None:
+    def test_malformed_calls_across_message_turns_are_invalid_with_generated_boundaries(self) -> None:
         completion = [
             {"role": "assistant", "content": self.READ + ")<|im_end|>"},
             {"role": "assistant", "content": self.PATCH + "<|im_end|>"},
@@ -342,10 +342,10 @@ class RewardGoldenTests(unittest.TestCase):
         )
         self.assertLessEqual(reward, 0.0)
 
-    def test_rendered_terminal_chatml_end_after_final_is_allowed(self) -> None:
-        clean = "\n".join([self.READ, self.PATCH, self.OK, "FINAL: done<|im_end|>"])
-        self.assertFalse(_role_marker_errors(clean))
-        self.assertEqual(score(clean, self.SOLVED), self._solve_stop())
+    def test_plain_terminal_chatml_end_after_final_is_invalid(self) -> None:
+        dirty = "\n".join([self.READ, self.PATCH, self.OK, "FINAL: done<|im_end|>"])
+        self.assertTrue(_role_marker_errors(dirty))
+        self.assertLess(score(dirty, self.SOLVED), self._solve_stop())
 
     def test_bad_cargo_project_path_blocks_top_reward(self) -> None:
         bad_cargo = call("cargo_test", "c3", project_path="/tmp/case/src/main.rs")

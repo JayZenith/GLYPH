@@ -19,7 +19,6 @@ from agent_runtime.protocol import (
     ended_cleanly_after_final,
     final_count,
     final_hygiene_errors,
-    strip_terminal_chatml_end,
 )
 from rl.task_format import load_prompts
 from agent_runtime.rust.executor import ExecutionResult, RustExecutor
@@ -125,7 +124,7 @@ def _completion_text(completion) -> str:
 def _completion_role_text(completion, role: str) -> str:
     if isinstance(completion, list):
         return "\n".join(
-            strip_terminal_chatml_end(message_content(m)) if role == "assistant" else message_content(m)
+            message_content(m)
             for m in completion
             if message_role(m) == role
         )
@@ -146,18 +145,11 @@ def _strip_role_leak_tail(text: str) -> str:
 
 
 def _normalize_assistant_for_reward(text: str) -> str:
-    """Match eval scoring: only a terminal ChatML end marker is outside content."""
-    return strip_terminal_chatml_end(text).strip()
+    return text.strip()
 
 
 def _role_marker_errors(text: str) -> list[str]:
     stripped = text.rstrip()
-    if stripped.endswith("<|im_end|>"):
-        before_end = stripped[: -len("<|im_end|>")].rstrip()
-        last_final = before_end.rfind("FINAL:")
-        last_call = before_end.rfind("CALL ")
-        if last_final >= 0 and last_final > last_call:
-            stripped = before_end
     if ROLE_LEAK_RE.search(stripped):
         return ["Generated chat role marker"]
     return []
@@ -185,7 +177,7 @@ def _trajectory_generated_text(state: dict) -> str:
     for step in state.get("trajectory") or []:
         for message in step.get("completion") or []:
             if message_role(message) == "assistant":
-                parts.append(strip_terminal_chatml_end(message_content(message)))
+                parts.append(message_content(message))
     return "\n".join(parts)
 
 
@@ -193,7 +185,7 @@ def _trajectory_latest_assistant_turn(state: dict) -> str:
     for step in reversed(state.get("trajectory") or []):
         for message in reversed(step.get("completion") or []):
             if message_role(message) == "assistant":
-                return strip_terminal_chatml_end(message_content(message)).strip()
+                return message_content(message).strip()
     return ""
 
 
@@ -400,7 +392,7 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
     assistant_trace = _strip_role_leak_tail(raw_assistant_trace)
     latest_assistant_turn = (
         _trajectory_latest_assistant_turn(state)
-        or strip_terminal_chatml_end(_completion_role_text(completion, "assistant")).strip()
+        or _completion_role_text(completion, "assistant").strip()
     )
     structure = _structure_reward(assistant_trace, tool_text, validator)
 
@@ -534,7 +526,6 @@ class RustToolEnv(vf.MultiTurnEnv):
         )
         latest_content = _completion_role_text(trajectory[-1]["completion"], "assistant")
         marker_errors = _role_marker_errors(latest_content)
-        text = strip_terminal_chatml_end(text)
         if marker_errors:
             state["malformed_call_errors"] = marker_errors
             return True
@@ -553,7 +544,7 @@ class RustToolEnv(vf.MultiTurnEnv):
         raw_latest = _latest_assistant_segment(raw_text)
         latest_content = _completion_role_text(messages, "assistant")
         marker_errors = _role_marker_errors(latest_content)
-        text = strip_terminal_chatml_end(_strip_role_leak_tail(raw_latest))
+        text = _strip_role_leak_tail(raw_latest)
         if marker_errors:
             state["malformed_call_errors"] = marker_errors
             return []
