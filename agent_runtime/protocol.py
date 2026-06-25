@@ -72,8 +72,11 @@ class ProtocolCall:
 def _joined_role_text(text: str, role: str) -> str:
     """Return all content for one role from a ChatML transcript.
 
-    If there are no ChatML markers, treat the whole text as assistant text.
-    This keeps plain completion strings usable by the same parser.
+    Example: assistant_text("<|im_start|>assistant\nFINAL: ok<|im_end|>")
+    returns "FINAL: ok".
+
+    Example: assistant_text("FINAL: ok") also returns "FINAL: ok", because
+    raw model completions may already be plain assistant text.
     """
     if "<|im_start|>" not in text:
         return text if role == "assistant" else ""
