@@ -1,240 +1,0 @@
-/workspace/prime-rl-src/.venv/lib/python3.12/site-packages/tyro/_resolver.py:601: TyroWarning: <class 'prime_rl.configs.orchestrator.DefaultAdvantageConfig'> does not match any type in Union: [<class 'types.UnionType'>, <class 'NoneType'>]
-  warnings.warn(
-/workspace/prime-rl-src/.venv/lib/python3.12/site-packages/tyro/_parsers.py:562: UserWarning: Duplicate subcommand name detected: 'advantage:default-advantage-config' is already used for typing.Annotated but will be overwritten by prime_rl.configs.orchestrator.DefaultAdvantageConfig. Only the last type (prime_rl.configs.orchestrator.DefaultAdvantageConfig) will be accessible via this subcommand. Consider using distinct class names or use tyro.conf.subcommand() to specify explicit subcommand names.
-  warnings.warn(
-[2m06:47:43[0m [1m   INFO[0m [1m[22mStarting orchestrator[0m[0m
-[2m06:47:43[0m [1m   INFO[0m [1m[22mSetting default executor to ThreadPoolExecutor(max_workers=64)[0m[0m
-[2m06:47:43[0m [1m   INFO[0m [1m[22mInitializing teacher inference pool (base_url=http://127.0.0.1:8001, model=JayZenith/SFT_V1)[0m[0m
-[2m06:47:43[0m [1m   INFO[0m [1m[22mInitializing static inference pool (base_url=http://127.0.0.1:8001, dp_rank_count=1, api_key_var=VLLM_API_KEY, headers={})[0m[0m
-[2m06:47:43[0m [1m   INFO[0m [1m[22mInitializing tokenizer (name='JayZenith/SFT_V1' trust_remote_code=False chat_template=None)[0m[0m
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-[2m06:47:49[0m [1m   INFO[0m [1m[22mInitialized DefaultRenderer for JayZenith/SFT_V1[0m[0m
-[2m06:47:49[0m [1m   INFO[0m [1m[22mInitializing static inference pool (base_url=http://localhost:8000/v1, dp_rank_count=1, api_key_var=VLLM_API_KEY, headers={})[0m[0m
-[2m06:47:49[0m [1m   INFO[0m [1m[22mUsing direct renderer rollout client[0m[0m
-[2m06:47:49[0m [1m   INFO[0m [1m[22mInitializing monitor (wandb=project='prime-rl' entity=None name=None group=None tags=None offline=True log_extras=LogExtrasConfig(samples=True, distributions=True, interval=10, sample_ratio=None), prime_monitor=None)[0m[0m
-[2m06:47:49[0m [1m   INFO[0m [1m[22mInitializing WandbMonitor (project='prime-rl' entity=None name=None group=None tags=None offline=True log_extras=LogExtrasConfig(samples=True, distributions=True, interval=10, sample_ratio=None))[0m[0m
-wandb: Tracking run with wandb version 0.26.1
-wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
-wandb: Run data is saved locally in /workspace/glyph/outputs/rlvr_heldout69_passk8_targets_seq8192_mlen12288_train2_memfix/run_default/wandb/offline-run-20260604_064749-0ghdkbp0
-wandb: Detected [anthropic, openai, verifiers] in use.
-wandb: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
-wandb: For more information, check out the docs at: https://weave-docs.wandb.ai
-[2m06:47:50[0m [1m   INFO[0m [1m[22mConfigured 3 rollout filter(s):[0m[0m
-[2m06:47:50[0m [1m   INFO[0m [1m[22m  Monitoring gibberish filter (type=gibberish, enforce=False, token_id_threshold=100000, logprob_offset=2.0)[0m[0m
-[2m06:47:50[0m [1m   INFO[0m [1m[22m  Monitoring repetition filter (type=repetition, enforce=False, window=3000, prob_threshold=0.99)[0m[0m
-[2m06:47:50[0m [1m   INFO[0m [1m[22m  Enforcing zero_advantage filter (type=zero_advantage, enforce=True)[0m[0m
-[2m06:47:50[0m [1m   INFO[0m [1m[22mLoading training environments[0m[0m
-[2m06:47:50[0m [1m   INFO[0m [1m[22mInitializing task-trace (id='task-trace' name=None args={'data_path': '/workspace/glyph/synthetic_data/rl_prompts_heldout69_passk_targets.jsonl', 'timeout': 30, 'max_tool_rounds': 15} extra_env_kwargs={'max_total_completion_tokens': -1, 'max_seq_len': 8192} address=None num_workers=1 ratio=None max_retries=0 max_total_completion_tokens=-1 timeout=None sampling=TrainSamplingConfig(temperature=0.8, repetition_penalty=1.0, max_completion_tokens=1536, min_tokens=0, seed=None, extra_body={'stop_token_ids': [151644, 151645], 'stop': ['<|im_end|>', '<|im_start|>'], 'top_k': -1, 'min_p': 0.0, 'return_token_ids': True, 'logit_bias': {'151669': -100.0, '151670': -100.0, '151671': -100.0, '151672': -100.0, '151673': -100.0, '151674': -100.0, '151675': -100.0, '151676': -100.0, '151677': -100.0, '151678': -100.0, '151679': -100.0, '151680': -100.0, '151681': -100.0, '151682': -100.0, '151683': -100.0, '151684': -100.0, '151685': -100.0, '151686': -100.0, '151687': -100.0, '151688': -100.0, '151689': -100.0, '151690': -100.0, '151691': -100.0, '151692': -100.0, '151693': -100.0, '151694': -100.0, '151695': -100.0, '151696': -100.0, '151697': -100.0, '151698': -100.0, '151699': -100.0, '151700': -100.0, '151701': -100.0, '151702': -100.0, '151703': -100.0, '151704': -100.0, '151705': -100.0, '151706': -100.0, '151707': -100.0, '151708': -100.0, '151709': -100.0, '151710': -100.0, '151711': -100.0, '151712': -100.0, '151713': -100.0, '151714': -100.0, '151715': -100.0, '151716': -100.0, '151717': -100.0, '151718': -100.0, '151719': -100.0, '151720': -100.0, '151721': -100.0, '151722': -100.0, '151723': -100.0, '151724': -100.0, '151725': -100.0, '151726': -100.0, '151727': -100.0, '151728': -100.0, '151729': -100.0, '151730': -100.0, '151731': -100.0, '151732': -100.0, '151733': -100.0, '151734': -100.0, '151735': -100.0, '151736': -100.0, '151737': -100.0, '151738': -100.0, '151739': -100.0, '151740': -100.0, '151741': -100.0, '151742': -100.0, '151743': -100.0, '151744': -100.0, '151745': -100.0, '151746': -100.0, '151747': -100.0, '151748': -100.0, '151749': -100.0, '151750': -100.0, '151751': -100.0, '151752': -100.0, '151753': -100.0, '151754': -100.0, '151755': -100.0, '151756': -100.0, '151757': -100.0, '151758': -100.0, '151759': -100.0, '151760': -100.0, '151761': -100.0, '151762': -100.0, '151763': -100.0, '151764': -100.0, '151765': -100.0, '151766': -100.0, '151767': -100.0, '151768': -100.0, '151769': -100.0, '151770': -100.0, '151771': -100.0, '151772': -100.0, '151773': -100.0, '151774': -100.0, '151775': -100.0, '151776': -100.0, '151777': -100.0, '151778': -100.0, '151779': -100.0, '151780': -100.0, '151781': -100.0, '151782': -100.0, '151783': -100.0, '151784': -100.0, '151785': -100.0, '151786': -100.0, '151787': -100.0, '151788': -100.0, '151789': -100.0, '151790': -100.0, '151791': -100.0, '151792': -100.0, '151793': -100.0, '151794': -100.0, '151795': -100.0, '151796': -100.0, '151797': -100.0, '151798': -100.0, '151799': -100.0, '151800': -100.0, '151801': -100.0, '151802': -100.0, '151803': -100.0, '151804': -100.0, '151805': -100.0, '151806': -100.0, '151807': -100.0, '151808': -100.0, '151809': -100.0, '151810': -100.0, '151811': -100.0, '151812': -100.0, '151813': -100.0, '151814': -100.0, '151815': -100.0, '151816': -100.0, '151817': -100.0, '151818': -100.0, '151819': -100.0, '151820': -100.0, '151821': -100.0, '151822': -100.0, '151823': -100.0, '151824': -100.0, '151825': -100.0, '151826': -100.0, '151827': -100.0, '151828': -100.0, '151829': -100.0, '151830': -100.0, '151831': -100.0, '151832': -100.0, '151833': -100.0, '151834': -100.0, '151835': -100.0, '151836': -100.0, '151837': -100.0, '151838': -100.0, '151839': -100.0, '151840': -100.0, '151841': -100.0, '151842': -100.0, '151843': -100.0, '151844': -100.0, '151845': -100.0, '151846': -100.0, '151847': -100.0, '151848': -100.0, '151849': -100.0, '151850': -100.0, '151851': -100.0, '151852': -100.0, '151853': -100.0, '151854': -100.0, '151855': -100.0, '151856': -100.0, '151857': -100.0, '151858': -100.0, '151859': -100.0, '151860': -100.0, '151861': -100.0, '151862': -100.0, '151863': -100.0, '151864': -100.0, '151865': -100.0, '151866': -100.0, '151867': -100.0, '151868': -100.0, '151869': -100.0, '151870': -100.0, '151871': -100.0, '151872': -100.0, '151873': -100.0, '151874': -100.0, '151875': -100.0, '151876': -100.0, '151877': -100.0, '151878': -100.0, '151879': -100.0, '151880': -100.0, '151881': -100.0, '151882': -100.0, '151883': -100.0, '151884': -100.0, '151885': -100.0, '151886': -100.0, '151887': -100.0, '151888': -100.0, '151889': -100.0, '151890': -100.0, '151891': -100.0, '151892': -100.0, '151893': -100.0, '151894': -100.0, '151895': -100.0, '151896': -100.0, '151897': -100.0, '151898': -100.0, '151899': -100.0, '151900': -100.0, '151901': -100.0, '151902': -100.0, '151903': -100.0, '151904': -100.0, '151905': -100.0, '151906': -100.0, '151907': -100.0, '151908': -100.0, '151909': -100.0, '151910': -100.0, '151911': -100.0, '151912': -100.0, '151913': -100.0, '151914': -100.0, '151915': -100.0, '151916': -100.0, '151917': -100.0, '151918': -100.0, '151919': -100.0, '151920': -100.0, '151921': -100.0, '151922': -100.0, '151923': -100.0, '151924': -100.0, '151925': -100.0, '151926': -100.0, '151927': -100.0, '151928': -100.0, '151929': -100.0, '151930': -100.0, '151931': -100.0, '151932': -100.0, '151933': -100.0, '151934': -100.0, '151935': -100.0}}))[0m[0m
-[2m06:47:50[0m [1m   INFO[0m [1m[22mLoaded 1 training environment(s) (task-trace)[0m[0m
-[2m06:48:00[0m [32m[1mSUCCESS[0m [32m[1m[22mTrain environment(s) ready[0m[0m
-[2m06:48:00[0m [1m   INFO[0m [1m[22mSetting up buffer (seed=None easy_threshold=None hard_threshold=None easy_fraction=0.0 hard_fraction=0.0 online_difficulty_filtering=False hash_keys=['env_name', 'prompt'])[0m[0m
-[2m06:48:00[0m [1m   INFO[0m [1m[22mInitializing checkpoint manager (interval=25 resume_step=None wait_for_weights_timeout=None keep_last=None keep_interval=None skip_progress=False skip_buffer=False)[0m[0m
-[2m06:48:00[0m [1m   INFO[0m [1m[22mWaiting for inference pool to be ready[0m[0m
-[2m06:48:10[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 10 seconds (Error: All connection attempts failed) on http://localhost:8000[0m[0m
-[2m06:48:20[0m [32m[1mSUCCESS[0m [32m[1m[22mInference pool ready[0m[0m
-[2m06:48:20[0m [1m   INFO[0m [1m[22mWaiting for teacher inference pool to be ready[0m[0m
-[2m06:48:21[0m [32m[1mSUCCESS[0m [32m[1m[22mTeacher inference pool ready[0m[0m
-[2m06:48:21[0m [1m   INFO[0m [1m[22mInitializing weight broadcast (type='filesystem')[0m[0m
-[2m06:48:21[0m [1m   INFO[0m [1m[22mInitializing training batch sender (type='filesystem')[0m[0m
-[2m06:48:21[0m [1m   INFO[0m [1m[22mTraining from scratch[0m[0m
-[2m06:48:21[0m [1m   INFO[0m [1m[22mStarting orchestrator loop (max_steps=50)[0m[0m
-[2m06:48:21[0m [1m   INFO[0m [1m[22mStarting orchestrator step 0[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][fastokens] patch_transformers: successfully patched transformers v5.5.0
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Generating rollouts (train): 100%|██████████| 8/8 [00:39<00:00,  4.88s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:39<00:00,  4.88s/it]
-[2m06:49:00[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m06:49:04[0m [1m   INFO[0m [1m[22mLogging 8 samples to W&B table at step 0[0m[0m
-[2m06:49:04[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 0 | Time: 42.42s | Reward: 3.9062 | Seq. Length: 5735.8 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m06:49:04[0m [1m   INFO[0m [1m[22mStarting orchestrator step 1[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m06:49:34[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m06:49:34[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m06:49:37[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:34<00:00,  4.32s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:34<00:00,  4.32s/it]
-[2m06:49:39[0m [1m   INFO[0m [1m[22mDetected 8/8 rollouts (zero_advantage=8), enforced 8[0m[0m
-[2m06:49:39[0m [33m[1mWARNING[0m [33m[1m[22mAttempt 1/3 at step 1 filtered out all 8 rollouts - retrying batch generation[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s]Generating rollouts (train): 100%|██████████| 8/8 [01:04<00:00,  8.11s/it]Generating rollouts (train): 100%|██████████| 8/8 [01:04<00:00,  8.11s/it]
-[2m06:50:44[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m06:50:46[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 1 | Time: 102.16s | Reward: 2.4688 | Seq. Length: 5124.0 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m06:50:47[0m [1m   INFO[0m [1m[22mStarting orchestrator step 2[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m06:51:11[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m06:51:11[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m06:51:14[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:35<00:00,  4.48s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:35<00:00,  4.48s/it]
-[2m06:51:23[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m06:51:26[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 2 | Time: 38.77s | Reward: 2.1250 | Seq. Length: 5714.5 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m06:51:26[0m [1m   INFO[0m [1m[22mStarting orchestrator step 3[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m06:51:54[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m06:51:54[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m06:51:58[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [01:08<00:00,  8.59s/it]Generating rollouts (train): 100%|██████████| 8/8 [01:08<00:00,  8.59s/it]
-[2m06:52:35[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m06:52:37[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 3 | Time: 71.12s | Reward: -0.6562 | Seq. Length: 4814.6 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m06:52:38[0m [1m   INFO[0m [1m[22mStarting orchestrator step 4[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m06:53:03[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m06:53:03[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m06:53:06[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:57<00:00,  7.20s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:57<00:00,  7.20s/it]
-[2m06:53:35[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m06:53:38[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 4 | Time: 60.22s | Reward: -3.1250 | Seq. Length: 5214.2 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m06:53:39[0m [1m   INFO[0m [1m[22mStarting orchestrator step 5[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m06:54:00[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m06:54:00[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m06:54:03[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:39<00:00,  4.99s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:39<00:00,  4.99s/it]
-[2m06:54:19[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m06:54:21[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 5 | Time: 42.91s | Reward: 3.8438 | Seq. Length: 5824.0 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m06:54:22[0m [1m   INFO[0m [1m[22mStarting orchestrator step 6[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m06:54:48[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m06:54:48[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m06:54:51[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [01:08<00:00,  8.56s/it]Generating rollouts (train): 100%|██████████| 8/8 [01:08<00:00,  8.56s/it]
-[2m06:55:30[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m06:55:33[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 6 | Time: 71.04s | Reward: -2.2812 | Seq. Length: 5132.9 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m06:55:33[0m [1m   INFO[0m [1m[22mStarting orchestrator step 7[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m06:55:53[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m06:55:54[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m06:55:56[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:49<00:00,  6.25s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:50<00:00,  6.25s/it]
-[2m06:56:23[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 9 training examples[0m[0m
-[2m06:56:27[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 7 | Time: 53.55s | Reward: 1.9688 | Seq. Length: 6641.1 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m06:56:27[0m [1m   INFO[0m [1m[22mStarting orchestrator step 8[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m06:56:51[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m06:56:52[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m06:56:55[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [01:04<00:00,  8.10s/it]Generating rollouts (train): 100%|██████████| 8/8 [01:04<00:00,  8.10s/it]
-[2m06:57:32[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m06:57:35[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 8 | Time: 67.43s | Reward: -2.6250 | Seq. Length: 5342.0 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m06:57:35[0m [1m   INFO[0m [1m[22mStarting orchestrator step 9[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m06:57:56[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m06:57:56[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m06:57:59[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:43<00:00,  5.46s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:43<00:00,  5.46s/it]
-[2m06:58:19[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 10 training examples[0m[0m
-[2m06:58:24[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 9 | Time: 48.29s | Reward: -3.1875 | Seq. Length: 8100.1 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m06:58:24[0m [1m   INFO[0m [1m[22mStarting orchestrator step 10[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m06:58:50[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m06:58:50[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m06:58:53[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:48<00:00,  6.05s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:48<00:00,  6.05s/it]
-[2m06:59:13[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m06:59:15[0m [1m   INFO[0m [1m[22mLogging 8 samples to W&B table at step 10[0m[0m
-[2m06:59:16[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 10 | Time: 51.31s | Reward: -3.0938 | Seq. Length: 5750.6 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m06:59:16[0m [1m   INFO[0m [1m[22mStarting orchestrator step 11[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m06:59:37[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m06:59:37[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m06:59:40[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [01:00<00:00,  7.50s/it]Generating rollouts (train): 100%|██████████| 8/8 [01:00<00:00,  7.50s/it]
-[2m07:00:16[0m [1m   INFO[0m [1m[22mDetected 1/8 rollouts (gibberish=1)[0m[0m
-[2m07:00:16[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 9 training examples[0m[0m
-[2m07:00:19[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 11 | Time: 62.66s | Reward: -0.5312 | Seq. Length: 4945.8 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m07:00:19[0m [1m   INFO[0m [1m[22mStarting orchestrator step 12[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m07:00:45[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m07:00:45[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m07:00:48[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:55<00:00,  6.97s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:55<00:00,  6.97s/it]
-[2m07:01:15[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 10 training examples[0m[0m
-[2m07:01:19[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 12 | Time: 60.34s | Reward: -3.0938 | Seq. Length: 8167.1 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m07:01:20[0m [1m   INFO[0m [1m[22mStarting orchestrator step 13[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m07:01:47[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m07:01:47[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m07:01:50[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [01:16<00:00,  9.57s/it]Generating rollouts (train): 100%|██████████| 8/8 [01:16<00:00,  9.57s/it]
-[2m07:02:37[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m07:02:41[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 13 | Time: 80.81s | Reward: -3.1250 | Seq. Length: 8192.0 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m07:02:41[0m [1m   INFO[0m [1m[22mStarting orchestrator step 14[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m07:03:05[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m07:03:05[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m07:03:08[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:35<00:00,  4.41s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:35<00:00,  4.41s/it]
-[2m07:03:16[0m [1m   INFO[0m [1m[22mDetected 1/8 rollouts (gibberish=1)[0m[0m
-[2m07:03:17[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m07:03:21[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 14 | Time: 39.55s | Reward: -3.1875 | Seq. Length: 8111.2 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m07:03:21[0m [1m   INFO[0m [1m[22mStarting orchestrator step 15[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m07:03:45[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m07:03:45[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m07:03:48[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:34<00:00,  4.36s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:34<00:00,  4.36s/it]
-[2m07:03:56[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m07:03:59[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 15 | Time: 37.91s | Reward: 3.6562 | Seq. Length: 6054.2 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m07:04:00[0m [1m   INFO[0m [1m[22mStarting orchestrator step 16[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m07:04:27[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m07:04:27[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m07:04:30[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:40<00:00,  5.05s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:40<00:00,  5.05s/it]
-[2m07:04:40[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 9 training examples[0m[0m
-[2m07:04:45[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 16 | Time: 45.07s | Reward: -3.2188 | Seq. Length: 8108.1 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m07:04:45[0m [1m   INFO[0m [1m[22mStarting orchestrator step 17[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m07:05:12[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m07:05:12[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m07:05:15[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:48<00:00,  6.01s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:48<00:00,  6.02s/it]
-[2m07:05:33[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m07:05:38[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 17 | Time: 52.38s | Reward: -2.9688 | Seq. Length: 8192.0 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m07:05:38[0m [1m   INFO[0m [1m[22mStarting orchestrator step 18[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m07:06:02[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m07:06:02[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m07:06:05[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:39<00:00,  4.90s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:39<00:00,  4.90s/it]
-[2m07:06:17[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 10 training examples[0m[0m
-[2m07:06:21[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 18 | Time: 42.58s | Reward: 1.9062 | Seq. Length: 6209.1 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m07:06:21[0m [1m   INFO[0m [1m[22mStarting orchestrator step 19[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m07:06:49[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m07:06:49[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m07:06:52[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [01:05<00:00,  8.20s/it]Generating rollouts (train): 100%|██████████| 8/8 [01:05<00:00,  8.20s/it]
-[2m07:07:27[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m07:07:29[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 19 | Time: 68.33s | Reward: -2.1250 | Seq. Length: 5505.5 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m07:07:30[0m [1m   INFO[0m [1m[22mStarting orchestrator step 20[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m07:07:53[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m07:07:53[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m07:07:56[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:38<00:00,  4.83s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:38<00:00,  4.83s/it]
-[2m07:08:08[0m [1m   INFO[0m [1m[22mDetected 1/8 rollouts (gibberish=1)[0m[0m
-[2m07:08:08[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 11 training examples[0m[0m
-[2m07:08:13[0m [1m   INFO[0m [1m[22mLogging 8 samples to W&B table at step 20[0m[0m
-[2m07:08:13[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 20 | Time: 43.40s | Reward: -3.2188 | Seq. Length: 8080.5 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m07:08:14[0m [1m   INFO[0m [1m[22mStarting orchestrator step 21[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m07:08:42[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m07:08:42[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m07:08:45[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:59<00:00,  7.38s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:59<00:00,  7.38s/it]
-[2m07:09:13[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m07:09:17[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 21 | Time: 63.34s | Reward: -3.0312 | Seq. Length: 8192.0 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m07:09:18[0m [1m   INFO[0m [1m[22mStarting orchestrator step 22[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m07:09:43[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m07:09:43[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m07:09:45[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [01:01<00:00,  7.72s/it]Generating rollouts (train): 100%|██████████| 8/8 [01:01<00:00,  7.72s/it]
-[2m07:10:19[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m07:10:22[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 22 | Time: 64.39s | Reward: -2.0938 | Seq. Length: 5339.0 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m07:10:22[0m [1m   INFO[0m [1m[22mStarting orchestrator step 23[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m07:10:43[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m07:10:43[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m07:10:46[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:51<00:00,  6.49s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:51<00:00,  6.50s/it]
-[2m07:11:14[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m07:11:19[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 23 | Time: 56.20s | Reward: -3.1562 | Seq. Length: 8192.0 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m07:11:19[0m [1m   INFO[0m [1m[22mStarting orchestrator step 24[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m07:11:43[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m07:11:43[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m07:11:46[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:47<00:00,  5.88s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:47<00:00,  5.88s/it]
-[2m07:12:06[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m07:12:09[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 24 | Time: 49.43s | Reward: -3.0938 | Seq. Length: 4986.0 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m07:12:09[0m [1m   INFO[0m [1m[22mSaving checkpoint at step 25[0m[0m
-[2m07:12:09[0m [1m   INFO[0m [1m[22mStarting orchestrator step 25[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m07:12:30[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m07:12:30[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m07:12:33[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [01:00<00:00,  7.55s/it]Generating rollouts (train): 100%|██████████| 8/8 [01:00<00:00,  7.55s/it]
-[2m07:13:09[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m07:13:12[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 25 | Time: 63.13s | Reward: -3.2188 | Seq. Length: 5339.0 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m07:13:13[0m [1m   INFO[0m [1m[22mStarting orchestrator step 26[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s][2m07:13:37[0m [1m   INFO[0m [1m[22mPausing inference engines for weight update[0m[0m
-[2m07:13:37[0m [1m   INFO[0m [1m[22mAll inference engines paused[0m[0m
-[2m07:13:40[0m [1m   INFO[0m [1m[22mAll inference engines resumed[0m[0m
-Generating rollouts (train): 100%|██████████| 8/8 [00:44<00:00,  5.54s/it]Generating rollouts (train): 100%|██████████| 8/8 [00:44<00:00,  5.54s/it]
-[2m07:13:57[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 8 training examples[0m[0m
-[2m07:14:00[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 26 | Time: 47.59s | Reward: 2.0625 | Seq. Length: 6226.9 tokens/sample | Max. Off-Policy Level: 0[0m[0m
-[2m07:14:01[0m [1m   INFO[0m [1m[22mStarting orchestrator step 27[0m[0m
-Generating rollouts (train):   0%|          | 0/8 [00:00<?, ?it/s]

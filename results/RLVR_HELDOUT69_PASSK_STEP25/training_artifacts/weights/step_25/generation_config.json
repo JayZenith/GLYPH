@@ -1,9 +1,0 @@
-{
-  "_from_model_config": true,
-  "eos_token_id": 151643,
-  "output_attentions": false,
-  "output_hidden_states": false,
-  "pad_token_id": 151643,
-  "transformers_version": "5.5.0",
-  "use_cache": true
-}

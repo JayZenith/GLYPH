@@ -1,7 +1,0 @@
-2026-06-04 06:48:11 - verifiers.utils.env_utils - INFO - Loading environment: task-trace
-2026-06-04 06:48:11 - verifiers.utils.env_utils - INFO - Using provided args: timeout=30, max_tool_rounds=15, data_path=/workspace/glyph/synthetic_data/rl_prompts_heldout69_passk_targets.jsonl
-2026-06-04 06:48:11 - verifiers.utils.env_utils - INFO - Using default args: max_samples=None, missing_final_penalty=None, verifier_success_bonus=None, env_id='task-trace', tool_after_success_penalty=None, structure_valid_bonus=None, final_once_bonus=None, terminal_on_success=False, failed_verifier_penalty=None, malformed_call_penalty=None, tool_budget_exhausted_penalty=None, verifier_success_clean_final_bonus=None, max_failed_verifier_penalty=None, nsjail_path=None, no_call_penalty=None
-2026-06-04 06:48:11 - verifiers.utils.env_utils - INFO - Successfully loaded environment 'task-trace'
-2026-06-04 06:48:11 - verifiers.serve.server.env_worker.EnvWorker - INFO - Initialized worker task-trace-0 on ipc:///tmp/vf-7729071d6a86-task-trace-0
-2026-06-04 06:48:11 - verifiers.serve.server.env_worker.EnvWorker - INFO - Starting worker task-trace-0
-2026-06-04 06:48:29 - verifiers.utils.message_utils - WARNING - env_response returned raw dicts/strings instead of vf.Messages. This repeatedly triggers normalize_messages(), causing unnecessary Pydantic validation overhead. Return vf.Message types (e.g. vf.UserMessage, vf.AssistantMessage) to avoid this.

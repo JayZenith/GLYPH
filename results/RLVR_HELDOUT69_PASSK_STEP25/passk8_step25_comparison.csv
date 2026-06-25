@@ -1,9 +1,0 @@
-name,before_solves,step25_solves,delta,before_pass_at_8,step25_pass_at_8
-eval100_040_patch_test_recover_006_route_action_enum_branch_recovery,7,6,-1,0.875,0.75
-eval100_071_patch_run_recover_007_layered_flags_cli_precedence_recover,7,8,1,0.875,1.0
-eval100_044_patch_test_recover_010_rank_players_dense_tiebreak_recover,6,7,1,0.75,0.875
-eval100_020_patch_run_pass_001_parse_records_validate_age_and_name,1,3,2,0.125,0.375
-eval100_057_patch_test_recover_023_config_merge_precedence_env_overrides_file_defaults,6,8,2,0.75,1.0
-eval100_045_patch_test_recover_011_daily_sales_region_summary_recovery,7,8,1,0.875,1.0
-eval100_005_patch_test_pass_006_dispatch_route_mode_branch_fix,6,7,1,0.75,0.875
-eval100_037_patch_test_recover_003_weekly_region_summary_recover,7,7,0,0.875,0.875

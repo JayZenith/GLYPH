@@ -1,47 +1,0 @@
-17 prompts remaining (17 total), k=8 @ T=0.8
-INFO 06-05 02:05:53 __init__.py:207] Automatically detected platform cuda.
-`torch_dtype` is deprecated! Use `dtype` instead!
-INFO 06-05 02:06:00 config.py:549] This model supports multiple tasks: {'generate', 'score', 'reward', 'embed', 'classify'}. Defaulting to 'generate'.
-INFO 06-05 02:06:00 llm_engine.py:234] Initializing a V0 LLM engine (v0.7.3) with config: model='JayZenith/SFT_V1', speculative_config=None, tokenizer='JayZenith/SFT_V1', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, override_neuron_config=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.bfloat16, max_seq_len=12288, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, disable_custom_all_reduce=False, quantization=None, enforce_eager=False, kv_cache_dtype=auto,  device_config=cuda, decoding_config=DecodingConfig(guided_decoding_backend='xgrammar'), observability_config=ObservabilityConfig(otlp_traces_endpoint=None, collect_model_forward_time=False, collect_model_execute_time=False), seed=0, served_model_name=JayZenith/SFT_V1, num_scheduler_steps=1, multi_step_stream_outputs=True, enable_prefix_caching=False, chunked_prefill_enabled=False, use_async_output_proc=True, disable_mm_preprocessor_cache=False, mm_processor_kwargs=None, pooler_config=None, compilation_config={"splitting_ops":[],"compile_sizes":[],"cudagraph_capture_sizes":[256,248,240,232,224,216,208,200,192,184,176,168,160,152,144,136,128,120,112,104,96,88,80,72,64,56,48,40,32,24,16,8,4,2,1],"max_capture_size":256}, use_cached_outputs=False, 
-INFO 06-05 02:06:02 cuda.py:229] Using Flash Attention backend.
-INFO 06-05 02:06:02 model_runner.py:1110] Starting to load model JayZenith/SFT_V1...
-WARNING 06-05 02:06:02 utils.py:78] Qwen3ForCausalLM has no vLLM implementation, falling back to Transformers implementation. Some features may not be supported and performance may not be optimal.
-INFO 06-05 02:06:02 transformers.py:129] Using Transformers backend.
-`torch_dtype` is deprecated! Use `dtype` instead!
-INFO 06-05 02:06:02 weight_utils.py:254] Using model weights format ['*.safetensors']
-Loading safetensors checkpoint shards:   0% Completed | 0/2 [00:00<?, ?it/s]
-Loading safetensors checkpoint shards:  50% Completed | 1/2 [00:00<00:00,  1.94it/s]
-Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:01<00:00,  1.33it/s]
-Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:01<00:00,  1.40it/s]
-
-INFO 06-05 02:06:04 model_runner.py:1115] Loading model weights took 7.5454 GB
-INFO 06-05 02:06:06 worker.py:267] Memory profiling takes 1.41 seconds
-INFO 06-05 02:06:06 worker.py:267] the current vLLM instance can use total_gpu_memory (39.49GiB) x gpu_memory_utilization (0.85) = 33.57GiB
-INFO 06-05 02:06:06 worker.py:267] model weights take 7.55GiB; non_torch_memory takes 0.09GiB; PyTorch activation peak memory takes 1.44GiB; the rest of the memory reserved for KV Cache is 24.49GiB.
-INFO 06-05 02:06:06 executor_base.py:111] # cuda blocks: 11145, # CPU blocks: 1820
-INFO 06-05 02:06:06 executor_base.py:116] Maximum concurrency for 12288 tokens per request: 14.51x
-INFO 06-05 02:06:10 model_runner.py:1434] Capturing cudagraphs for decoding. This may lead to unexpected consequences if the model is not static. To run the model in eager mode, set 'enforce_eager=True' or use '--enforce-eager' in the CLI. If out-of-memory error occurs during cudagraph capture, consider decreasing `gpu_memory_utilization` or switching to eager mode. You can also reduce the `max_num_seqs` as needed to decrease memory usage.
-Capturing CUDA graph shapes:   0%|          | 0/35 [00:00<?, ?it/s]Capturing CUDA graph shapes:   3%|▎         | 1/35 [00:00<00:17,  1.92it/s]Capturing CUDA graph shapes:   6%|▌         | 2/35 [00:00<00:16,  2.02it/s]Capturing CUDA graph shapes:   9%|▊         | 3/35 [00:01<00:15,  2.06it/s]Capturing CUDA graph shapes:  11%|█▏        | 4/35 [00:01<00:15,  2.06it/s]Capturing CUDA graph shapes:  14%|█▍        | 5/35 [00:02<00:14,  2.05it/s]Capturing CUDA graph shapes:  17%|█▋        | 6/35 [00:02<00:14,  2.06it/s]Capturing CUDA graph shapes:  20%|██        | 7/35 [00:03<00:13,  2.06it/s]Capturing CUDA graph shapes:  23%|██▎       | 8/35 [00:03<00:13,  2.07it/s]Capturing CUDA graph shapes:  26%|██▌       | 9/35 [00:04<00:12,  2.06it/s]Capturing CUDA graph shapes:  29%|██▊       | 10/35 [00:04<00:12,  2.07it/s]Capturing CUDA graph shapes:  31%|███▏      | 11/35 [00:05<00:11,  2.06it/s]Capturing CUDA graph shapes:  34%|███▍      | 12/35 [00:05<00:11,  2.05it/s]Capturing CUDA graph shapes:  37%|███▋      | 13/35 [00:06<00:10,  2.06it/s]Capturing CUDA graph shapes:  40%|████      | 14/35 [00:06<00:10,  2.07it/s]Capturing CUDA graph shapes:  43%|████▎     | 15/35 [00:07<00:09,  2.08it/s]Capturing CUDA graph shapes:  46%|████▌     | 16/35 [00:07<00:09,  2.07it/s]Capturing CUDA graph shapes:  49%|████▊     | 17/35 [00:08<00:08,  2.07it/s]Capturing CUDA graph shapes:  51%|█████▏    | 18/35 [00:08<00:08,  2.08it/s]Capturing CUDA graph shapes:  54%|█████▍    | 19/35 [00:09<00:07,  2.08it/s]Capturing CUDA graph shapes:  57%|█████▋    | 20/35 [00:09<00:07,  2.08it/s]Capturing CUDA graph shapes:  60%|██████    | 21/35 [00:10<00:06,  2.03it/s]Capturing CUDA graph shapes:  63%|██████▎   | 22/35 [00:10<00:06,  2.01it/s]Capturing CUDA graph shapes:  66%|██████▌   | 23/35 [00:11<00:05,  2.03it/s]Capturing CUDA graph shapes:  69%|██████▊   | 24/35 [00:11<00:05,  2.05it/s]Capturing CUDA graph shapes:  71%|███████▏  | 25/35 [00:12<00:04,  2.06it/s]Capturing CUDA graph shapes:  74%|███████▍  | 26/35 [00:12<00:04,  2.07it/s]Capturing CUDA graph shapes:  77%|███████▋  | 27/35 [00:13<00:03,  2.07it/s]Capturing CUDA graph shapes:  80%|████████  | 28/35 [00:13<00:03,  2.08it/s]Capturing CUDA graph shapes:  83%|████████▎ | 29/35 [00:14<00:02,  2.07it/s]Capturing CUDA graph shapes:  86%|████████▌ | 30/35 [00:14<00:02,  2.07it/s]Capturing CUDA graph shapes:  89%|████████▊ | 31/35 [00:15<00:01,  2.07it/s]Capturing CUDA graph shapes:  91%|█████████▏| 32/35 [00:15<00:01,  2.07it/s]Capturing CUDA graph shapes:  94%|█████████▍| 33/35 [00:16<00:00,  2.07it/s]Capturing CUDA graph shapes:  97%|█████████▋| 34/35 [00:16<00:00,  2.07it/s]Capturing CUDA graph shapes: 100%|██████████| 35/35 [00:16<00:00,  2.06it/s]Capturing CUDA graph shapes: 100%|██████████| 35/35 [00:16<00:00,  2.06it/s]
-INFO 06-05 02:06:27 model_runner.py:1562] Graph capturing finished in 17 secs, took 0.74 GiB
-INFO 06-05 02:06:27 llm_engine.py:436] init engine (profile, create kv cache, warmup model) took 22.94 seconds
-[1/17] eval100_040_patch_test_recover_006_route_action_enum_branch_recovery -> cargo 0/8, valid 0/8 capability-gap
-[2/17] eval100_071_patch_run_recover_007_layered_flags_cli_precedence_recover -> cargo 0/8, valid 0/8 capability-gap
-[3/17] eval100_022_patch_run_pass_003_department_report_filters_zero_and_formats_top -> cargo 1/8, valid 1/8 rlvr-target
-[4/17] eval100_044_patch_test_recover_010_rank_players_dense_tiebreak_recover -> cargo 1/8, valid 1/8 rlvr-target
-[5/17] eval100_025_patch_run_pass_006_dispatch_summary_enum_branches -> cargo 3/8, valid 3/8 rlvr-target
-[6/17] eval100_014_patch_test_pass_015_layered_config_env_does_not_override_explicit_file -> cargo 1/8, valid 1/8 rlvr-target
-[7/17] eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix -> cargo 2/8, valid 2/8 rlvr-target
-[8/17] eval100_033_patch_run_pass_014_shipping_label_match_enum_priority -> cargo 0/8, valid 0/8 capability-gap
-[9/17] eval100_020_patch_run_pass_001_parse_records_validate_age_and_name -> cargo 1/8, valid 0/8 rlvr-target
-[10/17] eval100_047_patch_test_recover_013_collect_visible_tags_skip_empty_and_keep_order -> cargo 6/8, valid 6/8 rlvr-target
-[11/17] eval100_036_patch_test_recover_002_leaderboard_sort_recover_tiebreak_chain -> cargo 5/8, valid 5/8 rlvr-target
-[12/17] eval100_035_patch_test_recover_001_record_line_parse_validate_recover -> cargo 0/8, valid 0/8 capability-gap
-[13/17] eval100_057_patch_test_recover_023_config_merge_precedence_env_overrides_file_defaults -> cargo 5/8, valid 5/8 rlvr-target
-[14/17] eval100_045_patch_test_recover_011_daily_sales_region_summary_recovery -> cargo 0/8, valid 0/8 capability-gap
-[15/17] eval100_064_patch_test_recover_030_patch_test_recover_enum_routing_policy_30 -> cargo 1/8, valid 1/8 rlvr-target
-[16/17] eval100_005_patch_test_pass_006_dispatch_route_mode_branch_fix -> cargo 3/8, valid 3/8 rlvr-target
-[17/17] eval100_037_patch_test_recover_003_weekly_region_summary_recover -> cargo 3/8, valid 3/8 rlvr-target
-
-rlvr-targets: 12  capability-gap: 5  solved: 0
-wrote results/FIXED_PASSK_CARGO/sft_v1_fail17_cargo_valid_passk8.json
-[rank0]:[W605 02:28:23.254310516 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
