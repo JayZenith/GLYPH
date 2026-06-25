@@ -54,7 +54,6 @@ valid_trace =
   + clean FINAL after that verifier success
   + exact CALL syntax
   + no role-marker leakage
-  + no repetition or gibberish
   + no extra tool use after successful verification
 ```
 
@@ -78,7 +77,7 @@ RL checkpoint export must match the policy actually served during training.
 ```
 
 Reward first: cargo passing somewhere in the trace is not enough. The highest reward had to require held-out-style success: terminal verifier pass, exact CALL syntax,
-clean final, no role leakage, no repetition, and no tool use after success.
+clean final, no role leakage, and no tool use after success.
 
 Protocol next: the model was trained on literal ChatML-style tool turns:
 

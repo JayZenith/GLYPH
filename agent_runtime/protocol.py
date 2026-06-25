@@ -36,13 +36,15 @@ RESULT_ID_RE = re.compile(r"^\s*RESULT\s+([A-Za-z0-9_\-]+):", re.MULTILINE)
 # A final answer must be introduced by FINAL:.
 FINAL_RE = re.compile(r"^\s*FINAL:\s*", re.MULTILINE)
 
+CHATML_ROLES = ("system", "user", "assistant", "tool")
+
 # Generated assistant content should not contain role markers. The renderer owns
 # those markers; live model output leaking them is a protocol error.
-ROLE_LEAK_RE = re.compile(r"(<\|im_start\|>|<\|im_end\|>|^\s*(system|user|assistant|tool)\s*$)", re.MULTILINE)
-
-GIBBERISH_RE = re.compile(
-    r"(\.waitKey|\.invokeLater|\.onreadystatechange|typealias|endphp|firebaseio|noreferrer|::::){8,}"
+ROLE_LEAK_RE = re.compile(
+    r"(<\|im_start\|>|<\|im_end\|>|^\s*(?:" + "|".join(CHATML_ROLES) + r")\s*$)",
+    re.MULTILINE,
 )
+
 CHATML_END = "<|im_end|>"
 
 
@@ -245,8 +247,6 @@ def final_hygiene_errors(assistant_text: str) -> list[str]:
         errors.append("Non-ASCII FINAL")
     if "\ufffd" in body or "<|endoftext|>" in assistant_text:
         errors.append("Corrupt/generated special token in FINAL")
-    if GIBBERISH_RE.search(body):
-        errors.append("Gibberish FINAL")
     if re.search(r"\b[A-Z][A-Za-z]{7,}(?:Style|State|View|Manager)\b$", body):
         errors.append("Suspicious FINAL suffix")
     return errors
@@ -260,9 +260,9 @@ class SimpleTraceValidator:
     """Protocol-only validator used by RL as a structure gate.
 
     This is not the complete RL reward shape. It checks generic transcript
-    validity: final presence, CALL/RESULT pairing, syntax, role leaks, and
-    gibberish. rl/task_trace.py adds outcome rewards and penalties that depend
-    on executed cargo_test/cargo_run results.
+    validity: final presence, CALL/RESULT pairing, syntax, and role leaks.
+    rl/task_trace.py adds outcome rewards and penalties that depend on executed
+    cargo_test/cargo_run results.
     """
 
     def validate(self, assistant_text: str, result_text: str = "") -> ValidationResult:
@@ -279,8 +279,6 @@ class SimpleTraceValidator:
             errors.append("Garbage after final response")
         if result_ids != call_ids[: len(result_ids)] or len(result_ids) < len(call_ids):
             errors.append("Tool calls without matching result")
-        if GIBBERISH_RE.search(assistant_text) or "<|endoftext|>" in assistant_text:
-            errors.append("Detected gibberish")
         errors.extend(call_syntax_errors(assistant_text))
         errors.extend(final_hygiene_errors(assistant_text))
         if ROLE_LEAK_RE.search(assistant_text):

@@ -15,7 +15,7 @@ distribution but did not improve held-out prompt-level reliability.
 
 Strict success is `valid_trace`: terminal `cargo_test`/`cargo_run` success,
 clean `FINAL` after that verifier success, exact CALL syntax, no role-marker
-leakage, no repetition/gibberish, and no extra tool use after success.
+leakage, and no extra tool use after success.
 
 | Model / checkpoint | Held-out-69 greedy `valid_trace` | Notes |
 | --- | ---: | --- |
@@ -206,7 +206,6 @@ python rl/train.py \
   --no-call-penalty 0 \
   --malformed-call-penalty 0 \
   --bad-cargo-project-path-penalty 0 \
-  --gibberish-penalty 0 \
   --bad-final-hygiene-penalty 0 \
   --tool-budget-exhausted-penalty 0 \
   --missing-final-penalty 0 \

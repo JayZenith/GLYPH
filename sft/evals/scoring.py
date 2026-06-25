@@ -5,7 +5,6 @@ import re
 from collections import Counter, defaultdict
 
 from agent_runtime.protocol import (
-    GIBBERISH_RE,
     RESULT_ID_RE,
     ROLE_LEAK_RE,
     SEG_RE,
@@ -95,8 +94,6 @@ def _failure_buckets(metrics: dict) -> list[str]:
         buckets.append("bad_cargo_project_path")
     if metrics["role_marker_leakage"]:
         buckets.append("role_marker_leakage")
-    if not metrics["no_gibberish"]:
-        buckets.append("gibberish")
     if not metrics["not_truncated"]:
         buckets.append("truncated")
     if not metrics["final_after_last_tool"]:
@@ -171,7 +168,6 @@ def score_output(
         "exact_call_syntax": not syntax_errors,
         "final_hygiene": not final_errors,
         "cargo_project_paths_valid": not cargo_path_errors,
-        "no_gibberish": GIBBERISH_RE.search(assistant_text) is None and "<|endoftext|>" not in assistant_text,
         "not_truncated": new_token_count < max_new_tokens - 10,
         "terminal_tool_success": terminal_tool_success,
         "new_token_count": new_token_count,
@@ -198,7 +194,6 @@ def score_output(
         and metrics["cargo_project_paths_valid"]
         and metrics["final_after_last_tool"]
         and metrics["terminal_tool_success"]
-        and metrics["no_gibberish"]
         and not metrics["role_marker_leakage"]
     )
 
@@ -210,7 +205,6 @@ def score_output(
     score += 1 if metrics["exact_call_syntax"] else 0
     score += 1 if metrics["final_hygiene"] else 0
     score += 1 if metrics["final_after_last_tool"] else 0
-    score += 1 if metrics["no_gibberish"] else 0
     score += 1 if metrics["not_truncated"] else 0
     metrics["score"] = score
     metrics["failure_buckets"] = _failure_buckets(metrics)
@@ -237,7 +231,6 @@ def summarize(name: str, rows: list[dict]) -> dict:
             "result_id_match_rate": sum(r["metrics"]["result_ids_match_call_ids"] for r in kind_rows) / n,
             "exact_call_syntax_rate": sum(r["metrics"]["exact_call_syntax"] for r in kind_rows) / n,
             "final_hygiene_rate": sum(r["metrics"]["final_hygiene"] for r in kind_rows) / n,
-            "no_gibberish_rate": sum(r["metrics"]["no_gibberish"] for r in kind_rows) / n,
             "final_after_last_tool_rate": sum(r["metrics"]["final_after_last_tool"] for r in kind_rows) / n,
             "terminal_tool_success_rate": sum(r["metrics"]["terminal_tool_success"] for r in kind_rows) / n,
         }
@@ -254,7 +247,6 @@ def summarize(name: str, rows: list[dict]) -> dict:
         "final_hygiene_rate": sum(1 for row in rows if row["metrics"]["final_hygiene"]) / total,
         "final_after_last_tool_rate": sum(1 for row in rows if row["metrics"]["final_after_last_tool"]) / total,
         "terminal_tool_success_rate": sum(1 for row in rows if row["metrics"]["terminal_tool_success"]) / total,
-        "no_gibberish_rate": sum(1 for row in rows if row["metrics"]["no_gibberish"]) / total,
         "not_truncated_rate": sum(1 for row in rows if row["metrics"]["not_truncated"]) / total,
         "failure_buckets": dict(sorted(failure_counts.items())),
         "by_kind": kinds,

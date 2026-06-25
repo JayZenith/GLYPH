@@ -355,19 +355,21 @@ class RewardGoldenTests(unittest.TestCase):
         )
         self.assertLess(reward, self._solve_nostop())
 
-    def test_garbage_final_does_not_get_clean_solve_reward(self) -> None:
-        garbage_final = score(
+    def test_multiline_final_does_not_get_clean_solve_reward(self) -> None:
+        dirty_final = score(
             "\n".join([self.READ, self.PATCH, self.OK, "FINAL: done", ".waitKey" * 9]),
             self.SOLVED,
         )
-        self.assertLess(garbage_final, self._solve_nostop())
+        self.assertLess(dirty_final, self._solve_stop())
+        self.assertLessEqual(dirty_final, 0.0)
 
     def test_generated_token_final_tail_is_not_clean(self) -> None:
         dirty_final = score(
             "\n".join([self.READ, self.PATCH, self.OK, "FINAL: done<|endoftext|>"]),
             self.SOLVED,
         )
-        self.assertLess(dirty_final, self._solve_nostop())
+        self.assertLess(dirty_final, self._solve_stop())
+        self.assertLessEqual(dirty_final, 0.0)
 
 
 def assistant_text(row: dict) -> str:
