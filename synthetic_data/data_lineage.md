@@ -1,6 +1,40 @@
 # Data Lineage
 
-## Current Signal Dataset
+## Current Reproducible Lineage
+
+The README and final blog use the V3 split artifacts below. Treat these as the
+active, reproducible path:
+
+- `synthetic_data/signal_v3.jsonl`: full validated V3 trace pool, `2083` rows,
+  `1522` unique cases.
+- `synthetic_data/signal_v3_sft_half_a.jsonl`: SFT training half, `1042` rows,
+  `762` unique cases.
+- `synthetic_data/signal_v3_rl_pool_b.jsonl`: RL held-back trace pool, `1041`
+  rows, `760` unique cases.
+- `synthetic_data/rl_prompts_signal_v3_pool_b.jsonl`: RL prompt manifest built
+  from pool B, `760` prompts.
+- `synthetic_data/rl_prompts_signal_v3_pool_b_mixed.jsonl`: mixed-outcome RL
+  prompt subset used by the final V999/V4000 RLVR run, `703` prompts.
+- `synthetic_data/signal_v3_rl_pool_b_prompts.yaml`: pass@k-compatible prompt
+  manifest for pool B, `760` prompts.
+- `synthetic_data/signal_v3_split_summary.json` and
+  `synthetic_data/signal_v3_split_summary.md`: deterministic split audit.
+
+The split was grouped by `case_id` to prevent duplicate trace leakage. The
+recorded audit reports `0` case-id overlap and `0` trace overlap between the
+SFT half and RL pool.
+
+Family counts:
+
+| artifact | rows | patch_test_pass | patch_test_recover | patch_run_pass | patch_run_recover | test_only | run_only |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `signal_v3.jsonl` | 2083 | 728 | 561 | 394 | 298 | 71 | 31 |
+| `signal_v3_sft_half_a.jsonl` | 1042 | 366 | 280 | 194 | 150 | 36 | 16 |
+| `signal_v3_rl_pool_b.jsonl` | 1041 | 362 | 281 | 200 | 148 | 35 | 15 |
+| `rl_prompts_signal_v3_pool_b.jsonl` | 760 | 181 | 281 | 100 | 148 | 35 | 15 |
+| `rl_prompts_signal_v3_pool_b_mixed.jsonl` | 703 | 167 | 257 | 96 | 139 | 31 | 13 |
+
+## Historical Signal Dataset
 
 - `synthetic_data/signal_1062.jsonl`
 - durable source blueprints in `synthetic_data/blueprints/`
