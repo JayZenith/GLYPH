@@ -645,7 +645,7 @@ class RustToolEnv(vf.MultiTurnEnv):
 
 # load prompts, pack metadata into `info`, registers _rust_tool_reward and returns `RustToolEnv`
 def load_environment(
-    data_path: str = "synthetic_data/rl_prompts_1062.jsonl",
+    data_path: str = "synthetic_data/rl_prompts_signal_v3_pool_b_mixed.jsonl",
     max_samples: int | None = None,
     env_id: str = "task-trace",
     nsjail_path: str | None = None,

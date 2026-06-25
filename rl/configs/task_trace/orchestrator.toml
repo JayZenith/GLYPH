@@ -19,7 +19,7 @@ max_completion_tokens = 1536
 
 [[train.env]]
 id = "task-trace"
-args = { data_path = "synthetic_data/rl_prompts_v2_1323.jsonl", timeout = 30, max_tool_rounds = 15 }
+args = { data_path = "synthetic_data/rl_prompts_signal_v3_pool_b_mixed.jsonl", timeout = 30, max_tool_rounds = 15 }
 
 [[filters]]
 type = "gibberish"

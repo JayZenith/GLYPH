@@ -46,7 +46,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lora-modules-to-save", default="")
     parser.add_argument("--lora-name",
                         help="Served adapter name for fresh LoRA mode.")
-    parser.add_argument("--data", type=Path, default=Path("synthetic_data/rl_prompts_1062.jsonl"), help="Prompt dataset path.")
+    parser.add_argument("--data", type=Path, default=Path("synthetic_data/rl_prompts_signal_v3_pool_b_mixed.jsonl"), help="Prompt dataset path.")
     parser.add_argument("--output", type=Path, default=Path("outputs/prime_rl"))
     parser.add_argument("--max-steps", type=int)
     parser.add_argument("--batch-size", type=int)
@@ -238,8 +238,9 @@ def build_config(args: argparse.Namespace) -> dict[str, Any]:
         auto_lora_name = f"r{rank}-a{float(alpha)}"
 
     teacher_model_name = args.teacher_model or base_model
-    base_model = materialize_glyph_chat_model(base_model, output_dir)
-    teacher_model_name = materialize_glyph_chat_model(teacher_model_name, output_dir)
+    if not args.dry_run:
+        base_model = materialize_glyph_chat_model(base_model, output_dir)
+        teacher_model_name = materialize_glyph_chat_model(teacher_model_name, output_dir)
 
     trainer_model = trainer.setdefault("model", {})
     trainer_optim = trainer.setdefault("optim", {})
@@ -292,7 +293,8 @@ def build_config(args: argparse.Namespace) -> dict[str, Any]:
             "rank": rank,
             "alpha": alpha,
         }
-    orch_student_client["base_url"] = [f"http://localhost:{args.port}/v1"]
+    student_port = args.port if args.port is not None else inference.get("server", {}).get("port", 8000)
+    orch_student_client["base_url"] = [f"http://localhost:{student_port}/v1"]
     maybe_set(orchestrator, "batch_size", args.batch_size)
     maybe_set(orchestrator, "rollouts_per_example", args.rollouts_per_example)
     maybe_set(orchestrator, "seq_len", args.seq_len)
@@ -305,8 +307,9 @@ def build_config(args: argparse.Namespace) -> dict[str, Any]:
         set_filter_enforcement(orchestrator, "repetition", True)
     maybe_set(orch_sampling, "temperature", args.temperature)
     maybe_set(orch_sampling, "max_completion_tokens", args.max_completion_tokens)
-    add_invalid_token_logit_bias(orch_sampling, base_model)
-    add_chat_boundary_stop_tokens(orch_sampling, base_model)
+    if not args.dry_run:
+        add_invalid_token_logit_bias(orch_sampling, base_model)
+        add_chat_boundary_stop_tokens(orch_sampling, base_model)
 
     # env args
     if data_path is not None:

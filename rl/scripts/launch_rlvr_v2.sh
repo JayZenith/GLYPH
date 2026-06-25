@@ -5,8 +5,8 @@
 set -euo pipefail
 
 MODEL="${MODEL:-JayZenith/SFT_V1}"          # base + external teacher anchor target
-OUTPUT="${OUTPUT:-outputs/rlvr_v2}"
-DATA="${DATA:-synthetic_data/rl_prompts_v2_1323.jsonl}"
+OUTPUT="${OUTPUT:-outputs/rlvr_signal_v3_pool_b_mixed}"
+DATA="${DATA:-synthetic_data/rl_prompts_signal_v3_pool_b_mixed.jsonl}"
 TEACHER_PORT="${TEACHER_PORT:-8011}"
 
 echo "Expected external teacher inference at http://127.0.0.1:${TEACHER_PORT}"
