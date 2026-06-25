@@ -37,7 +37,6 @@ from agent_runtime.rust.results import (
 # Tool names allowed by the Rust RL environment.
 RUST_TOOL_NAMES = SUPPORTED_RUST_TOOLS
 
-DEBUG_PARSE = False
 # Eval-aligned reward for reliability lift. The only positive outcome is the
 # heldout-style valid trace: cargo verifier pass, no later tools, exactly one
 # clean FINAL after the passing result, and no protocol errors. Invalid cargo
@@ -438,15 +437,6 @@ class RustToolEnv(vf.MultiTurnEnv):
         if isinstance(messages, list):
             return render_messages(messages).rstrip()
         return str(messages)
-
-    @staticmethod
-    def _trajectory_chars(state: dict) -> int:
-        total = 0
-        for step in state.get("trajectory") or []:
-            for field in ("prompt", "completion"):
-                for message in step.get(field) or []:
-                    total += len(message_content(message))
-        return total
 
     def _raw_trace_text(self, state: dict, messages=None) -> str:
         prior = state.get("raw_chatml_transcript", "")
