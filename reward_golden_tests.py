@@ -189,7 +189,7 @@ class RewardGoldenTests(unittest.TestCase):
 
     def test_clean_final_is_preferred(self) -> None:
         self.assertGreater(self._solve_stop(), self._solve_nostop())
-        self.assertLess(self._solve_stop_with_generated_chatml_end(), self._solve_stop())
+        self.assertEqual(self._solve_stop_with_generated_chatml_end(), self._solve_stop())
         self.assertGreater(self._graceful(), self._loop())
 
     def test_churn_after_success_is_penalized(self) -> None:
@@ -292,9 +292,9 @@ class RewardGoldenTests(unittest.TestCase):
         malformed = 'CALL read_file(id="c1", file_path="src/lib.rs"))<|im_end|>'
         self.assertLess(score(malformed, []), self._loop())
 
-    def test_generated_chatml_boundary_after_call_is_invalid(self) -> None:
+    def test_terminal_chatml_boundary_after_call_is_allowed(self) -> None:
         leaked = self.READ + "<|im_end|>"
-        self.assertTrue(_role_marker_errors(leaked))
+        self.assertFalse(_role_marker_errors(leaked))
         self.assertLessEqual(score(leaked, [result_block("c1", True)]), 0.0)
 
     def test_generated_chatml_boundary_between_calls_is_invalid(self) -> None:
@@ -342,10 +342,10 @@ class RewardGoldenTests(unittest.TestCase):
         )
         self.assertLessEqual(reward, 0.0)
 
-    def test_plain_terminal_chatml_end_after_final_is_invalid(self) -> None:
-        dirty = "\n".join([self.READ, self.PATCH, self.OK, "FINAL: done<|im_end|>"])
-        self.assertTrue(_role_marker_errors(dirty))
-        self.assertLess(score(dirty, self.SOLVED), self._solve_stop())
+    def test_terminal_chatml_end_after_final_is_allowed(self) -> None:
+        clean = "\n".join([self.READ, self.PATCH, self.OK, "FINAL: done<|im_end|>"])
+        self.assertFalse(_role_marker_errors(clean))
+        self.assertEqual(score(clean, self.SOLVED), self._solve_stop())
 
     def test_bad_cargo_project_path_blocks_top_reward(self) -> None:
         bad_cargo = call("cargo_test", "c3", project_path="/tmp/case/src/main.rs")

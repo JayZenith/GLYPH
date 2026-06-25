@@ -45,6 +45,8 @@ ROLE_LEAK_RE = re.compile(
     re.MULTILINE,
 )
 
+ASSISTANT_STOP = "<|im_end|>"
+
 # ---------------------------------------------------------------------------
 # Result types
 # ---------------------------------------------------------------------------
@@ -92,6 +94,20 @@ def assistant_text(text: str) -> str:
 
 def tool_text(text: str) -> str:
     return _joined_role_text(text, "tool")
+
+
+def strip_generated_assistant_stop(text: str) -> str:
+    """Remove one terminal assistant stop token from raw model output.
+
+    The prompt ends with "<|im_start|>assistant\n", so the model may finish a
+    CALL or FINAL turn by emitting "<|im_end|>". That final stop token is a
+    boundary, not assistant content. Any ChatML marker before the end is still
+    role leakage.
+    """
+    stripped = text.rstrip()
+    if stripped.endswith(ASSISTANT_STOP):
+        return stripped[: -len(ASSISTANT_STOP)].rstrip()
+    return stripped
 
 
 # ---------------------------------------------------------------------------
@@ -229,8 +245,9 @@ def final_hygiene_errors(assistant_text: str) -> list[str]:
     ]
     if len(finals) != 1:
         return errors
-    final_pos = assistant_text.rfind("FINAL:")
-    tail = assistant_text[final_pos + len("FINAL:"):].strip()
+    clean_text = strip_generated_assistant_stop(assistant_text)
+    final_pos = clean_text.rfind("FINAL:")
+    tail = clean_text[final_pos + len("FINAL:"):].strip()
     body = tail
     if not body:
         errors.append("Empty FINAL")

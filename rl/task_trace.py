@@ -19,6 +19,7 @@ from agent_runtime.protocol import (
     ended_cleanly_after_final,
     final_count,
     final_hygiene_errors,
+    strip_generated_assistant_stop,
 )
 from rl.task_format import load_prompts
 from agent_runtime.rust.executor import ExecutionResult, RustExecutor
@@ -124,7 +125,7 @@ def _completion_text(completion) -> str:
 def _completion_role_text(completion, role: str) -> str:
     if isinstance(completion, list):
         return "\n".join(
-            message_content(m)
+            strip_generated_assistant_stop(message_content(m)) if role == "assistant" else message_content(m)
             for m in completion
             if message_role(m) == role
         )
@@ -133,6 +134,7 @@ def _completion_role_text(completion, role: str) -> str:
 
 def _strip_role_leak_tail(text: str) -> str:
     """Use only the assistant segment before leaked chat-template boundaries."""
+    text = strip_generated_assistant_stop(text)
     markers = [
         match.start()
         for match in re.finditer(
@@ -145,11 +147,11 @@ def _strip_role_leak_tail(text: str) -> str:
 
 
 def _normalize_assistant_for_reward(text: str) -> str:
-    return text.strip()
+    return strip_generated_assistant_stop(text).strip()
 
 
 def _role_marker_errors(text: str) -> list[str]:
-    stripped = text.rstrip()
+    stripped = strip_generated_assistant_stop(text)
     if ROLE_LEAK_RE.search(stripped):
         return ["Generated chat role marker"]
     return []
@@ -177,7 +179,7 @@ def _trajectory_generated_text(state: dict) -> str:
     for step in state.get("trajectory") or []:
         for message in step.get("completion") or []:
             if message_role(message) == "assistant":
-                parts.append(message_content(message))
+                parts.append(strip_generated_assistant_stop(message_content(message)))
     return "\n".join(parts)
 
 
@@ -185,7 +187,7 @@ def _trajectory_latest_assistant_turn(state: dict) -> str:
     for step in reversed(state.get("trajectory") or []):
         for message in reversed(step.get("completion") or []):
             if message_role(message) == "assistant":
-                return message_content(message).strip()
+                return strip_generated_assistant_stop(message_content(message)).strip()
     return ""
 
 
@@ -392,7 +394,7 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
     assistant_trace = _strip_role_leak_tail(raw_assistant_trace)
     latest_assistant_turn = (
         _trajectory_latest_assistant_turn(state)
-        or _completion_role_text(completion, "assistant").strip()
+        or strip_generated_assistant_stop(_completion_role_text(completion, "assistant")).strip()
     )
     structure = _structure_reward(assistant_trace, tool_text, validator)
 
