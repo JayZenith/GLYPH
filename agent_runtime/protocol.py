@@ -75,6 +75,9 @@ def _joined_role_text(text: str, role: str) -> str:
     Example: assistant_text("<|im_start|>assistant\nFINAL: ok<|im_end|>")
     returns "FINAL: ok".
 
+    Example: tool_text("<|im_start|>tool\nRESULT c1:\nok<|im_end|>")
+    returns "RESULT c1:\nok".
+
     Example: assistant_text("FINAL: ok") also returns "FINAL: ok", because
     raw model completions may already be plain assistant text.
     """
