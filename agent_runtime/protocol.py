@@ -72,7 +72,7 @@ class ProtocolCall:
 # Otherwise RESULT text could be mistaken for something the model generated.
 
 def _joined_role_text(text: str, role: str) -> str:
-    """Return all content for one role from a ChatML transcript.
+    """Return one role's body text from a full ChatML transcript.
 
     Example: assistant_text("<|im_start|>assistant\nFINAL: ok<|im_end|>")
     returns "FINAL: ok".
@@ -80,8 +80,9 @@ def _joined_role_text(text: str, role: str) -> str:
     Example: tool_text("<|im_start|>tool\nRESULT c1:\nok<|im_end|>")
     returns "RESULT c1:\nok".
 
-    Example: assistant_text("FINAL: ok") also returns "FINAL: ok", because
-    raw model completions may already be plain assistant text.
+    If there are no ChatML role markers, the input is already plain generated
+    text. In that case assistant_text("FINAL: ok") returns "FINAL: ok", while
+    tool_text("FINAL: ok") returns "".
     """
     if "<|im_start|>" not in text:
         return text if role == "assistant" else ""
@@ -97,10 +98,11 @@ def tool_text(text: str) -> str:
 
 
 def strip_terminal_chatml_end(text: str) -> str:
-    """Remove one terminal ChatML end marker from assistant content.
+    """Remove one allowed trailing ChatML end marker from assistant content.
 
-    This normalizes already-rendered assistant turns before scoring. It does not
-    repair missing markers in live model output.
+    This is for assistant text that was already extracted or passed in plain,
+    e.g. "FINAL: ok<|im_end|>" -> "FINAL: ok". It does not parse roles, and it
+    does not add or repair missing markers.
     """
     stripped = text.rstrip()
     if stripped.endswith(CHATML_END):
