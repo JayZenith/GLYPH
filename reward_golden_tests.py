@@ -13,6 +13,7 @@ import types
 import unittest
 from collections import Counter, defaultdict
 from pathlib import Path
+from unittest.mock import patch
 
 from agent_runtime.chatml import (
     assert_glyph_template_parity,
@@ -619,6 +620,70 @@ def summarize_rollouts(paths: list[Path], sample: int) -> None:
             print(f"  {count:4d} {pattern} examples={examples[pattern]}")
 
 
+class RustToolEnvTests(unittest.TestCase):
+    READ = call("read_file", "c1", file_path="src/lib.rs")
+    TEST = call("cargo_test", "c2", project_path=".")
+
+    def test_env_response_records_tool_execution_state(self) -> None:
+        calls = []
+
+        def fake_execute(executor, tool_name, params, expected_output=None):
+            calls.append((tool_name, params, expected_output))
+            detail = params.get("file_path") or params.get("project_path") or "."
+            return ExecutionResult(True, f"{tool_name}:{detail}", "", 0)
+
+        env = RustToolEnv(executor=object(), max_tool_rounds=5)
+        state: dict = {}
+        assistant = "\n".join([self.READ, self.TEST])
+
+        with patch("rl.environment.execute_rust_tool", side_effect=fake_execute):
+            responses = asyncio.run(
+                env.env_response(
+                    [{"role": "assistant", "content": assistant}],
+                    state,
+                    info={"expected_tool": "read_file"},
+                )
+            )
+
+        self.assertEqual(
+            calls,
+            [
+                ("read_file", {"file_path": "src/lib.rs"}, None),
+                ("cargo_test", {"project_path": "."}, None),
+            ],
+        )
+        self.assertEqual(state["executed_call_ids"], ["c1", "c2"])
+        self.assertEqual(
+            [call.id for call in state["executed_tool_calls"]],
+            ["c1", "c2"],
+        )
+        self.assertTrue(state["executed_results"]["c1"].success)
+        self.assertEqual(state["executed_results"]["c2"].stdout, "cargo_test:.")
+        self.assertEqual(len(state["executed_result_blocks"]), 2)
+        self.assertIn("RESULT c1:", state["raw_chatml_transcript"])
+        self.assertIn("<|im_start|>tool\nRESULT c2:", state["raw_chatml_transcript"])
+        self.assertEqual([message["role"] for message in responses], ["tool", "tool"])
+        self.assertEqual([message["tool_call_id"] for message in responses], ["c1", "c2"])
+        self.assertEqual(
+            [message["content"] for message in responses],
+            state["executed_result_blocks"],
+        )
+
+    def test_glyph_completed_is_the_stop_method_name(self) -> None:
+        env = RustToolEnv(executor=object(), max_tool_rounds=1)
+        state = {
+            "executed_call_ids": ["c1"],
+            "trajectory": trajectory_from_assistant_lines(
+                "\n".join([self.READ, "FINAL: done"]),
+                [result_block("c1", True)],
+            ),
+        }
+
+        self.assertTrue(asyncio.run(env.glyph_completed(state)))
+        self.assertTrue(callable(getattr(env, "glyph_completed")))
+        self.assertNotIn("is_completed", RustToolEnv.__dict__)
+
+
 class RlPromptFormatTests(unittest.TestCase):
     def test_chatml_prompt_loads_as_messages(self) -> None:
         row = {
@@ -693,6 +758,7 @@ def main() -> int:
 
     suite = unittest.TestSuite()
     suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(RewardGoldenTests))
+    suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(RustToolEnvTests))
     suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(RlPromptFormatTests))
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     if not result.wasSuccessful():
