@@ -285,6 +285,27 @@ class RewardGoldenTests(unittest.TestCase):
         no_call = score("FINAL: done", [])
         self.assertLess(no_call, self._loop())
 
+    def test_unverified_rollout_is_penalized(self) -> None:
+        unverified = score("\n".join([self.READ, self.PATCH, "FINAL: done"]), self.SOLVED[:2])
+        self.assertLess(unverified, 0.0)
+
+    def test_reward_uses_resolved_info_fallback(self) -> None:
+        assistant = "\n".join([self.READ, self.PATCH, self.OK, "FINAL: done"])
+        reward = asyncio.run(
+            _rust_tool_reward(
+                [{"role": "assistant", "content": assistant}],
+                state={
+                    "resolved_info": {"expected_tool": "read_file"},
+                    "executed_tool_calls": parse_calls(assistant),
+                    "executed_results": executed_results_from_blocks(self.SOLVED),
+                    "executed_result_blocks": self.SOLVED,
+                    "raw_chatml_transcript": raw_trace(assistant, self.SOLVED),
+                    "trajectory": trajectory_from_assistant_lines(assistant, self.SOLVED),
+                },
+            )
+        )
+        self.assertEqual(reward, self._solve_stop())
+
     def test_worst_case_is_bounded(self) -> None:
         self.assertGreater(self._loop(), -8.0)
         self.assertGreater(score("FINAL: done", []), -8.0)

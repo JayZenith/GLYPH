@@ -20,7 +20,6 @@ from agent_runtime.rust.runtime import (
 )
 from agent_runtime.chatml import render_tool_turn
 from rl.rollout_text import (
-    append_unseen_text,
     latest_assistant_segment,
     messages_text,
 )
@@ -57,12 +56,6 @@ class RustToolEnv(vf.MultiTurnEnv):
         state["blueprint_root"] = blueprint_root
         return state["sandbox_path"]
 
-    def _raw_trace_text(self, state: dict, messages=None) -> str:
-        prior = state.get("raw_chatml_transcript", "")
-        if messages is not None:
-            prior = append_unseen_text(prior, messages_text(messages))
-        return prior
-
     async def is_completed(self, state, **kwargs) -> bool:
         trajectory = state.get("trajectory") or []
         if not trajectory:
@@ -75,9 +68,7 @@ class RustToolEnv(vf.MultiTurnEnv):
             return True
         if state.get("tool_budget_exhausted"):
             return True
-        text = strip_generated_assistant_stop(
-            latest_assistant_segment(self._raw_trace_text(state, trajectory[-1]["completion"]))
-        )
+        text = strip_generated_assistant_stop(messages_text(trajectory[-1]["completion"]))
         errors = call_syntax_errors(text)
         if errors:
             state["malformed_call_errors"] = errors
@@ -87,10 +78,8 @@ class RustToolEnv(vf.MultiTurnEnv):
         return not any(call.id not in executed for call in calls)
 
     async def env_response(self, messages, state, **kwargs):
-        prior_trace = state.get("raw_chatml_transcript", "")
-        incoming_text = messages_text(messages)
-        raw_text = self._raw_trace_text(state, messages)
-        raw_latest = latest_assistant_segment(raw_text)
+        prior_trace = messages_text(messages)
+        raw_latest = latest_assistant_segment(prior_trace)
         text = strip_generated_assistant_stop(raw_latest)
         errors = call_syntax_errors(text)
         if errors:
@@ -104,6 +93,7 @@ class RustToolEnv(vf.MultiTurnEnv):
         info = kwargs.get("info") or {}
         if not info.get("expected_tool"):
             info = self._infer_info_from_calls(calls)
+        state["resolved_info"] = info
         is_rust_prompt = bool(info.get("expected_tool"))
         blueprint_root = info.get("blueprint_root")
         trace_prefix = info.get("trace_prefix") or blueprint_root
@@ -139,8 +129,7 @@ class RustToolEnv(vf.MultiTurnEnv):
             state.setdefault("executed_tool_calls", []).append(call)
             state.setdefault("executed_results", {})[cid] = er
             state.setdefault("executed_result_blocks", []).append(result_block)
-            prior_trace = append_unseen_text(prior_trace, incoming_text)
-            prior_trace = f"{prior_trace}{tool_turn}"
+            prior_trace += tool_turn
             responses.append(
                 {
                     "role": "tool",

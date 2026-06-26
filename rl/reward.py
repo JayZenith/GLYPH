@@ -16,7 +16,6 @@ from agent_runtime.protocol import (
 )
 from agent_runtime.rust.executor import ExecutionResult
 from rl.rollout_text import (
-    append_unseen_text,
     collect_rollout_text,
     completion_role_text,
     completion_text,
@@ -32,6 +31,7 @@ DEFAULT_REWARD_CONFIG = MappingProxyType({
     "structure_valid_bonus": 0.0,
     "no_call_penalty": -5.0,
     "malformed_call_penalty": -4.0,
+    "no_verifier_penalty": -3.0,
     "bad_cargo_project_path_penalty": -4.0,
     "bad_final_hygiene_penalty": -2.0,
     # clean completion
@@ -151,12 +151,14 @@ def _outcome_reward(
     success_idx: int | None = None
     success_pos = -1
     failed_before_success = 0
+    saw_verifier_result = False
     for idx, call in enumerate(calls):
         if call.tool not in {"cargo_test", "cargo_run"}:
             continue
         result = executed_results.get(call.id)
         if result is None:
             continue
+        saw_verifier_result = True
         if result.success:
             success_idx = idx
             pos = _result_offset(call.id, full_text)
@@ -164,6 +166,9 @@ def _outcome_reward(
                 success_pos = pos
             break
         failed_before_success += 1
+
+    if not saw_verifier_result:
+        return reward_config["no_verifier_penalty"]
 
     fail_penalty = max(
         reward_config["max_failed_verifier_penalty"],
@@ -206,8 +211,8 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
         tool_text = rollout_text.tool or completion_role_text(
             completion, "tool"
         )
-    full_text = append_unseen_text(rollout_text.full, text) or text
-    info = kwargs.get("info") or {}
+    full_text = rollout_text.full or text
+    info = kwargs.get("info") or state.get("resolved_info") or {}
     expected_tool = info.get("expected_tool")
     validator: SimpleTraceValidator | None = kwargs.get("validator")
     raw_assistant_trace = assistant_text or text

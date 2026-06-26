@@ -35,16 +35,6 @@ def latest_assistant_segment(text: str) -> str:
     return text.rsplit(marker, 1)[-1]
 
 
-def append_unseen_text(prior: str, text: str) -> str:
-    if not text or text in prior:
-        return prior
-    max_overlap = min(len(prior), len(text))
-    for size in range(max_overlap, 0, -1):
-        if prior.endswith(text[:size]):
-            return prior + text[size:]
-    return prior + text
-
-
 def messages_text(messages) -> str:
     if isinstance(messages, str):
         return messages
