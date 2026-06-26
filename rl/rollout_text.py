@@ -70,11 +70,9 @@ def collect_rollout_text(state: dict) -> RolloutText:
                     assistant_parts.append(assistant)
                     latest_assistant = assistant.strip()
 
-    full = (
-        str(state["raw_chatml_transcript"])
-        if state.get("raw_chatml_transcript")
-        else "\n".join(full_parts)
-    )
+    full = "\n".join(full_parts)
+    if not full and state.get("raw_chatml_transcript"):
+        full = str(state["raw_chatml_transcript"])
     return RolloutText(
         assistant="\n".join(assistant_parts),
         latest_assistant=latest_assistant,

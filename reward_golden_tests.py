@@ -306,6 +306,22 @@ class RewardGoldenTests(unittest.TestCase):
         )
         self.assertEqual(reward, self._solve_stop())
 
+    def test_trajectory_full_text_wins_over_stale_raw_transcript(self) -> None:
+        assistant = "\n".join([self.READ, self.PATCH, self.OK, "FINAL: done"])
+        stale_raw = raw_trace("\n".join([self.READ, self.PATCH, self.OK]), self.SOLVED)
+        reward = score_with_state(
+            assistant,
+            self.SOLVED,
+            {
+                "executed_tool_calls": parse_calls(assistant),
+                "executed_results": executed_results_from_blocks(self.SOLVED),
+                "executed_result_blocks": self.SOLVED,
+                "raw_chatml_transcript": stale_raw,
+                "trajectory": trajectory_from_assistant_lines(assistant, self.SOLVED),
+            },
+        )
+        self.assertEqual(reward, self._solve_stop())
+
     def test_worst_case_is_bounded(self) -> None:
         self.assertGreater(self._loop(), -8.0)
         self.assertGreater(score("FINAL: done", []), -8.0)
