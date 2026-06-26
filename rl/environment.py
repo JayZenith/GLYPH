@@ -60,12 +60,6 @@ class RustToolEnv(vf.MultiTurnEnv):
         trajectory = state.get("trajectory") or []
         if not trajectory:
             return False
-        if state.get("rounds_used", 0) >= self.max_tool_rounds:
-            state["tool_budget_exhausted"] = True
-            return True
-        if len(state.get("executed_call_ids") or []) >= self.max_tool_rounds:
-            state["tool_budget_exhausted"] = True
-            return True
         if state.get("tool_budget_exhausted"):
             return True
         text = strip_generated_assistant_stop(messages_text(trajectory[-1]["completion"]))
@@ -75,7 +69,14 @@ class RustToolEnv(vf.MultiTurnEnv):
             return True
         executed = set(state.get("executed_call_ids") or [])
         calls = parse_calls(text)
-        return not any(call.id not in executed for call in calls)
+        pending_calls = [call for call in calls if call.id not in executed]
+        if pending_calls and (
+            state.get("rounds_used", 0) >= self.max_tool_rounds
+            or len(executed) >= self.max_tool_rounds
+        ):
+            state["tool_budget_exhausted"] = True
+            return True
+        return not pending_calls
 
     async def env_response(self, messages, state, **kwargs):
         prior_trace = messages_text(messages)

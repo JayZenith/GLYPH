@@ -49,6 +49,7 @@ from rl.reward import (  # noqa: E402
     DEFAULT_REWARD_CONFIG,
     _rust_tool_reward,
 )
+from rl.environment import RustToolEnv  # noqa: E402
 from rl.task_format import load_prompts  # noqa: E402
 
 
@@ -321,6 +322,48 @@ class RewardGoldenTests(unittest.TestCase):
             },
         )
         self.assertEqual(reward, self._solve_stop())
+
+    def test_exact_tool_limit_clean_final_is_not_exhausted(self) -> None:
+        assistant = "\n".join([self.READ, self.PATCH, self.OK, "FINAL: done"])
+        state = {
+            "executed_tool_calls": parse_calls(assistant),
+            "executed_call_ids": ["c1", "c2", "c3"],
+            "executed_results": executed_results_from_blocks(self.SOLVED),
+            "executed_result_blocks": self.SOLVED,
+            "rounds_used": 3,
+            "raw_chatml_transcript": raw_trace(assistant, self.SOLVED),
+            "trajectory": trajectory_from_assistant_lines(assistant, self.SOLVED),
+        }
+        env = RustToolEnv(executor=object(), max_tool_rounds=3)
+
+        completed = asyncio.run(env.is_completed(state))
+        reward = score_with_state(assistant, self.SOLVED, state)
+
+        self.assertTrue(completed)
+        self.assertNotIn("tool_budget_exhausted", state)
+        self.assertEqual(reward, self._solve_stop())
+
+    def test_validator_invalid_blocks_clean_success_bonus(self) -> None:
+        class InvalidValidator:
+            def validate(self, assistant_text: str, result_text: str):
+                return types.SimpleNamespace(valid=False, errors=["invalid"])
+
+        assistant = "\n".join([self.READ, self.PATCH, self.OK, "FINAL: done"])
+        reward = asyncio.run(
+            _rust_tool_reward(
+                [{"role": "assistant", "content": assistant}],
+                state={
+                    "executed_tool_calls": parse_calls(assistant),
+                    "executed_results": executed_results_from_blocks(self.SOLVED),
+                    "executed_result_blocks": self.SOLVED,
+                    "raw_chatml_transcript": raw_trace(assistant, self.SOLVED),
+                    "trajectory": trajectory_from_assistant_lines(assistant, self.SOLVED),
+                },
+                info={"expected_tool": "read_file"},
+                validator=InvalidValidator(),
+            )
+        )
+        self.assertEqual(reward, 0.0)
 
     def test_worst_case_is_bounded(self) -> None:
         self.assertGreater(self._loop(), -8.0)

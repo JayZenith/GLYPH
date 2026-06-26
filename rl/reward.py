@@ -62,11 +62,12 @@ def _structure_reward(
     result_text: str,
     validator: SimpleTraceValidator | None,
     reward_config: RewardConfig,
-) -> float:
+) -> tuple[float, bool]:
     if validator is None:
-        return 0.0
+        return 0.0, True
     v = validator.validate(assistant_text, result_text)
-    return reward_config["structure_valid_bonus"] if v.valid else 0.0
+    structure = reward_config["structure_valid_bonus"] if v.valid else 0.0
+    return structure, v.valid
 
 
 def _finalization_reward(assistant_text: str, reward_config: RewardConfig) -> float:
@@ -145,6 +146,7 @@ def _outcome_reward(
     full_text: str,
     latest_assistant_turn: str,
     reward_config: RewardConfig,
+    validator_valid: bool,
     protocol_errors: list[str] | None = None,
 ) -> float:
     """Primary signal: exact heldout-style success."""
@@ -183,7 +185,7 @@ def _outcome_reward(
     if later_tools:
         reward += reward_config["tool_after_success_penalty"]
 
-    if _heldout_style_success(
+    if validator_valid and _heldout_style_success(
         assistant_text,
         full_text,
         success_pos,
@@ -222,7 +224,12 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
         rollout_text.latest_assistant
         or strip_generated_assistant_stop(completion_role_text(completion, "assistant")).strip()
     )
-    structure = _structure_reward(assistant_trace, tool_text, validator, reward_config)
+    structure, validator_valid = _structure_reward(
+        assistant_trace,
+        tool_text,
+        validator,
+        reward_config,
+    )
 
     if not expected_tool:
         return structure
@@ -256,6 +263,7 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
         full_text,
         latest_assistant_turn,
         reward_config,
+        validator_valid,
         protocol_errors,
     )
     if protocol_errors:
