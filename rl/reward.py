@@ -238,8 +238,6 @@ async def _rust_tool_reward(completion, **kwargs) -> float:
         return reward_config["no_call_penalty"] + protocol_penalty + structure
 
     reward = 0.0
-    malformed = len(re.findall(r"\bCALL[A-Z]", raw_assistant_trace))
-    reward += min(malformed, 4) * reward_config["malformed_call_penalty"]
     protocol_penalty, protocol_errors = _protocol_reward_penalty(
         reward_assistant_trace,
         calls,

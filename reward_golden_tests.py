@@ -49,6 +49,7 @@ from rl.reward import (  # noqa: E402
     DEFAULT_REWARD_CONFIG,
     _rust_tool_reward,
 )
+from rl.environment import RustToolEnv  # noqa: E402
 from rl.task_format import load_prompts  # noqa: E402
 
 
@@ -333,6 +334,36 @@ class RewardGoldenTests(unittest.TestCase):
         self.assertTrue(call_syntax_errors(malformed))
         self.assertLess(score(malformed + "\nFINAL: done", []), self._loop())
 
+    def test_state_malformed_call_penalty_applies_once(self) -> None:
+        assistant = "\n".join([self.READ, "CALLTYPE bad", self.OK, "FINAL: done"])
+        calls = parse_calls(assistant)
+        reward = asyncio.run(
+            _rust_tool_reward(
+                [{"role": "assistant", "content": assistant}],
+                state={
+                    "executed_tool_calls": calls,
+                    "executed_results": executed_results_from_blocks(
+                        [result_block("c1", True), result_block("c3", True)]
+                    ),
+                    "executed_result_blocks": [
+                        result_block("c1", True),
+                        result_block("c3", True),
+                    ],
+                    "malformed_call_errors": ["Malformed CALL line"],
+                    "raw_chatml_transcript": raw_trace(
+                        assistant,
+                        [result_block("c1", True), result_block("c3", True)],
+                    ),
+                    "trajectory": trajectory_from_assistant_lines(
+                        assistant,
+                        [result_block("c1", True), result_block("c3", True)],
+                    ),
+                },
+                info={"expected_tool": "read_file"},
+            )
+        )
+        self.assertEqual(reward, DEFAULT_REWARD_CONFIG["malformed_call_penalty"])
+
     def test_malformed_call_with_chatml_end_cannot_score_well(self) -> None:
         malformed = 'CALL read_file {"id":"c1","file_path":"src/lib.rs",}<|im_end|>'
         self.assertLess(score(malformed, []), self._loop())
@@ -367,6 +398,28 @@ class RewardGoldenTests(unittest.TestCase):
     def test_terminal_chatml_end_after_final_is_allowed(self) -> None:
         clean = "\n".join([self.READ, self.PATCH, self.OK, "FINAL: done<|im_end|>"])
         self.assertEqual(score(clean, self.SOLVED), self._solve_stop())
+
+    def test_tool_rounds_do_not_cap_total_calls(self) -> None:
+        calls = "\n".join(
+            call("unknown_tool", f"c{i}", file_path=f"src/{i}.rs")
+            for i in range(6)
+        )
+        env = RustToolEnv(
+            executor=object(),
+            max_tool_rounds=5,
+            max_tool_calls=6,
+        )
+        state: dict = {}
+        responses = asyncio.run(
+            env.env_response(
+                [{"role": "assistant", "content": calls}],
+                state,
+                info={"expected_tool": "unknown_tool"},
+            )
+        )
+        self.assertEqual(len(responses), 6)
+        self.assertEqual(state["rounds_used"], 1)
+        self.assertNotIn("tool_budget_exhausted", state)
 
     def test_bad_cargo_project_path_blocks_top_reward(self) -> None:
         bad_cargo = call("cargo_test", "c3", project_path="/tmp/case/src/main.rs")
