@@ -16,7 +16,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from agent_runtime.chatml import GLYPH_CHAT_TEMPLATE, assert_glyph_template_parity
+from agent_runtime.chatml import GLYPH_CHAT_TEMPLATE, install_glyph_chat_template
 
 CONFIG_DIR = Path(__file__).resolve().parent / "configs" / "task_trace"
 
@@ -153,8 +153,7 @@ def materialize_glyph_chat_model(model_name: str, output_dir: Path) -> str:
             target.symlink_to(item)
 
     tokenizer = AutoTokenizer.from_pretrained(str(source))
-    tokenizer.chat_template = GLYPH_CHAT_TEMPLATE
-    assert_glyph_template_parity(tokenizer)
+    tokenizer = install_glyph_chat_template(tokenizer)
     for name in (
         "chat_template.jinja",
         "tokenizer_config.json",

@@ -122,3 +122,9 @@ def assert_glyph_template_parity(tokenizer: Any | None = None) -> None:
             f"rendered: {rendered!r}\n"
             f"expected: {expected!r}"
         )
+
+
+def install_glyph_chat_template(tokenizer: Any) -> Any:
+    tokenizer.chat_template = GLYPH_CHAT_TEMPLATE
+    assert_glyph_template_parity(tokenizer)
+    return tokenizer
