@@ -90,6 +90,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tool-after-success-penalty", type=float)
     parser.add_argument("--failed-verifier-penalty", type=float)
     parser.add_argument("--max-failed-verifier-penalty", type=float)
+    parser.add_argument("--progress-compile-bonus", type=float,
+                        help="Dense partial credit added to failed rollouts that compiled. "
+                             "Breaks the zero-advantage tie among all-fail groups.")
+    parser.add_argument("--progress-test-frac-bonus", type=float,
+                        help="Dense partial credit scaled by the best test-pass fraction on "
+                             "failed rollouts. Keep small (e.g. 2.0) vs the +10 success bonus.")
     parser.add_argument("--port", type=int)
     parser.add_argument("--teacher-model", default="JayZenith/SFT_V1")
     parser.add_argument("--teacher-base-url",
@@ -337,6 +343,8 @@ def configure_environment(env_args: dict[str, Any], args: argparse.Namespace, da
     maybe_set(env_args, "tool_after_success_penalty", args.tool_after_success_penalty)
     maybe_set(env_args, "failed_verifier_penalty", args.failed_verifier_penalty)
     maybe_set(env_args, "max_failed_verifier_penalty", args.max_failed_verifier_penalty)
+    maybe_set(env_args, "progress_compile_bonus", args.progress_compile_bonus)
+    maybe_set(env_args, "progress_test_frac_bonus", args.progress_test_frac_bonus)
 
 
 def configure_inference(

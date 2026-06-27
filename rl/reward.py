@@ -52,6 +52,14 @@ DEFAULT_REWARD_CONFIG = MappingProxyType({
     "tool_budget_exhausted_penalty": -5.0,
     "failed_verifier_penalty": -1.0,
     "max_failed_verifier_penalty": -4.0,
+    # Dense partial-credit shaping applied ONLY when no cargo verifier succeeded.
+    # Turns the all-fail region (which otherwise scores identically -> zero
+    # advantage -> filtered out of training) into a graded signal: did it
+    # compile, and what fraction of tests passed. Kept well below the +10
+    # clean-success bonus so full success still dominates the gradient. Off by
+    # default (0.0) to preserve the sparse reward; enable per-run via CLI.
+    "progress_compile_bonus": 0.0,
+    "progress_test_frac_bonus": 0.0,
 })
 
 
@@ -152,6 +160,49 @@ def _protocol_reward_penalty(
 
 # Consumes parsed calls plus structured execution results and owns verifier
 # success/failure reward. Returns a scalar.
+_TEST_RESULT_RE = re.compile(r"test result:\s*\w+\.\s*(\d+)\s+passed;\s*(\d+)\s+failed")
+
+
+def _progress_reward(
+    calls: list[ProtocolCall],
+    executed_results: dict[str, ExecutionResult],
+    reward_config: RewardConfig,
+) -> float:
+    """Dense partial credit for the no-success region.
+
+    Scans cargo verifier results for the best partial progress across the
+    rollout: whether the crate compiled, and the highest test-pass fraction
+    observed. Both are objective task facts the model cannot game (tests and
+    expected output are fixed by the case). Returns 0.0 when the shaping bonuses
+    are disabled, so the default sparse reward is unchanged.
+    """
+    compile_bonus = reward_config.get("progress_compile_bonus", 0.0)
+    test_bonus = reward_config.get("progress_test_frac_bonus", 0.0)
+    if not compile_bonus and not test_bonus:
+        return 0.0
+
+    compiled = False
+    best_test_frac = 0.0
+    for call in calls:
+        if call.tool not in {"cargo_test", "cargo_run"}:
+            continue
+        result = executed_results.get(call.id)
+        if result is None:
+            continue
+        out = f"{result.stdout or ''}\n{result.stderr or ''}"
+        compile_failed = ("error[E" in out) or ("could not compile" in out)
+        if not compile_failed and (
+            result.success or "test result:" in out or "Finished" in out or "Running `" in out
+        ):
+            compiled = True
+        for match in _TEST_RESULT_RE.finditer(out):
+            passed, failed = int(match.group(1)), int(match.group(2))
+            if passed + failed > 0:
+                best_test_frac = max(best_test_frac, passed / (passed + failed))
+
+    return (compile_bonus if compiled else 0.0) + test_bonus * best_test_frac
+
+
 def _outcome_reward(
     calls: list[ProtocolCall],
     executed_results: dict[str, ExecutionResult],
@@ -191,7 +242,7 @@ def _outcome_reward(
     )
 
     if success_idx is None:
-        return fail_penalty
+        return fail_penalty + _progress_reward(calls, executed_results, reward_config)
 
     reward = reward_config["verifier_success_bonus"] + fail_penalty
     later_tools = calls[success_idx + 1 :]

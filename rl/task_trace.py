@@ -76,6 +76,8 @@ def load_environment(
     tool_after_success_penalty: float | None = None,
     failed_verifier_penalty: float | None = None,
     max_failed_verifier_penalty: float | None = None,
+    progress_compile_bonus: float | None = None,
+    progress_test_frac_bonus: float | None = None,
 ) -> vf.Environment:
     """Load the Rust tool RL environment with real multi-round tool execution."""
     # Load prompt data: JSONL prompts are normalized into chat-message rows.
@@ -101,6 +103,8 @@ def load_environment(
             "tool_after_success_penalty": tool_after_success_penalty,
             "failed_verifier_penalty": failed_verifier_penalty,
             "max_failed_verifier_penalty": max_failed_verifier_penalty,
+            "progress_compile_bonus": progress_compile_bonus,
+            "progress_test_frac_bonus": progress_test_frac_bonus,
         }
     )
     rubric = build_rubric(reward_config)
