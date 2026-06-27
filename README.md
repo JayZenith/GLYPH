@@ -103,10 +103,10 @@ SFT:
 CUDA_VISIBLE_DEVICES=0 python -m sft.eval_formal \
   --sft-model JayZenith/SFT_HALF_A \
   --train-data synthetic_data/signal_v3_sft_half_a.jsonl \
-  --prompt-file sft/evals/eval_prompts_heldout_69.yaml \
-  --prompt-section post_eval_heldout_69 \
-  --cases-root runs/heldout69_sft_half_a \
-  --output results/SFT_HALF_A/eval_formal_heldout_69.json \
+  --prompt-file sft/evals/eval_prompts_heldout_150.yaml \
+  --prompt-section post_eval_heldout_150 \
+  --cases-root runs/heldout150_sft_half_a \
+  --output results/SFT_HALF_A/eval_formal_heldout_150.json \
   --max-new-tokens 4000 \
   --max-tool-rounds 20 \
   --prompt-batch-size 8 \
@@ -120,10 +120,10 @@ CUDA_VISIBLE_DEVICES=0 python -m sft.eval_formal \
   --sft-model JayZenith/SFT_HALF_A \
   --sft-adapter outputs/RLVR_SIGNAL_V4001_POOL_B_OVERSAMPLED_LORA_R64_A128/hf_adapter_step10 \
   --train-data synthetic_data/signal_v3_sft_half_a.jsonl \
-  --prompt-file sft/evals/eval_prompts_heldout_69.yaml \
-  --prompt-section post_eval_heldout_69 \
-  --cases-root runs/heldout69_rlvr_v4001_step10 \
-  --output results/RLVR_SIGNAL_V4001_STEP10/eval_formal_heldout_69.json \
+  --prompt-file sft/evals/eval_prompts_heldout_150.yaml \
+  --prompt-section post_eval_heldout_150 \
+  --cases-root runs/heldout150_rlvr_v4001_step10 \
+  --output results/RLVR_SIGNAL_V4001_STEP10/eval_formal_heldout_150.json \
   --max-new-tokens 4000 \
   --max-tool-rounds 20 \
   --prompt-batch-size 8 \
@@ -137,14 +137,14 @@ SFT:
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -m sft.passk_scan_vllm \
   --sft-model JayZenith/SFT_HALF_A \
-  --prompt-file sft/evals/eval_prompts_heldout_69.yaml \
-  --prompt-section post_eval_heldout_69 \
-  --cases-root runs/passk_heldout69_sft_half_a_k4 \
+  --prompt-file sft/evals/eval_prompts_heldout_150.yaml \
+  --prompt-section post_eval_heldout_150 \
+  --cases-root runs/passk_heldout150_sft_half_a_k4 \
   -k 4 \
   --temperature 0.8 \
   --max-new-tokens 4000 \
   --max-tool-rounds 20 \
-  --output results/passk_heldout69/SFT_HALF_A_k4.json \
+  --output results/passk_heldout150/SFT_HALF_A_k4.json \
   --gpu-memory-utilization 0.88 \
   --max-model-len 16384 \
   --prompt-batch-size 8 \
@@ -157,14 +157,14 @@ RL adapter:
 CUDA_VISIBLE_DEVICES=0 python -m sft.passk_scan_vllm \
   --sft-model JayZenith/SFT_HALF_A \
   --sft-adapter outputs/RLVR_SIGNAL_V4001_POOL_B_OVERSAMPLED_LORA_R64_A128/hf_adapter_step10 \
-  --prompt-file sft/evals/eval_prompts_heldout_69.yaml \
-  --prompt-section post_eval_heldout_69 \
-  --cases-root runs/passk_heldout69_rlvr_v4001_step10_k4 \
+  --prompt-file sft/evals/eval_prompts_heldout_150.yaml \
+  --prompt-section post_eval_heldout_150 \
+  --cases-root runs/passk_heldout150_rlvr_v4001_step10_k4 \
   -k 4 \
   --temperature 0.8 \
   --max-new-tokens 4000 \
   --max-tool-rounds 20 \
-  --output results/passk_heldout69/RLVR_SIGNAL_V4001_STEP10_k4.json \
+  --output results/passk_heldout150/RLVR_SIGNAL_V4001_STEP10_k4.json \
   --gpu-memory-utilization 0.88 \
   --max-model-len 16384 \
   --max-lora-rank 64 \

@@ -8,7 +8,7 @@ import yaml
 
 from agent_runtime.chatml import render_prompt
 
-_PROMPTS_FILE = Path(__file__).parent / "eval_prompts_heldout_69.yaml"
+_PROMPTS_FILE = Path(__file__).parent / "eval_prompts_heldout_150.yaml"
 _USER_RE = re.compile(r"<\|im_start\|>user\n(.*?)\n<\|im_end\|>", re.DOTALL)
 
 def load_prompts(section: str, prompt_file: str | None = None) -> list[dict]:

@@ -228,9 +228,9 @@ def main() -> int:
     p.add_argument("--sft-model", default="JayZenith/SFT_V1")
     p.add_argument("--sft-adapter", default=None,
                    help="Optional PEFT LoRA adapter to serve on top of --sft-model via vLLM LoRA.")
-    p.add_argument("--prompt-file", default="sft/evals/eval_prompts_heldout_69.yaml")
-    p.add_argument("--prompt-section", default="post_eval_heldout_69")
-    p.add_argument("--cases-root", default="runs/rlvr1/rust_cases/eval_heldout_69")
+    p.add_argument("--prompt-file", default="sft/evals/eval_prompts_heldout_150.yaml")
+    p.add_argument("--prompt-section", default="post_eval_heldout_150")
+    p.add_argument("--cases-root", default="runs/passk_heldout150")
     p.add_argument("--names", default=None, help="Comma-separated prompt names to keep.")
     p.add_argument("-k", "--samples", type=int, default=8)
     p.add_argument("--temperature", type=float, default=0.8)

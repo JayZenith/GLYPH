@@ -77,9 +77,9 @@ def main() -> int:
         default=None,
         help="Optional PEFT adapter to load on top of --sft-model. Use this for RLVR LoRA checkpoints.",
     )
-    parser.add_argument("--prompt-section", default="post_eval_heldout_69")
+    parser.add_argument("--prompt-section", default="post_eval_heldout_150")
     parser.add_argument("--prompt-file", default=None,
-                        help="Optional yaml file to load prompts from instead of the heldout-69 prompt file")
+                        help="Optional yaml file to load prompts from instead of the default heldout-150 prompt file")
     parser.add_argument("--train-data", required=True,
                         help="Train dataset JSONL used to reject exact eval prompt overlap")
     parser.add_argument("--max-prompt-similarity", type=float, default=None,
@@ -90,7 +90,7 @@ def main() -> int:
                         help="Max rounds of real tool execution/result injection per prompt")
     parser.add_argument("--limit", type=int, default=None,
                         help="Limit to first N prompts (for smoke runs)")
-    parser.add_argument("--cases-root", default="runs/rlvr1/rust_cases/eval",
+    parser.add_argument("--cases-root", default="runs/heldout150_eval",
                         help="Root directory where held-out eval Rust cases are materialized")
     parser.add_argument("--tool-timeout", type=int, default=30)
     parser.add_argument("--stream-output", action="store_true",
