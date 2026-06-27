@@ -20,7 +20,10 @@ TMP_ROOT="${TMP_ROOT:-$DEFAULT_TMP_ROOT}"
 UV_CACHE_DIR="${UV_CACHE_DIR:-$WORKSPACE_DIR/.uv-cache}"
 
 mkdir -p "$TMP_ROOT" "$UV_CACHE_DIR"
-if ! (printf '#!/usr/bin/env sh\nexit 0\n' > "$TMP_ROOT/.exec-test" && chmod +x "$TMP_ROOT/.exec-test" && "$TMP_ROOT/.exec-test"); then
+# /dev/shm is often mounted noexec even when writable, so probe it for real
+# rather than trusting the -x bit. The failure is expected on noexec mounts;
+# silence it and fall back to a workspace tmp dir.
+if ! (printf '#!/usr/bin/env sh\nexit 0\n' > "$TMP_ROOT/.exec-test" && chmod +x "$TMP_ROOT/.exec-test" && "$TMP_ROOT/.exec-test") 2>/dev/null; then
   TMP_ROOT="$WORKSPACE_DIR/.tmp"
   mkdir -p "$TMP_ROOT"
 fi
@@ -41,7 +44,10 @@ init_prime_rl_submodules() {
   git -C "$PRIME_RL_DIR" config -f .gitmodules submodule.research-environments.url https://github.com/PrimeIntellect-ai/research-environments.git 2>/dev/null || true
   git -C "$PRIME_RL_DIR" config -f .gitmodules submodule.pydantic-config.url https://github.com/PrimeIntellect-ai/pydantic-config 2>/dev/null || true
   git -C "$PRIME_RL_DIR" config -f .gitmodules --remove-section submodule.configs/private 2>/dev/null || true
-  git -C "$PRIME_RL_DIR" submodule sync --recursive
+  # Sync only top-level submodule URLs. --recursive tries to descend into nested
+  # submodules that aren't checked out yet at this pin and prints a spurious
+  # "Unable to find current revision" fatal; we init the deps we need below.
+  git -C "$PRIME_RL_DIR" submodule sync
 
   local declared
   declared="$(git -C "$PRIME_RL_DIR" config -f .gitmodules --name-only --get-regexp 'submodule\..*\.path' | sed 's/^submodule\.\(.*\)\.path$/\1/')"

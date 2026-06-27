@@ -100,8 +100,14 @@ TEACHER_LOGPROB_BLOCK_NEW = """async def compute_teacher_logprobs(
             if api_key:
                 headers.setdefault(\"Authorization\", f\"Bearer {api_key}\")
 
+        base_url = (client_config.api_base_url or \"\").rstrip(\"/\")
+        if base_url.endswith(\"/v1\"):
+            # The /generate prefill endpoint is mounted at server root, not under
+            # /v1. An auto-launched teacher (deployment.num_teacher_gpus) gets a
+            # base_url ending in /v1, which would double up to /v1/inference/...
+            base_url = base_url[:-len(\"/v1\")].rstrip(\"/\")
         async with httpx.AsyncClient(
-            base_url=client_config.api_base_url,
+            base_url=base_url,
             timeout=getattr(client_config, \"timeout\", 1200),
             headers=headers,
         ) as client:

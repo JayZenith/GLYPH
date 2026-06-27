@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import os
 import sys
@@ -92,8 +93,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--port", type=int)
     parser.add_argument("--teacher-model", default="JayZenith/SFT_V1")
     parser.add_argument("--teacher-base-url",
-                        help="External teacher inference base URL. Defaults to http://127.0.0.1:<teacher-port>.")
+                        help="External teacher inference base URL. Defaults to http://127.0.0.1:<teacher-port>. "
+                             "Setting this forces the manual external-teacher path and disables --num-teacher-gpus.")
     parser.add_argument("--teacher-port", type=int, default=8001)
+    parser.add_argument("--num-teacher-gpus", type=int,
+                        help="Number of GPUs for an auto-launched teacher inference server. When set "
+                             "(and --teacher-base-url is not), PRIME-RL starts the frozen teacher itself "
+                             "and wires orchestrator.teacher to it -- no manual teacher server needed.")
     # Anchor to the SFT reference. 0.01 was effectively no KL: the policy drifted
     # and collapsed (clean_end 0.75->0.33, terminal success 0.99->0.70). RL here
     # is a nudge, not a rewrite -- keep it close to SFT.
@@ -372,30 +378,55 @@ def configure_teacher(
     }
 
 
+def configure_auto_teacher(
+    inference: dict[str, Any],
+    args: argparse.Namespace,
+    teacher_model_name: str,
+) -> dict[str, Any]:
+    # PRIME-RL launches and serves the frozen teacher itself when
+    # deployment.num_teacher_gpus is set. We hand it a teacher_inference config
+    # derived from the student inference server (same dtype/len/util) but pinned
+    # to the teacher model and a distinct port, with no LoRA aliases so the
+    # teacher stays frozen. The rl.py auto_setup_teacher_inference validator then
+    # rewrites orchestrator.teacher.client.base_url to this server.
+    teacher_inference = copy.deepcopy(inference)
+    teacher_inference.setdefault("model", {})["name"] = teacher_model_name
+    student_port = args.port if args.port is not None else inference.get("server", {}).get("port", 8000)
+    teacher_inference.setdefault("server", {})["port"] = student_port + 1
+    teacher_inference.setdefault("vllm_extra", {})["served_model_name"] = [teacher_model_name]
+    return teacher_inference
+
+
 def configure_deployment(args: argparse.Namespace) -> dict[str, Any]:
     # Deployment config assigns inference and trainer GPUs inside PRIME-RL.
     managed_gpu_ids = args.prime_rl_gpu_ids
     num_train_gpus = args.num_train_gpus if args.num_train_gpus is not None else 1
     num_infer_gpus = args.num_infer_gpus if args.num_infer_gpus is not None else 1
+    # Teacher GPUs only count when PRIME-RL launches the teacher itself; an
+    # external teacher (--teacher-base-url) lives outside the managed GPU set.
+    num_teacher_gpus = (args.num_teacher_gpus or 0) if not args.teacher_base_url else 0
     gpus_per_node = args.gpus_per_node
     if managed_gpu_ids is not None:
-        required_gpus = num_train_gpus + num_infer_gpus
+        required_gpus = num_train_gpus + num_infer_gpus + num_teacher_gpus
         if len(managed_gpu_ids) != required_gpus:
             raise ValueError(
                 f"--prime-rl-gpu-ids must provide exactly {required_gpus} GPU ids "
-                f"for {num_infer_gpus} infer + {num_train_gpus} train GPUs."
+                f"for {num_infer_gpus} infer + {num_train_gpus} train + {num_teacher_gpus} teacher GPUs."
             )
         if gpus_per_node is None:
             gpus_per_node = len(managed_gpu_ids)
     elif gpus_per_node is None:
         gpus_per_node = 2
 
-    return {
+    deployment = {
         "type": "single_node",
         "gpus_per_node": gpus_per_node,
         "num_train_gpus": num_train_gpus,
         "num_infer_gpus": num_infer_gpus,
     }
+    if num_teacher_gpus:
+        deployment["num_teacher_gpus"] = num_teacher_gpus
+    return deployment
 
 
 # Final assembly and launch
@@ -449,6 +480,11 @@ def build_config(args: argparse.Namespace) -> dict[str, Any]:
         "wandb": {"offline": True, "shared": False},
         "deployment": deployment,
     }
+    # When PRIME-RL manages the teacher itself, hand it a teacher_inference
+    # config; its validator rewrites orchestrator.teacher to point at that
+    # server. An external teacher (--teacher-base-url) skips this entirely.
+    if args.num_teacher_gpus and not args.teacher_base_url:
+        config["teacher_inference"] = configure_auto_teacher(inference, args, teacher_model_name)
     if args.resume_step is not None:
         config["ckpt"] = {"resume_step": args.resume_step}
         if args.checkpoint_interval is not None:

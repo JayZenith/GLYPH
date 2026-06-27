@@ -20,7 +20,9 @@ PRIME_RL_ENABLE_LORA=1 bash rl/setup/install_prime_rl.sh
 source /workspace/prime-rl-src/.venv/bin/activate
 ```
 
-## SFT Train
+## SFT_HALF_A_V8 Train
+
+Produces `runs/SIGNAL_v3_HALF_A_SFT_E3_LR2E5/final`, uploaded as `JayZenith/SFT_HALF_A_V8`.
 
 ```bash
 python -m sft.train \
@@ -39,15 +41,9 @@ python -m sft.train \
 
 ## RLVR Train
 
-Start the frozen teacher on GPU 3:
-
-```bash
-CUDA_VISIBLE_DEVICES=3 inference \
-  --model.name JayZenith/SFT_HALF_A_V8 \
-  --server.port 8001
-```
-
-Run RLVR on GPUs 0,1,2:
+Run RLVR on GPUs 0,1,2,3. PRIME-RL launches the frozen teacher itself
+(`--num-teacher-gpus 1`) and wires `orchestrator.teacher` to it, so no separate
+teacher server needs to be started manually:
 
 ```bash
 python rl/train.py \
@@ -76,15 +72,18 @@ python rl/train.py \
   --activation-checkpointing \
   --fused-lm-head-token-chunk-size auto \
   --gpu-memory-utilization 0.70 \
-  --prime-rl-gpu-ids 0,1,2 \
+  --prime-rl-gpu-ids 0,1,2,3 \
   --num-infer-gpus 1 \
   --num-train-gpus 2 \
-  --gpus-per-node 3 \
+  --num-teacher-gpus 1 \
+  --gpus-per-node 4 \
   --port 8000 \
-  --teacher-port 8001 \
   --enforce-gibberish-filter \
   --enforce-repetition-filter
 ```
+
+> To use an existing external teacher instead of the auto-launched one, drop
+> `--num-teacher-gpus` and pass `--teacher-base-url`/`--teacher-port`.
 
 ## Export RL LoRA
 
@@ -97,7 +96,7 @@ python rl/scripts/export_prime_lora_adapter.py \
 
 ## Strict Pass@1 Eval
 
-SFT:
+SFT_HALF_A_V8:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -m sft.eval_formal \
@@ -132,7 +131,7 @@ CUDA_VISIBLE_DEVICES=0 python -m sft.eval_formal \
 
 ## Pass@4 Eval
 
-SFT:
+SFT_HALF_A_V8:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -m sft.passk_scan_vllm \
