@@ -6,22 +6,28 @@ real Rust crates via cargo, and it must finish with a clean `FINAL`. Built on
 `verifiers` / PRIME-RL — `rl/task_trace.py` exposes
 `load_environment() -> vf.Environment`.
 
-Full write-up: [`blog/finalized_blogv3.md`](blog/finalized_blogv3.md).
+Full write-up (deployed): <https://jayzenith.github.io/glyph/> (source:
+[`blog/index.html`](blog/index.html)).
 
 ## Results (held-out 150 unseen crates)
 
 Strict `valid_trace` = terminal cargo success + one clean `FINAL` after it +
 exact `CALL` syntax + no tool use after success.
 
-| metric | SFT_HALF_A_V8 | + dense RLVR (step 10) |
+| model | greedy pass@1 | pass@8 (3 seeds) |
 | --- | ---: | ---: |
-| greedy strict pass@1 | 74/150 | sparse reward: 72/150 (flat) |
-| pass@8 valid (3 seeds) | 95, 97, 100 (mean 97.3) | 102, 102, 99 (mean **101.0**) |
+| SFT_HALF_A_V8 (base) | 74/150 | 97.3 (95, 97, 100) |
+| + sparse-reward RLVR | 72/150 (flat) | — |
+| + dense-reward RLVR (step 10) | — | **101.0** (102, 102, 99) |
 
-Sparse binary reward gave no gradient on the hard tail (all-fail rollout groups →
-zero advantage → filtered). A dense partial-credit reward (compile + test-pass
-fraction) restores it, yielding a small but reproducible **+3.7 pass@8** lift
-(seed-level t-test p ≈ 0.06). See the blog for the diagnosis.
+Sparse binary reward is flat at pass@1 and gives no gradient on the hard tail
+(all-fail rollout groups → zero advantage → filtered). A dense partial-credit
+reward (compile + test-pass fraction) restores it: **+3.7 pass@8** (97.3 →
+101.0), small but reproducible across 3 seeds (seed-level t-test p ≈ 0.06; a
+single run showed +7, which replication revealed was seed noise). Greedy pass@1
+is too noisy for an effect this size, so the dense comparison uses pass@8 with
+seed replication. See the [write-up](https://jayzenith.github.io/glyph/) for the
+full diagnosis.
 
 Artifacts: `JayZenith/SFT_HALF_A_V8` · dense adapters
 `JayZenith/RLVR_VFINAL_STEP{10,20,30}` · sparse baseline
