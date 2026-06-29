@@ -14,20 +14,25 @@ Full write-up (deployed): <https://jayzenith.github.io/glyph/> (source:
 Strict `valid_trace` = terminal cargo success + one clean `FINAL` after it +
 exact `CALL` syntax + no tool use after success.
 
-| model | greedy pass@1 | pass@8 (3 seeds) |
-| --- | ---: | ---: |
-| SFT_HALF_A_V8 (base) | 74/150 | 97.3 (95, 97, 100) |
-| + sparse-reward RLVR | 72/150 (flat) | — |
-| + dense-reward RLVR (step 10) | — | **101.0** (102, 102, 99) |
+**The sparse-reward attempt was flat.** The first RLVR run used a sparse binary
+reward (+10 only for a clean pass) and came out flat — 72/150 vs the SFT
+baseline's 74/150 at greedy pass@1. The diagnosis: all-fail rollout groups have
+zero reward variance → zero advantage → they get filtered, so the hard tail
+never trains.
 
-Sparse binary reward is flat at pass@1 and gives no gradient on the hard tail
-(all-fail rollout groups → zero advantage → filtered). A dense partial-credit
-reward (compile + test-pass fraction) restores it: **+3.7 pass@8** (97.3 →
-101.0), small but reproducible across 3 seeds (seed-level t-test p ≈ 0.06; a
-single run showed +7, which replication revealed was seed noise). Greedy pass@1
-is too noisy for an effect this size, so the dense comparison uses pass@8 with
-seed replication. See the [write-up](https://jayzenith.github.io/glyph/) for the
-full diagnosis.
+**The dense-reward fix gave a small, real lift.** A dense partial-credit reward
+(compile + test-pass fraction) restores the gradient. Measured base SFT vs
+dense-reward RLVR at **pass@8 with 3-seed replication** (greedy pass@1 is too
+noisy for an effect this size):
+
+| pass@8 valid traces / 150 | seed 1 | seed 2 | seed 3 | mean |
+| --- | ---: | ---: | ---: | ---: |
+| SFT_HALF_A_V8 | 95 | 97 | 100 | 97.3 |
+| + dense-reward RLVR (step 10) | 102 | 102 | 99 | **101.0** |
+
+**+3.7 valid@8**, small but reproducible (seed-level t-test p ≈ 0.06; a single
+run showed +7, which replication revealed was seed noise). See the
+[write-up](https://jayzenith.github.io/glyph/) for the full diagnosis.
 
 Artifacts: `JayZenith/SFT_HALF_A_V8` · dense adapters
 `JayZenith/RLVR_VFINAL_STEP{10,20,30}` · sparse baseline
