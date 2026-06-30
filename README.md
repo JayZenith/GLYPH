@@ -31,11 +31,34 @@ noisy for an effect this size):
 | + dense-reward RLVR (step 10) | 102 | 102 | 99 | **101.0** |
 
 **+3.7 valid@8**, small but reproducible (seed-level t-test p ≈ 0.06; a single
-run showed +7, which replication revealed was seed noise). See the
-[write-up](https://jayzenith.github.io/glyph/) for the full diagnosis.
+run showed +7, which replication revealed was seed noise).
+
+**A Rust-compiler-aware reward (the A/B above) lost to the generic dense one.**
+Same base/data/steps/hyperparameters, only the reward shape changed: the
+compiler-aware arm scores progress by the furthest `rustc` phase reached
+(parse → type → borrow → compiles), which restores gradient the same way the
+dense reward does (step 0 retained 32/96 rollouts after zero-advantage
+filtering, vs 0/96 for sparse) but performed *worse* on the actual metric:
+
+| pass@8 valid traces / 150 | seed 1 | seed 2 | seed 3 | mean |
+| --- | ---: | ---: | ---: | ---: |
+| SFT_HALF_A_V8 | 95 | 97 | 100 | 97.3 |
+| + dense reward (step 10) | 102 | 102 | 99 | **101.0** |
+| + compiler-aware reward (step 10) | 95 | 96 | 94 | 95.0 |
+
+**−6.0 valid@8 vs dense (p ≈ 0.012)**, slightly below the SFT baseline. Likely
+Goodhart: "reached a later compiler phase" is a proxy further from the true
+objective (tests passing) than the dense reward's own compile/test-fraction
+signal, so optimizing it pulled the model toward churning on borrow-checker
+errors instead of working code. One coefficient, one checkpoint — not an
+ablation, so the honest claim is narrow: *this* compiler-aware shaping, at
+*this* strength, underperformed; not that compiler-aware rewards categorically
+don't work. See the [write-up](https://jayzenith.github.io/glyph/) for the
+full diagnosis and charts.
 
 Artifacts: `JayZenith/SFT_HALF_A_V8` · dense adapters
-`JayZenith/RLVR_VFINAL_STEP{10,20,30}` · sparse baseline
+`JayZenith/RLVR_VFINAL_STEP{10,20,30}` · compiler-aware adapters
+`JayZenith/RLVR_VFINAL2_STEP{5,10}` · sparse baseline
 `JayZenith/RLVR_POOL_B_V8_STEP{10,20,30}`.
 
 ## Hardware

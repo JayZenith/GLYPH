@@ -77,7 +77,9 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
     and a strict held-out eval. SFT learns the agent contract; the first RLVR run came out
     <strong>flat</strong>; I traced that to no gradient on the hard tail and fixed it with a
     <strong>dense partial-credit reward</strong> for a small, reproducible pass@8 lift —
-    with seed replication, not a single lucky run.
+    with seed replication, not a single lucky run. I then A/B'd a more "principled"
+    Rust-compiler-aware reward against it, and it <strong>lost</strong> — a real result
+    about reward design, not just another win.
   </p>
   <p class="links">
     <a href="https://github.com/JayZenith/glyph" target="_blank" rel="noreferrer">code</a>
@@ -172,10 +174,52 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
     stronger base, not a fancier reward.
   </p>
 
+  <h2>Testing that prediction: a compiler-aware reward (it lost)</h2>
+  <p>
+    The obvious next move is to make the dense reward Rust-specific instead of generic.
+    <code>rustc</code> fails in a fixed phase order — parse → type/resolve → borrow/lifetime →
+    compiles — and reaching a later phase requires passing every earlier one, so the furthest
+    phase a failed rollout reaches is a principled, monotone distance-to-compiling that the
+    model can't game by deleting code to shrink its error count
+    (<code>--progress-error-ladder-bonus</code>, see <code>rl/tests/test_reward_progress.py</code>).
+    Same base model, data, steps, and hyperparameters as the dense run — only the reward shape
+    changed.
+  </p>
+  <div class="panel"><img src="training_curves.svg" alt="Per-step reward and zero-advantage filter rate, dense vs compiler-aware" style="width:100%;height:auto;display:block;"></div>
+  <p>
+    It worked exactly as designed at the mechanism level: step 0 retained 32/96 rollouts after
+    zero-advantage filtering (the sparse run had filtered <em>all</em> 96), so the ladder did
+    restore gradient on the hard tail, same as the dense reward.
+  </p>
+  <div class="panel"><img src="valid8_chart.svg" alt="valid@8 per seed: SFT base vs dense reward vs compiler-aware reward" style="width:100%;height:auto;display:block;"></div>
+  <table>
+    <thead><tr><th>model</th><th>valid@8 per seed</th><th class="num">mean</th></tr></thead>
+    <tbody>
+      <tr><td>SFT_HALF_A_V8</td><td>95, 97, 100</td><td class="num">97.3</td></tr>
+      <tr><td>+ dense reward (step 10)</td><td>102, 102, 99</td><td class="num hl">101.0</td></tr>
+      <tr><td>+ compiler-aware reward (step 10)</td><td>95, 96, 94</td><td class="num">95.0</td></tr>
+    </tbody>
+  </table>
+  <p>
+    But the outcome was worse, not better: <strong>−6.0 valid@8 vs the dense reward
+    (p ≈ 0.012)</strong>, and even slightly below the SFT baseline. cargo@8 (ignoring trace
+    hygiene) tells the same story, so it's a real solve-rate drop, not a formatting artifact.
+    The likely cause is Goodhart, not noise: "reached a later compiler phase" is a proxy for
+    progress, not progress itself, and it's a step further from the true objective (tests
+    passing) than the dense reward's own compile/test-fraction signal. Optimizing the proxy
+    pulled the model toward churning on borrow-checker errors instead of toward working code.
+  </p>
+  <p>
+    This is one coefficient (2.5) at one checkpoint (step 10), not an ablation — so the honest
+    claim is narrower than "compiler-aware rewards don't work": this specific shaping, at this
+    strength, underperformed a reward that stays closer to the actual success criterion.
+  </p>
+
   <h2>What I claim / don't</h2>
   <ul>
     <li><strong>Claim:</strong> a dense, unhackable partial-credit reward turns a flat RLVR result into a small, reproducible pass@8 lift, by restoring gradient on the reachable part of the hard tail.</li>
-    <li><strong>Don't claim:</strong> a large RLVR win, or significance at p&lt;0.05. It's a small effect on a 4B LoRA.</li>
+    <li><strong>Claim:</strong> a more "principled" Rust-specific reward (compiler-phase ladder) is not automatically better — at the tested coefficient it underperformed the simpler dense reward by −6.0 valid@8, despite also restoring gradient. Reward proxies further from the true objective can hurt even when they're well-motivated and harder to game.</li>
+    <li><strong>Don't claim:</strong> a large RLVR win, or significance at p&lt;0.05 for the dense-vs-SFT result. Don't claim compiler-aware rewards are categorically worse — only that this one configuration was.</li>
   </ul>
 
   <h2>Reusable lessons</h2>
