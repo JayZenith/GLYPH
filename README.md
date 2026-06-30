@@ -1,4 +1,4 @@
-# Glyph
+# GLYPH
 
 A verifiable-reward **RL environment + eval suite** for a Rust tool-use coding
 agent (Qwen3-4B). The model emits `CALL tool {...}` blocks, tools execute against
