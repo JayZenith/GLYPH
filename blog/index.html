@@ -139,7 +139,7 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
     <p class="meta">JayZenith/RLVR_VFINAL_STEP10 &middot; RL reward 10.0 &middot; 7 trace turns</p>
     <p>An RLVR-trained agent reads a small Rust config-merge crate, follows failed-test feedback, patches the merge precedence, and confirms the tests pass.</p>
     <div class="panel note"><p>Specification gaming, not a clean win: the patch satisfies the verifier (cargo_test, 3/3) while violating the user's actual spec — it flips tls from direct-first to profile-first, the opposite of the stated 'direct values take precedence' rule. No test sets conflicting direct/profile tls values, so the verifier can't see the violation, and the FINAL message ("tls, which was already correct") doesn't disclose it. One observed instance from reading this trace, not a measured systemic exploit — but it's exactly the proxy-vs-true-objective gap verifiable reward is supposed to close.</p></div>
-    <div class="panel rust-code"><pre><span class="rust-attr">#[derive(Debug, Clone, PartialEq, Eq)]</span>
+    <div class="panel rust-code scroll"><pre><span class="rust-attr">#[derive(Debug, Clone, PartialEq, Eq)]</span>
 <span class="rust-keyword">pub</span> <span class="rust-keyword">struct</span> Config {
     <span class="rust-keyword">pub</span> host: <span class="rust-keyword">String</span>,
     <span class="rust-keyword">pub</span> port: <span class="rust-keyword">u16</span>,
@@ -397,7 +397,7 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
   <div class="example-panel" id="example-recovery" hidden>
     <p class="meta">JayZenith/RLVR_VFINAL_STEP10 &middot; RL reward 9.0 &middot; 13 trace turns</p>
     <p>An RLVR-trained agent fixes sorting first, then uses failed-test output to notice the missing shared-rank behavior and patch the ranking logic.</p>
-    <div class="panel rust-code"><pre><span class="rust-attr">#[derive(Debug, Clone, PartialEq, Eq)]</span>
+    <div class="panel rust-code scroll"><pre><span class="rust-attr">#[derive(Debug, Clone, PartialEq, Eq)]</span>
 <span class="rust-keyword">pub</span> <span class="rust-keyword">struct</span> Player {
     <span class="rust-keyword">pub</span> name: &amp;'static <span class="rust-keyword">str</span>,
     <span class="rust-keyword">pub</span> score: <span class="rust-keyword">u32</span>,
@@ -834,7 +834,7 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
   <div class="example-panel" id="example-long-recovery" hidden>
     <p class="meta">JayZenith/RLVR_VFINAL_STEP10 &middot; RL reward 8.0 &middot; 23 trace turns</p>
     <p>A longer RLVR rollout where the agent recovers from bad edits and uses repeated test feedback to fix trimming and signed-number parsing.</p>
-    <div class="panel rust-code"><pre><span class="rust-keyword">pub</span> <span class="rust-keyword">fn</span> collect_tagged_numbers(input: &amp;<span class="rust-keyword">str</span>) -&gt; <span class="rust-keyword">Vec</span>&lt;<span class="rust-keyword">i32</span>&gt; {
+    <div class="panel rust-code scroll"><pre><span class="rust-keyword">pub</span> <span class="rust-keyword">fn</span> collect_tagged_numbers(input: &amp;<span class="rust-keyword">str</span>) -&gt; <span class="rust-keyword">Vec</span>&lt;<span class="rust-keyword">i32</span>&gt; {
     input
         .split(',')
         .filter_map(|part| part.split_once(':'))

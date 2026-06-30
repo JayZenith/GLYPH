@@ -124,7 +124,7 @@ def render_example(trace_id: str, trace: dict, crate_src: str | None, active: bo
     src_html = ""
     if crate_src:
         src_html = (
-            f'\n    <div class="panel rust-code"><pre>{highlight_rust(crate_src.strip())}</pre></div>'
+            f'\n    <div class="panel rust-code scroll"><pre>{highlight_rust(crate_src.strip())}</pre></div>'
         )
     trace_html = render_trace(trace)
     hidden = "" if active else " hidden"
