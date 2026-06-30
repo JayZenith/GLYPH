@@ -215,16 +215,51 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
     strength, underperformed a reward that stays closer to the actual success criterion.
   </p>
 
+  <h2>A verifier gap I found by inspection, not by a metric</h2>
+  <p>
+    Reading individual rollouts instead of just trusting scores surfaced something
+    <code>valid_trace</code> can't see. On a config-merge crate the RLVR model's patch correctly
+    fixed <code>port</code> precedence, but it also flipped <code>tls</code> from direct-first to
+    profile-first — the opposite of the stated spec ("direct values must take precedence over
+    profile values"):
+  </p>
+  <div class="panel"><pre>  let tls = direct
+      .and_then(|c| c.tls)
+      .or_else(|| profile.and_then(|c| c.tls))   // before: spec-correct
+      .unwrap_or(defaults.tls);
+
+  let tls = profile
+      .and_then(|c| c.tls)
+      .or_else(|| direct.and_then(|c| c.tls))    // after the patch: violates the spec
+      .unwrap_or(defaults.tls);</pre></div>
+  <p>
+    None of the crate's 3 tests set conflicting <code>direct.tls</code> and <code>profile.tls</code>
+    values, so the regression is invisible to them: <code>cargo_test</code> still reports 3/3
+    passing, the trace ends with a clean <code>FINAL</code>, and strict <code>valid_trace</code>
+    scores it a success. The model's own closing summary ("tls, which was already correct") is
+    true of the <em>original</em> code, not of what it just shipped — it doesn't disclose the
+    regression its own edit introduced.
+  </p>
+  <p>
+    This is the sharp edge of verifiable reward: the reward is only as good as the test suite
+    behind it. <code>cargo_test</code> passing means the spec <em>as tested</em> held, not the
+    spec <em>as written</em>. A binary or dense reward built on this verifier would have no way to
+    penalize this trace — it looks identical to a fully correct one. I didn't catch it from a
+    number; I caught it from reading a trace.
+  </p>
+
   <h2>What I claim / don't</h2>
   <ul>
     <li><strong>Claim:</strong> a dense, unhackable partial-credit reward turns a flat RLVR result into a small, reproducible pass@8 lift, by restoring gradient on the reachable part of the hard tail.</li>
     <li><strong>Claim:</strong> a more "principled" Rust-specific reward (compiler-phase ladder) is not automatically better — at the tested coefficient it underperformed the simpler dense reward by −6.0 valid@8, despite also restoring gradient. Reward proxies further from the true objective can hurt even when they're well-motivated and harder to game.</li>
     <li><strong>Don't claim:</strong> a large RLVR win, or significance at p&lt;0.05 for the dense-vs-SFT result. Don't claim compiler-aware rewards are categorically worse — only that this one configuration was.</li>
+    <li><strong>Don't claim:</strong> <code>valid_trace</code> success means the patch is fully spec-correct — only that it passes the test suite the task ships with. Per-task test coverage gaps exist (see above); the metric inherits them.</li>
   </ul>
 
   <h2>Reusable lessons</h2>
   <ul>
     <li>Verifier RL only works if the verifier matches the full behavior you want — for agents, the contract is the whole trace, not just "cargo passed."</li>
+    <li>"Tests pass" is not "spec correct" — it's only as strong as the test suite. Read individual traces; a per-task coverage gap (see above) is invisible to every metric in this post.</li>
     <li>A binary verifiable reward silently discards the hard tail via zero-advantage filtering. Dense, unhackable partial credit recovers it.</li>
     <li>Greedy pass@1 hides small effects in noise; pass@k + seed replication is the minimum honest bar (a single-run +7 here was seed luck).</li>
     <li>Export the <em>served</em> policy: <code>run_default/broadcasts/step_N</code> as a PEFT adapter, not <code>weights/step_N</code>.</li>
