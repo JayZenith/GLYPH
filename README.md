@@ -74,8 +74,8 @@ Run on vast.ai (NVIDIA RTX PRO 6000 Blackwell, 96 GB each):
 ## GPU Setup
 
 ```bash
-git clone https://github.com/JayZenith/glyph.git
-cd glyph
+git clone https://github.com/JayZenith/GLYPH.git
+cd GLYPH
 git pull --ff-only
 ```
 
