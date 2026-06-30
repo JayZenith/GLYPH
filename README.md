@@ -6,7 +6,7 @@ real Rust crates via cargo, and it must finish with a clean `FINAL`. Built on
 `verifiers` / PRIME-RL — `rl/task_trace.py` exposes
 `load_environment() -> vf.Environment`.
 
-Full write-up (deployed): <https://jayzenith.github.io/glyph/> (source:
+Full write-up (deployed): <https://jayzenith.github.io/GLYPH/> (source:
 [`blog/index.html`](blog/index.html)).
 
 ## Results (held-out 150 unseen crates)
@@ -53,7 +53,7 @@ signal, so optimizing it pulled the model toward churning on borrow-checker
 errors instead of working code. One coefficient, one checkpoint — not an
 ablation, so the honest claim is narrow: *this* compiler-aware shaping, at
 *this* strength, underperformed; not that compiler-aware rewards categorically
-don't work. See the [write-up](https://jayzenith.github.io/glyph/) for the
+don't work. See the [write-up](https://jayzenith.github.io/GLYPH/) for the
 full diagnosis and charts.
 
 Artifacts: `JayZenith/SFT_HALF_A_V8` · dense adapters
