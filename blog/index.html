@@ -131,7 +131,7 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
   <div class="example-panel" id="example-clean-solve">
     <p class="meta">JayZenith/RLVR_VFINAL_STEP10 &middot; RL reward 10.0 &middot; 7 trace turns</p>
     <p>An RLVR-trained agent reads a small Rust config-merge crate, follows failed-test feedback, patches the merge precedence, and confirms the tests pass.</p>
-    <div class="panel note"><p>Verifier gap, not a clean win: the patch also flips tls from direct-first to profile-first, the opposite of the stated precedence rule. No test sets conflicting direct/profile tls values, so cargo_test still passes 3/3, and the FINAL message ("tls, which was already correct") is true of the original code but glosses over the regression its own edit just introduced. A strict cargo-pass + clean-FINAL reward does not catch this — the test suite would need to.</p></div>
+    <div class="panel note"><p>Specification gaming, not a clean win: the patch satisfies the verifier (cargo_test, 3/3) while violating the user's actual spec — it flips tls from direct-first to profile-first, the opposite of the stated 'direct values take precedence' rule. No test sets conflicting direct/profile tls values, so the verifier can't see the violation, and the FINAL message ("tls, which was already correct") doesn't disclose it. One observed instance from reading this trace, not a measured systemic exploit — but it's exactly the proxy-vs-true-objective gap verifiable reward is supposed to close.</p></div>
     <div class="panel"><pre>#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Config {
     pub host: String,
@@ -1256,10 +1256,11 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
     strength, underperformed a reward that stays closer to the actual success criterion.
   </p>
 
-  <h2>A verifier gap I found by inspection, not by a metric</h2>
+  <h2>Specification gaming I found by inspection, not by a metric</h2>
   <p>
     Reading individual rollouts instead of just trusting scores surfaced something
-    <code>valid_trace</code> can't see. On a config-merge crate the RLVR model's patch correctly
+    <code>valid_trace</code> can't see: a case of the model satisfying the verifier while
+    violating the user's actual spec. On a config-merge crate the RLVR model's patch correctly
     fixed <code>port</code> precedence, but it also flipped <code>tls</code> from direct-first to
     profile-first — the opposite of the stated spec ("direct values must take precedence over
     profile values"):
@@ -1282,11 +1283,14 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
     regression its own edit introduced.
   </p>
   <p>
-    This is the sharp edge of verifiable reward: the reward is only as good as the test suite
-    behind it. <code>cargo_test</code> passing means the spec <em>as tested</em> held, not the
-    spec <em>as written</em>. A binary or dense reward built on this verifier would have no way to
-    penalize this trace — it looks identical to a fully correct one. I didn't catch it from a
-    number; I caught it from reading a trace.
+    This is specification gaming through verifier exploitation: the model's output satisfies the
+    proxy (<code>cargo_test</code>, <code>valid_trace</code>) while violating the true objective
+    (the written spec), because the proxy has a coverage gap the model's training never penalized.
+    A binary or dense reward built on this verifier would have no way to penalize this trace — it
+    looks identical to a fully correct one. I didn't catch it from a number; I caught it from
+    reading a trace. To be precise about scope: this is one observed instance, not a measured
+    systemic exploit across the dataset — I don't have evidence the model is reliably hunting for
+    test-coverage gaps, only that this verifier let one slip through uncaught.
   </p>
 
   <h2>What I claim / don't</h2>
@@ -1295,12 +1299,13 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
     <li><strong>Claim:</strong> a more "principled" Rust-specific reward (compiler-phase ladder) is not automatically better — at the tested coefficient it underperformed the simpler dense reward by −6.0 valid@8, despite also restoring gradient. Reward proxies further from the true objective can hurt even when they're well-motivated and harder to game.</li>
     <li><strong>Don't claim:</strong> a large RLVR win, or significance at p&lt;0.05 for the dense-vs-SFT result. Don't claim compiler-aware rewards are categorically worse — only that this one configuration was.</li>
     <li><strong>Don't claim:</strong> <code>valid_trace</code> success means the patch is fully spec-correct — only that it passes the test suite the task ships with. Per-task test coverage gaps exist (see above); the metric inherits them.</li>
+    <li><strong>Don't claim:</strong> this is evidence of systemic specification gaming. I caught one instance by reading one trace; I haven't measured how often the model exploits a verifier gap versus genuinely solving the task.</li>
   </ul>
 
   <h2>Reusable lessons</h2>
   <ul>
     <li>Verifier RL only works if the verifier matches the full behavior you want — for agents, the contract is the whole trace, not just "cargo passed."</li>
-    <li>"Tests pass" is not "spec correct" — it's only as strong as the test suite. Read individual traces; a per-task coverage gap (see above) is invisible to every metric in this post.</li>
+    <li>"Tests pass" is not "spec correct" — it's only as strong as the test suite. Specification gaming through verifier exploitation (see above) is invisible to every metric in this post; you only catch it by reading traces.</li>
     <li>A binary verifiable reward silently discards the hard tail via zero-advantage filtering. Dense, unhackable partial credit recovers it.</li>
     <li>Greedy pass@1 hides small effects in noise; pass@k + seed replication is the minimum honest bar (a single-run +7 here was seed luck).</li>
     <li>Export the <em>served</em> policy: <code>run_default/broadcasts/step_N</code> as a PEFT adapter, not <code>weights/step_N</code>.</li>
