@@ -72,11 +72,12 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
   <p class="kicker">GLYPH</p>
   <h1>A verifiable RL environment for a Rust tool-use agent</h1>
   <p class="lede">
-    I built a verifiable-reward RL environment + eval suite for a Rust tool-use coding
-    agent (Qwen3-4B), ran SFT then RLVR, found RLVR flat, <strong>diagnosed why</strong>
-    (the sparse reward gave no gradient on the hard tail), fixed it with a
-    <strong>dense partial-credit reward</strong>, and measured a small but
-    <strong>reproducible</strong> pass@8 lift — with seed replication, not a single lucky run.
+    I built the full post-training stack for a Rust tool-use coding agent (Qwen3-4B)
+    <strong>end to end</strong> — synthetic data, SFT, verifiable-reward RLVR on PRIME-RL,
+    and a strict held-out eval. SFT learns the agent contract; the first RLVR run came out
+    <strong>flat</strong>; I traced that to no gradient on the hard tail and fixed it with a
+    <strong>dense partial-credit reward</strong> for a small, reproducible pass@8 lift —
+    with seed replication, not a single lucky run.
   </p>
   <p class="links">
     <a href="https://github.com/JayZenith/glyph" target="_blank" rel="noreferrer">code</a>
@@ -161,10 +162,20 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
     attributable to the reward change.
   </p>
 
+  <h2>Where the method's limit is</h2>
+  <p>
+    The hard tail splits in two. The <em>reachable</em> part — problems the model solves
+    sometimes at pass@8 — is where RL has trajectories to reinforce, and the dense reward
+    captured a sliver of it. The rest (~49/150 fail even at pass@8) is a 4B-base Rust
+    capability ceiling: the model essentially never produces a correct trajectory, so no
+    reward shaping can move it. Raising that needs richer compiler feedback to the agent or a
+    stronger base, not a fancier reward.
+  </p>
+
   <h2>What I claim / don't</h2>
   <ul>
-    <li><strong>Claim:</strong> a dense, unhackable partial-credit reward turns a flat RLVR result into a small, reproducible pass@8 lift, by restoring gradient on the hard tail.</li>
-    <li><strong>Don't claim:</strong> a large RLVR win, or significance at p&lt;0.05. It's a small effect on a 4B LoRA, measured honestly.</li>
+    <li><strong>Claim:</strong> a dense, unhackable partial-credit reward turns a flat RLVR result into a small, reproducible pass@8 lift, by restoring gradient on the reachable part of the hard tail.</li>
+    <li><strong>Don't claim:</strong> a large RLVR win, or significance at p&lt;0.05. It's a small effect on a 4B LoRA.</li>
   </ul>
 
   <h2>Reusable lessons</h2>
