@@ -67,6 +67,32 @@ def esc(s: str) -> str:
     return html.escape(s, quote=False)
 
 
+# Mirrors portfolio/src/MainPage.js's rustTokenPattern + RustCode component, so
+# the blog's crate-source panels get the same highlighting as the trace viewer.
+RUST_TOKEN_RE = re.compile(
+    r'("(?:\\.|[^"\\])*")'
+    r"|\b(pub|struct|fn|let|mut|mod|use|super|impl|for|in|if|else|match|return|"
+    r"true|false|None|Some|Option|Vec|String|usize|u32|u16|i32|bool|str)\b"
+    r"|(\b\d+\b)"
+    r"|(#\[[^\]]+\])"
+)
+
+
+def highlight_rust(code: str) -> str:
+    out = []
+    last = 0
+    for m in RUST_TOKEN_RE.finditer(code):
+        if m.start() > last:
+            out.append(esc(code[last:m.start()]))
+        string, keyword, number, attr = m.groups()
+        cls = "rust-string" if string else "rust-keyword" if keyword else \
+            "rust-number" if number else "rust-attr"
+        out.append(f'<span class="{cls}">{esc(m.group(0))}</span>')
+        last = m.end()
+    out.append(esc(code[last:]))
+    return "".join(out)
+
+
 def render_block(content: str, role: str) -> str:
     text = esc(content)
     if role == "assistant" and content.lstrip().startswith("CALL"):
@@ -98,7 +124,7 @@ def render_example(trace_id: str, trace: dict, crate_src: str | None, active: bo
     src_html = ""
     if crate_src:
         src_html = (
-            f'\n    <div class="panel"><pre>{esc(crate_src.strip())}</pre></div>'
+            f'\n    <div class="panel rust-code"><pre>{highlight_rust(crate_src.strip())}</pre></div>'
         )
     trace_html = render_trace(trace)
     hidden = "" if active else " hidden"

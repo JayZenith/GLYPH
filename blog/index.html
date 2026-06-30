@@ -19,6 +19,8 @@
   --green: #3ddc84;
   --cyan: #5fd0db;
   --amber: #ffce6a;
+  --blue: #6fb3ff;
+  --purple: #c79bff;
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
@@ -72,6 +74,10 @@ h3 { margin: 32px 0 4px; font-size: 16px; color: #fff; }
 .example-tab:hover { color: var(--ink); }
 .example-tab.active { color: var(--bg); border-color: var(--green); background: var(--green); }
 .example-panel[hidden] { display: none; }
+.rust-keyword { color: var(--blue); }
+.rust-string { color: var(--amber); }
+.rust-number { color: var(--purple); }
+.rust-attr { color: var(--green); }
 table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
 th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
 th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
@@ -132,36 +138,36 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
     <p class="meta">JayZenith/RLVR_VFINAL_STEP10 &middot; RL reward 10.0 &middot; 7 trace turns</p>
     <p>An RLVR-trained agent reads a small Rust config-merge crate, follows failed-test feedback, patches the merge precedence, and confirms the tests pass.</p>
     <div class="panel note"><p>Specification gaming, not a clean win: the patch satisfies the verifier (cargo_test, 3/3) while violating the user's actual spec — it flips tls from direct-first to profile-first, the opposite of the stated 'direct values take precedence' rule. No test sets conflicting direct/profile tls values, so the verifier can't see the violation, and the FINAL message ("tls, which was already correct") doesn't disclose it. One observed instance from reading this trace, not a measured systemic exploit — but it's exactly the proxy-vs-true-objective gap verifiable reward is supposed to close.</p></div>
-    <div class="panel"><pre>#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Config {
-    pub host: String,
-    pub port: u16,
-    pub tls: bool,
+    <div class="panel rust-code"><pre><span class="rust-attr">#[derive(Debug, Clone, PartialEq, Eq)]</span>
+<span class="rust-keyword">pub</span> <span class="rust-keyword">struct</span> Config {
+    <span class="rust-keyword">pub</span> host: <span class="rust-keyword">String</span>,
+    <span class="rust-keyword">pub</span> port: <span class="rust-keyword">u16</span>,
+    <span class="rust-keyword">pub</span> tls: <span class="rust-keyword">bool</span>,
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct PartialConfig {
-    pub host: Option&lt;String&gt;,
-    pub port: Option&lt;u16&gt;,
-    pub tls: Option&lt;bool&gt;,
+<span class="rust-attr">#[derive(Debug, Clone, Default)]</span>
+<span class="rust-keyword">pub</span> <span class="rust-keyword">struct</span> PartialConfig {
+    <span class="rust-keyword">pub</span> host: <span class="rust-keyword">Option</span>&lt;<span class="rust-keyword">String</span>&gt;,
+    <span class="rust-keyword">pub</span> port: <span class="rust-keyword">Option</span>&lt;<span class="rust-keyword">u16</span>&gt;,
+    <span class="rust-keyword">pub</span> tls: <span class="rust-keyword">Option</span>&lt;<span class="rust-keyword">bool</span>&gt;,
 }
 
-pub fn merge_config(
+<span class="rust-keyword">pub</span> <span class="rust-keyword">fn</span> merge_config(
     defaults: &amp;Config,
-    profile: Option&lt;&amp;PartialConfig&gt;,
-    direct: Option&lt;&amp;PartialConfig&gt;,
+    profile: <span class="rust-keyword">Option</span>&lt;&amp;PartialConfig&gt;,
+    direct: <span class="rust-keyword">Option</span>&lt;&amp;PartialConfig&gt;,
 ) -&gt; Config {
-    let host = direct
+    <span class="rust-keyword">let</span> host = direct
         .and_then(|c| c.host.clone())
         .or_else(|| profile.and_then(|c| c.host.clone()))
         .unwrap_or_else(|| defaults.host.clone());
 
-    let port = profile
+    <span class="rust-keyword">let</span> port = profile
         .and_then(|c| c.port)
         .or_else(|| direct.and_then(|c| c.port))
         .unwrap_or(defaults.port);
 
-    let tls = direct
+    <span class="rust-keyword">let</span> tls = direct
         .and_then(|c| c.tls)
         .or_else(|| profile.and_then(|c| c.tls))
         .unwrap_or(defaults.tls);
@@ -169,61 +175,61 @@ pub fn merge_config(
     Config { host, port, tls }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+<span class="rust-attr">#[cfg(test)]</span>
+<span class="rust-keyword">mod</span> tests {
+    <span class="rust-keyword">use</span> <span class="rust-keyword">super</span>::*;
 
-    fn defaults() -&gt; Config {
+    <span class="rust-keyword">fn</span> defaults() -&gt; Config {
         Config {
-            host: "localhost".to_string(),
-            port: 8080,
-            tls: false,
+            host: <span class="rust-string">"localhost"</span>.to_string(),
+            port: <span class="rust-number">8080</span>,
+            tls: <span class="rust-keyword">false</span>,
         }
     }
 
-    #[test]
-    fn direct_values_override_profile_values() {
-        let profile = PartialConfig {
-            host: Some("profile.internal".to_string()),
-            port: Some(7000),
-            tls: Some(true),
+    <span class="rust-attr">#[test]</span>
+    <span class="rust-keyword">fn</span> direct_values_override_profile_values() {
+        <span class="rust-keyword">let</span> profile = PartialConfig {
+            host: <span class="rust-keyword">Some</span>(<span class="rust-string">"profile.internal"</span>.to_string()),
+            port: <span class="rust-keyword">Some</span>(<span class="rust-number">7000</span>),
+            tls: <span class="rust-keyword">Some</span>(<span class="rust-keyword">true</span>),
         };
-        let direct = PartialConfig {
-            host: Some("cli.example.com".to_string()),
-            port: Some(9000),
-            tls: None,
+        <span class="rust-keyword">let</span> direct = PartialConfig {
+            host: <span class="rust-keyword">Some</span>(<span class="rust-string">"cli.example.com"</span>.to_string()),
+            port: <span class="rust-keyword">Some</span>(<span class="rust-number">9000</span>),
+            tls: <span class="rust-keyword">None</span>,
         };
 
-        let merged = merge_config(&amp;defaults(), Some(&amp;profile), Some(&amp;direct));
+        <span class="rust-keyword">let</span> merged = merge_config(&amp;defaults(), <span class="rust-keyword">Some</span>(&amp;profile), <span class="rust-keyword">Some</span>(&amp;direct));
 
-        assert_eq!(merged.host, "cli.example.com");
-        assert_eq!(merged.port, 9000);
-        assert_eq!(merged.tls, true);
+        assert_eq!(merged.host, <span class="rust-string">"cli.example.com"</span>);
+        assert_eq!(merged.port, <span class="rust-number">9000</span>);
+        assert_eq!(merged.tls, <span class="rust-keyword">true</span>);
     }
 
-    #[test]
-    fn missing_direct_field_falls_back_to_profile_then_default() {
-        let profile = PartialConfig {
-            host: None,
-            port: Some(7000),
-            tls: Some(true),
+    <span class="rust-attr">#[test]</span>
+    <span class="rust-keyword">fn</span> missing_direct_field_falls_back_to_profile_then_default() {
+        <span class="rust-keyword">let</span> profile = PartialConfig {
+            host: <span class="rust-keyword">None</span>,
+            port: <span class="rust-keyword">Some</span>(<span class="rust-number">7000</span>),
+            tls: <span class="rust-keyword">Some</span>(<span class="rust-keyword">true</span>),
         };
-        let direct = PartialConfig {
-            host: None,
-            port: None,
-            tls: None,
+        <span class="rust-keyword">let</span> direct = PartialConfig {
+            host: <span class="rust-keyword">None</span>,
+            port: <span class="rust-keyword">None</span>,
+            tls: <span class="rust-keyword">None</span>,
         };
 
-        let merged = merge_config(&amp;defaults(), Some(&amp;profile), Some(&amp;direct));
+        <span class="rust-keyword">let</span> merged = merge_config(&amp;defaults(), <span class="rust-keyword">Some</span>(&amp;profile), <span class="rust-keyword">Some</span>(&amp;direct));
 
-        assert_eq!(merged.host, "localhost");
-        assert_eq!(merged.port, 7000);
-        assert_eq!(merged.tls, true);
+        assert_eq!(merged.host, <span class="rust-string">"localhost"</span>);
+        assert_eq!(merged.port, <span class="rust-number">7000</span>);
+        assert_eq!(merged.tls, <span class="rust-keyword">true</span>);
     }
 
-    #[test]
-    fn defaults_are_used_when_no_overrides_exist() {
-        let merged = merge_config(&amp;defaults(), None, None);
+    <span class="rust-attr">#[test]</span>
+    <span class="rust-keyword">fn</span> defaults_are_used_when_no_overrides_exist() {
+        <span class="rust-keyword">let</span> merged = merge_config(&amp;defaults(), <span class="rust-keyword">None</span>, <span class="rust-keyword">None</span>);
         assert_eq!(merged, defaults());
     }
 }</pre></div>
@@ -390,23 +396,23 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
   <div class="example-panel" id="example-recovery" hidden>
     <p class="meta">JayZenith/RLVR_VFINAL_STEP10 &middot; RL reward 9.0 &middot; 13 trace turns</p>
     <p>An RLVR-trained agent fixes sorting first, then uses failed-test output to notice the missing shared-rank behavior and patch the ranking logic.</p>
-    <div class="panel"><pre>#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Player {
-    pub name: &amp;'static str,
-    pub score: u32,
-    pub wins: u32,
+    <div class="panel rust-code"><pre><span class="rust-attr">#[derive(Debug, Clone, PartialEq, Eq)]</span>
+<span class="rust-keyword">pub</span> <span class="rust-keyword">struct</span> Player {
+    <span class="rust-keyword">pub</span> name: &amp;'static <span class="rust-keyword">str</span>,
+    <span class="rust-keyword">pub</span> score: <span class="rust-keyword">u32</span>,
+    <span class="rust-keyword">pub</span> wins: <span class="rust-keyword">u32</span>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RankedPlayer {
-    pub rank: usize,
-    pub name: &amp;'static str,
-    pub score: u32,
-    pub wins: u32,
+<span class="rust-attr">#[derive(Debug, Clone, PartialEq, Eq)]</span>
+<span class="rust-keyword">pub</span> <span class="rust-keyword">struct</span> RankedPlayer {
+    <span class="rust-keyword">pub</span> rank: <span class="rust-keyword">usize</span>,
+    <span class="rust-keyword">pub</span> name: &amp;'static <span class="rust-keyword">str</span>,
+    <span class="rust-keyword">pub</span> score: <span class="rust-keyword">u32</span>,
+    <span class="rust-keyword">pub</span> wins: <span class="rust-keyword">u32</span>,
 }
 
-pub fn leaderboard(players: &amp;[Player]) -&gt; Vec&lt;RankedPlayer&gt; {
-    let mut items = players.to_vec();
+<span class="rust-keyword">pub</span> <span class="rust-keyword">fn</span> leaderboard(players: &amp;[Player]) -&gt; <span class="rust-keyword">Vec</span>&lt;RankedPlayer&gt; {
+    <span class="rust-keyword">let</span> <span class="rust-keyword">mut</span> items = players.to_vec();
     items.sort_by(|a, b| {
         b.score
             .cmp(&amp;a.score)
@@ -418,7 +424,7 @@ pub fn leaderboard(players: &amp;[Player]) -&gt; Vec&lt;RankedPlayer&gt; {
         .into_iter()
         .enumerate()
         .map(|(idx, p)| RankedPlayer {
-            rank: idx + 1,
+            rank: idx + <span class="rust-number">1</span>,
             name: p.name,
             score: p.score,
             wins: p.wins,
@@ -426,70 +432,70 @@ pub fn leaderboard(players: &amp;[Player]) -&gt; Vec&lt;RankedPlayer&gt; {
         .collect()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+<span class="rust-attr">#[cfg(test)]</span>
+<span class="rust-keyword">mod</span> tests {
+    <span class="rust-keyword">use</span> <span class="rust-keyword">super</span>::*;
 
-    #[test]
-    fn orders_by_score_then_wins_then_name() {
-        let players = vec![
+    <span class="rust-attr">#[test]</span>
+    <span class="rust-keyword">fn</span> orders_by_score_then_wins_then_name() {
+        <span class="rust-keyword">let</span> players = vec![
             Player {
-                name: "zoe",
-                score: 12,
-                wins: 3,
+                name: <span class="rust-string">"zoe"</span>,
+                score: <span class="rust-number">12</span>,
+                wins: <span class="rust-number">3</span>,
             },
             Player {
-                name: "anna",
-                score: 15,
-                wins: 1,
+                name: <span class="rust-string">"anna"</span>,
+                score: <span class="rust-number">15</span>,
+                wins: <span class="rust-number">1</span>,
             },
             Player {
-                name: "mike",
-                score: 15,
-                wins: 4,
+                name: <span class="rust-string">"mike"</span>,
+                score: <span class="rust-number">15</span>,
+                wins: <span class="rust-number">4</span>,
             },
             Player {
-                name: "bert",
-                score: 15,
-                wins: 4,
+                name: <span class="rust-string">"bert"</span>,
+                score: <span class="rust-number">15</span>,
+                wins: <span class="rust-number">4</span>,
             },
         ];
 
-        let board = leaderboard(&amp;players);
-        let names: Vec&lt;_&gt; = board.iter().map(|p| p.name).collect();
-        assert_eq!(names, vec!["bert", "mike", "anna", "zoe"]);
-        let ranks: Vec&lt;_&gt; = board.iter().map(|p| p.rank).collect();
-        assert_eq!(ranks, vec![1, 1, 3, 4]);
+        <span class="rust-keyword">let</span> board = leaderboard(&amp;players);
+        <span class="rust-keyword">let</span> names: <span class="rust-keyword">Vec</span>&lt;_&gt; = board.iter().map(|p| p.name).collect();
+        assert_eq!(names, vec![<span class="rust-string">"bert"</span>, <span class="rust-string">"mike"</span>, <span class="rust-string">"anna"</span>, <span class="rust-string">"zoe"</span>]);
+        <span class="rust-keyword">let</span> ranks: <span class="rust-keyword">Vec</span>&lt;_&gt; = board.iter().map(|p| p.rank).collect();
+        assert_eq!(ranks, vec![<span class="rust-number">1</span>, <span class="rust-number">1</span>, <span class="rust-number">3</span>, <span class="rust-number">4</span>]);
     }
 
-    #[test]
-    fn shared_rank_only_for_equal_score_and_wins() {
-        let players = vec![
+    <span class="rust-attr">#[test]</span>
+    <span class="rust-keyword">fn</span> shared_rank_only_for_equal_score_and_wins() {
+        <span class="rust-keyword">let</span> players = vec![
             Player {
-                name: "amy",
-                score: 20,
-                wins: 5,
+                name: <span class="rust-string">"amy"</span>,
+                score: <span class="rust-number">20</span>,
+                wins: <span class="rust-number">5</span>,
             },
             Player {
-                name: "bea",
-                score: 20,
-                wins: 5,
+                name: <span class="rust-string">"bea"</span>,
+                score: <span class="rust-number">20</span>,
+                wins: <span class="rust-number">5</span>,
             },
             Player {
-                name: "cam",
-                score: 20,
-                wins: 4,
+                name: <span class="rust-string">"cam"</span>,
+                score: <span class="rust-number">20</span>,
+                wins: <span class="rust-number">4</span>,
             },
             Player {
-                name: "dan",
-                score: 18,
-                wins: 9,
+                name: <span class="rust-string">"dan"</span>,
+                score: <span class="rust-number">18</span>,
+                wins: <span class="rust-number">9</span>,
             },
         ];
 
-        let board = leaderboard(&amp;players);
-        let pairs: Vec&lt;_&gt; = board.iter().map(|p| (p.name, p.rank)).collect();
-        assert_eq!(pairs, vec![("amy", 1), ("bea", 1), ("cam", 3), ("dan", 4)]);
+        <span class="rust-keyword">let</span> board = leaderboard(&amp;players);
+        <span class="rust-keyword">let</span> pairs: <span class="rust-keyword">Vec</span>&lt;_&gt; = board.iter().map(|p| (p.name, p.rank)).collect();
+        assert_eq!(pairs, vec![(<span class="rust-string">"amy"</span>, <span class="rust-number">1</span>), (<span class="rust-string">"bea"</span>, <span class="rust-number">1</span>), (<span class="rust-string">"cam"</span>, <span class="rust-number">3</span>), (<span class="rust-string">"dan"</span>, <span class="rust-number">4</span>)]);
     }
 }</pre></div>
     <div class="panel trace scroll"><pre><span class="role">SYSTEM</span> You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.
@@ -827,32 +833,32 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
   <div class="example-panel" id="example-long-recovery" hidden>
     <p class="meta">JayZenith/RLVR_VFINAL_STEP10 &middot; RL reward 8.0 &middot; 23 trace turns</p>
     <p>A longer RLVR rollout where the agent recovers from bad edits and uses repeated test feedback to fix trimming and signed-number parsing.</p>
-    <div class="panel"><pre>pub fn collect_tagged_numbers(input: &amp;str) -&gt; Vec&lt;i32&gt; {
+    <div class="panel rust-code"><pre><span class="rust-keyword">pub</span> <span class="rust-keyword">fn</span> collect_tagged_numbers(input: &amp;<span class="rust-keyword">str</span>) -&gt; <span class="rust-keyword">Vec</span>&lt;<span class="rust-keyword">i32</span>&gt; {
     input
         .split(',')
         .filter_map(|part| part.split_once(':'))
-        .filter(|(tag, _)| *tag == "keep")
-        .filter_map(|(_, value)| value.parse::&lt;i32&gt;().ok())
+        .filter(|(tag, _)| *tag == <span class="rust-string">"keep"</span>)
+        .filter_map(|(_, value)| value.parse::&lt;<span class="rust-keyword">i32</span>&gt;().ok())
         .collect()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::collect_tagged_numbers;
+<span class="rust-attr">#[cfg(test)]</span>
+<span class="rust-keyword">mod</span> tests {
+    <span class="rust-keyword">use</span> <span class="rust-keyword">super</span>::collect_tagged_numbers;
 
-    #[test]
-    fn keeps_only_keep_tagged_values() {
-        assert_eq!(collect_tagged_numbers("keep:1,drop:9,keep:3"), vec![1, 3]);
+    <span class="rust-attr">#[test]</span>
+    <span class="rust-keyword">fn</span> keeps_only_keep_tagged_values() {
+        assert_eq!(collect_tagged_numbers(<span class="rust-string">"keep:1,drop:9,keep:3"</span>), vec![<span class="rust-number">1</span>, <span class="rust-number">3</span>]);
     }
 
-    #[test]
-    fn ignores_empty_values_and_bad_numbers() {
-        assert_eq!(collect_tagged_numbers("keep:,keep:7,keep:abc,drop:4,keep:2"), vec![7, 2]);
+    <span class="rust-attr">#[test]</span>
+    <span class="rust-keyword">fn</span> ignores_empty_values_and_bad_numbers() {
+        assert_eq!(collect_tagged_numbers(<span class="rust-string">"keep:,keep:7,keep:abc,drop:4,keep:2"</span>), vec![<span class="rust-number">7</span>, <span class="rust-number">2</span>]);
     }
 
-    #[test]
-    fn trims_parts_and_supports_signed_numbers() {
-        assert_eq!(collect_tagged_numbers(" keep : -2 , keep : 5 , drop : -1 "), vec![-2, 5]);
+    <span class="rust-attr">#[test]</span>
+    <span class="rust-keyword">fn</span> trims_parts_and_supports_signed_numbers() {
+        assert_eq!(collect_tagged_numbers(<span class="rust-string">" keep : -2 , keep : 5 , drop : -1 "</span>), vec![-<span class="rust-number">2</span>, <span class="rust-number">5</span>]);
     }
 }</pre></div>
     <div class="panel trace scroll"><pre><span class="role">SYSTEM</span> You are a Rust coding agent. Use tools when needed. After FINAL, stop immediately.
