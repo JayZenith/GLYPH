@@ -30,7 +30,8 @@ noisy for an effect this size):
 | SFT_HALF_A_V8 | 95 | 97 | 100 | 97.3 |
 | + dense-reward RLVR (step 10) | 102 | 102 | 99 | **101.0** |
 
-**+3.7 valid@8**, small but reproducible (seed-level t-test p ≈ 0.06; a single
+**+3.7 valid@8**, small but reproducible (Welch's t-test, independent seeds,
+p ≈ 0.115 — not significant at the conventional p<0.05 bar; a single
 run showed +7, which replication revealed was seed noise).
 
 **A Rust-compiler-aware reward (the A/B above) lost to the generic dense one.**
