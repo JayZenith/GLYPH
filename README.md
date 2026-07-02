@@ -20,40 +20,54 @@ dataset) — install with `prime env install jayzenith/glyph`.
 Strict `valid_trace` = terminal cargo success + one clean `FINAL` after it +
 exact `CALL` syntax + no tool use after success.
 
-**The sparse-reward attempt was flat.** The first RLVR run used a sparse binary
-reward (+10 only for a clean pass) and came out flat — 72/150 vs the SFT
-baseline's 74/150 at greedy pass@1. The diagnosis: all-fail rollout groups have
-zero reward variance → zero advantage → they get filtered, so the hard tail
-never trains.
+**The sparse-reward baseline was flat.** The sparse baseline
+(`RLVR_POOL_B_V8_STEP10`) rewards +10 only for a clean pass, with fixed failure
+penalties otherwise — sparse, but not binary. Measured under the same pass@8
+harness as every other arm (3 independent unseeded reruns each), it is exactly
+flat against the SFT base: mean 97.3 vs 97.3. The mechanism: all-fail rollout
+groups whose 8 rollouts share the same failure profile get identical rewards →
+zero group-relative advantage → the zero-advantage filter drops them, so those
+prompts contribute no verifier-driven signal (at step 0 the filter dropped
+64/96 rollouts; 25–83% per batch across the run).
 
-**The dense-reward fix gave a small, real lift.** A dense partial-credit reward
-(compile + test-pass fraction) restores the gradient. Measured base SFT vs
-dense-reward RLVR at **pass@8 with 3-seed replication** (greedy pass@1 is too
-noisy for an effect this size):
+**The dense reward measured a small, non-significant lift.** A dense
+partial-credit reward (compile + test-pass fraction) breaks the reward ties
+inside all-fail groups. All arms at **pass@8 with 3 independent unseeded
+reruns** (the harness exposes no sampling seed; greedy pass@1 is too noisy for
+an effect this size):
 
-| pass@8 valid traces / 150 | seed 1 | seed 2 | seed 3 | mean |
+| pass@8 valid traces / 150 | run 1 | run 2 | run 3 | mean |
 | --- | ---: | ---: | ---: | ---: |
 | SFT_HALF_A_V8 | 95 | 97 | 100 | 97.3 |
-| + dense-reward RLVR (step 10) | 102 | 102 | 99 | **101.0** |
+| + sparse RLVR (RLVR_POOL_B_V8_STEP10) | 98 | 96 | 98 | 97.3 |
+| + dense-reward RLVR (RLVR_VFINAL_STEP10) | 102 | 102 | 99 | **101.0** |
 
-**+3.7 valid@8**, small but reproducible (Welch's t-test, independent seeds,
-p ≈ 0.115 — not significant at the conventional p<0.05 bar; a single
-run showed +7, which replication revealed was seed noise).
+**+3.7 valid@8 over both SFT and sparse** — consistent in direction (dense
+never below 99; SFT and sparse never above 100) but not statistically
+significant: prompt-level paired sign-flip permutation gives p ≈ 0.14 vs SFT
+and p ≈ 0.16 vs sparse (Welch on the 3-run aggregates, a weaker secondary
+check, gives p ≈ 0.115). A single run had shown +7; replication revealed
+run-to-run sampling noise. Attribution to the reward shape is bounded by
+design: each arm is a single training run.
 
 **A Rust-compiler-aware reward (the A/B above) lost to the generic dense one.**
 Same base/data/steps/hyperparameters, only the reward shape changed: the
-compiler-aware arm scores progress by the furthest `rustc` phase reached
-(parse → type → borrow → compiles), which restores gradient the same way the
-dense reward does (step 0 retained 32/96 rollouts after zero-advantage
-filtering, vs 0/96 for sparse) but performed *worse* on the actual metric:
+compiler-aware arm (`RLVR_VFINAL2_STEP10`) scores progress by the furthest
+`rustc` phase reached (parse → type → borrow → compiles). Like the dense
+reward, it breaks ties inside all-fail groups — step-0 zero-advantage
+filtering barely separates the arms (sparse 64/96 filtered, dense 78/96,
+compiler-aware 64/96) — but it performed *worse* on the actual metric:
 
-| pass@8 valid traces / 150 | seed 1 | seed 2 | seed 3 | mean |
+| pass@8 valid traces / 150 | run 1 | run 2 | run 3 | mean |
 | --- | ---: | ---: | ---: | ---: |
 | SFT_HALF_A_V8 | 95 | 97 | 100 | 97.3 |
-| + dense reward (step 10) | 102 | 102 | 99 | **101.0** |
-| + compiler-aware reward (step 10) | 95 | 96 | 94 | 95.0 |
+| + sparse RLVR (RLVR_POOL_B_V8_STEP10) | 98 | 96 | 98 | 97.3 |
+| + dense reward (RLVR_VFINAL_STEP10) | 102 | 102 | 99 | **101.0** |
+| + compiler-aware reward (RLVR_VFINAL2_STEP10) | 95 | 96 | 94 | 95.0 |
 
-**−6.0 valid@8 vs dense (p ≈ 0.012)**, slightly below the SFT baseline. Likely
+**−6.0 valid@8 vs dense** (prompt-level paired permutation p ≈ 0.014, Welch
+p ≈ 0.012; a family-blocked sensitivity test — only ~4 effective task clusters
+— cannot confirm it), slightly below the SFT baseline. Possibly
 Goodhart: "reached a later compiler phase" is a proxy further from the true
 objective (tests passing) than the dense reward's own compile/test-fraction
 signal, so optimizing it pulled the model toward churning on borrow-checker
@@ -162,9 +176,10 @@ generic dense one:
 Both arms run the **identical** command below — same base model
 (`SFT_HALF_A_V8`), same `--data`, same `--max-steps`, same hyperparameters and
 GPU layout. Only `$REWARD_FLAGS` (and `--lora-name` / `--output`, so artifacts
-don't collide) differ. `train.py` exposes no training-seed flag, so fairness on
-the run-to-run variance comes from evaluating **both** resulting adapters under
-the same 3-seed pass@8 harness below — not from a single greedy number.
+don't collide) differ. Neither `train.py` nor the eval harness exposes a seed
+flag, so each arm is one training run, compared by evaluating every resulting
+adapter under the same pass@8 harness with 3 independent unseeded reruns — not
+from a single greedy number.
 
 ```bash
 # Arm A — generic dense:
@@ -267,9 +282,11 @@ CUDA_VISIBLE_DEVICES=0 python -m sft.eval_formal \
 
 ## Pass@8 Eval (vLLM, the headline metric)
 
-Greedy pass@1 is too noisy for a small effect; pass@8 with seed replication is
-the honest bar. `--max-model-len 24576` gives headroom for tool-accumulated
-context at T=0.8 (16384 overflows on long recovery rollouts).
+Greedy pass@1 is too noisy for a small effect; pass@8 with repeated reruns is
+the honest bar. Note the harness has no sampling-seed flag — reruns are
+independent but unseeded (vLLM nondeterminism supplies the variation).
+`--max-model-len 24576` gives headroom for tool-accumulated context at T=0.8
+(16384 overflows on long recovery rollouts).
 
 SFT base:
 
@@ -311,5 +328,6 @@ CUDA_VISIBLE_DEVICES=0 python -m sft.passk_scan_vllm \
   --save-rollouts
 ```
 
-For seed replication, rerun with a different `--cases-root` / `--output` per seed
-and compare mean valid@8 across seeds.
+For replication, rerun the same command 3× with a different `--cases-root` /
+`--output` per run and compare mean valid@8 across runs (runs are unseeded;
+see the note above).
