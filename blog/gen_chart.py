@@ -23,6 +23,11 @@ MODELS = [
         R / "SFT_HALF_A_V8/evals/seeds/sft_seed1.json",
         R / "SFT_HALF_A_V8/evals/seeds/sft_seedB.json",
     ], "#5fd0db"),  # cyan
+    ("Sparse reward", [
+        R / "RLVR_POOL_B_V8_STEP10/passk8_heldout150_run1.json",
+        R / "RLVR_POOL_B_V8_STEP10/passk8_heldout150_run2.json",
+        R / "RLVR_POOL_B_V8_STEP10/passk8_heldout150_run3.json",
+    ], "#b48cff"),  # violet
     ("Dense reward", [
         R / "RLVR_VFINAL_STEP10/evals/passk8_heldout150.json",
         R / "RLVR_VFINAL_STEP10/evals/seeds/step10_seedB.json",
@@ -107,7 +112,7 @@ for gi, (name, vals, color) in enumerate(groups):
 
 svg_parts.append(
     f'<text x="{PAD_L}" y="16" font-size="11" fill="#82998d">'
-    f'valid@8 / 150 (pass@8, T=0.8, 3 seeds each; dashed = mean)</text>'
+    f'valid@8 / 150 (pass@8, T=0.8, 3 unseeded runs each; dashed = mean)</text>'
 )
 svg_parts.append("</svg>")
 
