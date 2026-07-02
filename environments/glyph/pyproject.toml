@@ -1,7 +1,7 @@
 [project]
 name = "glyph"
 description = "Verifiable-reward RL environment for a Rust tool-use coding agent: real cargo execution, strict valid_trace metric."
-version = "0.1.0"
+version = "0.1.1"
 requires-python = ">=3.10"
 tags = ["rust", "tool-use", "coding-agent", "multi-turn", "verifiable-reward"]
 dependencies = [

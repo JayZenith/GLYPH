@@ -50,3 +50,8 @@ remote_artifacts/
 
 # Local CLIs
 .runpod-cli/
+
+# local run archives (raw data lives on HF: Glyph-RLVR-Eval-Results)
+glyph_results/
+new_results/
+environments/glyph/.prime/
