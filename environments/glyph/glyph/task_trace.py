@@ -87,6 +87,7 @@ def load_environment(
     env_id: str = "glyph",
     timeout: int = 30,
     max_tool_rounds: int = 15,
+    max_turns: int | None = None,
     sandbox_root: str | None = None,
     structure_valid_bonus: float | None = None,
     no_call_penalty: float | None = None,
@@ -158,7 +159,7 @@ def load_environment(
         message_type="chat",
         env_id=env_id,
         executor=executor,
-        max_tool_rounds=max_tool_rounds,
+        max_tool_rounds=max_turns if max_turns is not None else max_tool_rounds,
         sandbox_root=resolved_sandbox_root,
         trace_infos=trace_infos,
     )

@@ -1,0 +1,301 @@
+diff --git a/README.md b/README.md
+index fafcf81..f01188c 100644
+--- a/README.md
++++ b/README.md
+@@ -20,40 +20,54 @@ dataset) — install with `prime env install jayzenith/glyph`.
+ Strict `valid_trace` = terminal cargo success + one clean `FINAL` after it +
+ exact `CALL` syntax + no tool use after success.
+ 
+-**The sparse-reward attempt was flat.** The first RLVR run used a sparse binary
+-reward (+10 only for a clean pass) and came out flat — 72/150 vs the SFT
+-baseline's 74/150 at greedy pass@1. The diagnosis: all-fail rollout groups have
+-zero reward variance → zero advantage → they get filtered, so the hard tail
+-never trains.
+-
+-**The dense-reward fix gave a small, real lift.** A dense partial-credit reward
+-(compile + test-pass fraction) restores the gradient. Measured base SFT vs
+-dense-reward RLVR at **pass@8 with 3-seed replication** (greedy pass@1 is too
+-noisy for an effect this size):
+-
+-| pass@8 valid traces / 150 | seed 1 | seed 2 | seed 3 | mean |
++**The sparse-reward baseline was flat.** The sparse baseline
++(`RLVR_POOL_B_V8_STEP10`) rewards +10 only for a clean pass, with fixed failure
++penalties otherwise — sparse, but not binary. Measured under the same pass@8
++harness as every other arm (3 independent unseeded reruns each), it is exactly
++flat against the SFT base: mean 97.3 vs 97.3. The mechanism: all-fail rollout
++groups whose 8 rollouts share the same failure profile get identical rewards →
++zero group-relative advantage → the zero-advantage filter drops them, so those
++prompts contribute no verifier-driven signal (at step 0 the filter dropped
++64/96 rollouts; 25–83% per batch across the run).
++
++**The dense reward measured a small, non-significant lift.** A dense
++partial-credit reward (compile + test-pass fraction) breaks the reward ties
++inside all-fail groups. All arms at **pass@8 with 3 independent unseeded
++reruns** (the harness exposes no sampling seed; greedy pass@1 is too noisy for
++an effect this size):
++
++| pass@8 valid traces / 150 | run 1 | run 2 | run 3 | mean |
+ | --- | ---: | ---: | ---: | ---: |
+ | SFT_HALF_A_V8 | 95 | 97 | 100 | 97.3 |
+-| + dense-reward RLVR (step 10) | 102 | 102 | 99 | **101.0** |
++| + sparse RLVR (RLVR_POOL_B_V8_STEP10) | 98 | 96 | 98 | 97.3 |
++| + dense-reward RLVR (RLVR_VFINAL_STEP10) | 102 | 102 | 99 | **101.0** |
+ 
+-**+3.7 valid@8**, small but reproducible (Welch's t-test, independent seeds,
+-p ≈ 0.115 — not significant at the conventional p<0.05 bar; a single
+-run showed +7, which replication revealed was seed noise).
++**+3.7 valid@8 over both SFT and sparse** — consistent in direction (dense
++never below 99; SFT and sparse never above 100) but not statistically
++significant: prompt-level paired sign-flip permutation gives p ≈ 0.14 vs SFT
++and p ≈ 0.16 vs sparse (Welch on the 3-run aggregates, a weaker secondary
++check, gives p ≈ 0.115). A single run had shown +7; replication revealed
++run-to-run sampling noise. Attribution to the reward shape is bounded by
++design: each arm is a single training run.
+ 
+ **A Rust-compiler-aware reward (the A/B above) lost to the generic dense one.**
+ Same base/data/steps/hyperparameters, only the reward shape changed: the
+-compiler-aware arm scores progress by the furthest `rustc` phase reached
+-(parse → type → borrow → compiles), which restores gradient the same way the
+-dense reward does (step 0 retained 32/96 rollouts after zero-advantage
+-filtering, vs 0/96 for sparse) but performed *worse* on the actual metric:
++compiler-aware arm (`RLVR_VFINAL2_STEP10`) scores progress by the furthest
++`rustc` phase reached (parse → type → borrow → compiles). Like the dense
++reward, it breaks ties inside all-fail groups — step-0 zero-advantage
++filtering barely separates the arms (sparse 64/96 filtered, dense 78/96,
++compiler-aware 64/96) — but it performed *worse* on the actual metric:
+ 
+-| pass@8 valid traces / 150 | seed 1 | seed 2 | seed 3 | mean |
++| pass@8 valid traces / 150 | run 1 | run 2 | run 3 | mean |
+ | --- | ---: | ---: | ---: | ---: |
+ | SFT_HALF_A_V8 | 95 | 97 | 100 | 97.3 |
+-| + dense reward (step 10) | 102 | 102 | 99 | **101.0** |
+-| + compiler-aware reward (step 10) | 95 | 96 | 94 | 95.0 |
++| + sparse RLVR (RLVR_POOL_B_V8_STEP10) | 98 | 96 | 98 | 97.3 |
++| + dense reward (RLVR_VFINAL_STEP10) | 102 | 102 | 99 | **101.0** |
++| + compiler-aware reward (RLVR_VFINAL2_STEP10) | 95 | 96 | 94 | 95.0 |
+ 
+-**−6.0 valid@8 vs dense (p ≈ 0.012)**, slightly below the SFT baseline. Likely
++**−6.0 valid@8 vs dense** (prompt-level paired permutation p ≈ 0.014, Welch
++p ≈ 0.012; a family-blocked sensitivity test — only ~4 effective task clusters
++— cannot confirm it), slightly below the SFT baseline. Possibly
+ Goodhart: "reached a later compiler phase" is a proxy further from the true
+ objective (tests passing) than the dense reward's own compile/test-fraction
+ signal, so optimizing it pulled the model toward churning on borrow-checker
+@@ -162,9 +176,10 @@ generic dense one:
+ Both arms run the **identical** command below — same base model
+ (`SFT_HALF_A_V8`), same `--data`, same `--max-steps`, same hyperparameters and
+ GPU layout. Only `$REWARD_FLAGS` (and `--lora-name` / `--output`, so artifacts
+-don't collide) differ. `train.py` exposes no training-seed flag, so fairness on
+-the run-to-run variance comes from evaluating **both** resulting adapters under
+-the same 3-seed pass@8 harness below — not from a single greedy number.
++don't collide) differ. Neither `train.py` nor the eval harness exposes a seed
++flag, so each arm is one training run, compared by evaluating every resulting
++adapter under the same pass@8 harness with 3 independent unseeded reruns — not
++from a single greedy number.
+ 
+ ```bash
+ # Arm A — generic dense:
+@@ -267,9 +282,11 @@ CUDA_VISIBLE_DEVICES=0 python -m sft.eval_formal \
+ 
+ ## Pass@8 Eval (vLLM, the headline metric)
+ 
+-Greedy pass@1 is too noisy for a small effect; pass@8 with seed replication is
+-the honest bar. `--max-model-len 24576` gives headroom for tool-accumulated
+-context at T=0.8 (16384 overflows on long recovery rollouts).
++Greedy pass@1 is too noisy for a small effect; pass@8 with repeated reruns is
++the honest bar. Note the harness has no sampling-seed flag — reruns are
++independent but unseeded (vLLM nondeterminism supplies the variation).
++`--max-model-len 24576` gives headroom for tool-accumulated context at T=0.8
++(16384 overflows on long recovery rollouts).
+ 
+ SFT base:
+ 
+@@ -311,5 +328,6 @@ CUDA_VISIBLE_DEVICES=0 python -m sft.passk_scan_vllm \
+   --save-rollouts
+ ```
+ 
+-For seed replication, rerun with a different `--cases-root` / `--output` per seed
+-and compare mean valid@8 across seeds.
++For replication, rerun the same command 3× with a different `--cases-root` /
++`--output` per run and compare mean valid@8 across runs (runs are unseeded;
++see the note above).
+diff --git a/blog/index.html b/blog/index.html
+index 006ee10..0c1bfa7 100644
+--- a/blog/index.html
++++ b/blog/index.html
+@@ -92,11 +92,13 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
+   <p class="kicker">GLYPH</p>
+   <h1>A verifiable RL environment for a Rust tool-use agent</h1>
+   <p class="lede">
+-    At step 0 of my first RLVR run, the orchestrator filtered the entire batch — 96 rollouts,
+-    zero advantage, no gradient. The reward was binary: <code>+10</code> for a clean trace
+-    that passed cargo tests, nothing otherwise. Every rollout failed, so every rollout scored
+-    identically. I fixed it with a <strong>dense partial-credit reward</strong> and got a
+-    small, reproducible pass@8 lift. Then I tested a "smarter" compiler-aware reward, and it
++    At step 0 of my sparse-reward RLVR run, the orchestrator filtered 64 of 96 rollouts —
++    tied rewards, zero group-relative advantage, no gradient from any of them. The reward
++    was <code>+10</code> for a clean trace that passed cargo tests, fixed failure penalties
++    otherwise — so all-fail groups with identical failure profiles scored identically and
++    taught the policy nothing, and the run came out exactly flat at pass@8. I added a
++    <strong>dense partial-credit reward</strong> and measured a small (not statistically
++    significant) pass@8 lift. Then I tested a "smarter" compiler-aware reward, and it
+     <strong>made things worse</strong>. Along the way, reading individual traces instead of
+     trusting scores, I caught the model satisfying the test suite while silently violating
+     the user's actual written spec. This is the full post-training stack for a Rust tool-use
+@@ -1171,50 +1173,63 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
+ 
+   <h2>RLVR with a sparse reward was flat</h2>
+   <p>
+-    LoRA RLVR via PRIME-RL (on-policy distillation anchor + verifiable reward). Reward:
+-    <code>+10</code> only for a clean verifier success, penalties otherwise. Strict pass@1,
+-    same harness: <strong>74 → 72 / 150</strong>. Flat-to-down.
++    LoRA RLVR via PRIME-RL (on-policy distillation anchor + verifiable reward): the sparse
++    baseline <code>RLVR_POOL_B_V8_STEP10</code>. Reward: <code>+10</code> only for a clean
++    verifier success, fixed failure penalties otherwise — sparse, but not binary. At the
++    headline pass@8 metric (three independent unseeded reruns, same harness as every arm
++    below): <strong>98, 96, 98 — mean 97.3, exactly the SFT base's 97.3</strong>. Flat.
++    (Greedy pass@1 is unstable at this effect size and even flips direction across
++    harnesses — 72 vs 74 — so pass@8 is the comparison that counts.)
+   </p>
+ 
+   <h2>Why it was flat (the useful part)</h2>
+   <p>I analyzed the failures instead of just the score:</p>
+   <ul>
+-    <li><strong>Structure is 100% SFT-saturated.</strong> Across all 150, exact CALL syntax, call IDs, and cargo paths are 150/150. RLVR has zero headroom on format.</li>
+-    <li><strong>Failures are capability, not hygiene.</strong> 75 of 76 failures never reach a terminal cargo success — the model formats perfectly and writes the wrong Rust.</li>
+-    <li><strong>72/150 fail in both SFT and RLVR</strong> — a shared hard tail; RLVR only reshuffled ~10 borderline prompts.</li>
+-    <li><strong>The hard tail produces no gradient.</strong> RLVR learns from reward <em>variance</em> within each group of 8 rollouts. When all 8 fail, a binary reward scores them identically → zero advantage → the group is filtered → no gradient. (At step 0 of the sparse run, the orchestrator filtered the entire first batch.)</li>
+-    <li><strong>But ~half the hard tail is partially correct:</strong> of the 75 cargo-failures, 52% compile and 44% pass ≥1 test (median 50%). Under a binary reward these score identically to never-compiles.</li>
++    <li><strong>Structure is 100% SFT-saturated.</strong> On the sparse arm's greedy eval, exact CALL syntax, call IDs, and cargo paths are 150/150 (the SFT base itself is 149/150 on syntax). RLVR has essentially zero headroom on format.</li>
++    <li><strong>Failures are capability, not hygiene.</strong> On that same eval, 75 of 76 failures never reach a terminal cargo success — the model formats perfectly and writes the wrong Rust.</li>
++    <li><strong>The two models share almost the same hard tail</strong> — 74 of the sparse arm's 76 greedy failures also fail on SFT; RLVR only reshuffled a handful of borderline prompts.</li>
++    <li><strong>The hard tail produces almost no gradient.</strong> RLVR learns from reward <em>variance</em> within each group of 8 rollouts. When all 8 fail with the same failure profile, they score identically → zero group-relative advantage → the group is filtered → no verifier-driven signal. (At step 0 of the sparse run the orchestrator filtered 64 of 96 rollouts; 25–83% per batch across the run.)</li>
++    <li><strong>But ~half the hard tail is partially correct:</strong> of the 75 cargo-failures, 52% compile and 44% pass ≥1 test (median 50%). The sparse reward's penalties don't grade this — a rollout that compiles and passes half the tests can score the same as one that never compiles.</li>
+   </ul>
+ 
+   <h2>The fix: a dense partial-credit reward</h2>
+   <p>
+     Give graded credit in the no-success region only: a small bonus for compiling, plus a bonus
+-    scaled by the test-pass fraction. Both are fixed by the task (unhackable) and capped well
+-    below the <code>+10</code> success bonus. Now 8 failing rollouts get <em>different</em>
+-    scores → non-zero advantage → gradient on exactly the prompts that were dead weight.
++    scaled by the test-pass fraction. Both are objective task facts, capped well
++    below the <code>+10</code> success bonus (though not literally untamperable: the tests
++    live in the same file the model patches — see the verifier-gap section). Now 8 failing
++    rollouts get <em>different</em> scores → non-zero advantage → gradient on exactly the
++    prompts that were dead weight.
+     (<code>rl/reward.py</code>, off by default,
+     <code>--progress-compile-bonus 0.5 --progress-test-frac-bonus 2.0</code>.)
+   </p>
+ 
+   <h2>Measuring honestly</h2>
+   <p>
+-    Greedy pass@1 is too noisy to detect a small effect, so I used pass@8 (T=0.8) with
+-    <strong>3-seed replication</strong> per model.
++    Greedy pass@1 is too noisy to detect a small effect, so every arm gets pass@8 (T=0.8)
++    with <strong>three independent reruns</strong>. (The harness has no sampling-seed flag —
++    the reruns are unseeded, and run-to-run variation comes from vLLM scheduling
++    nondeterminism.)
+   </p>
+   <table>
+-    <thead><tr><th>model</th><th>valid@8 per seed</th><th class="num">mean</th></tr></thead>
++    <thead><tr><th>model</th><th>valid@8 per run</th><th class="num">mean</th></tr></thead>
+     <tbody>
+       <tr><td>SFT_HALF_A_V8</td><td>95, 97, 100</td><td class="num">97.3</td></tr>
+-      <tr><td>+ dense RLVR (step 10)</td><td>102, 102, 99</td><td class="num hl">101.0</td></tr>
++      <tr><td>+ sparse RLVR (RLVR_POOL_B_V8_STEP10)</td><td>98, 96, 98</td><td class="num">97.3</td></tr>
++      <tr><td>+ dense RLVR (RLVR_VFINAL_STEP10)</td><td>102, 102, 99</td><td class="num hl">101.0</td></tr>
+     </tbody>
+   </table>
+   <p>
+-    <strong>Δ ≈ +3.7 valid@8, Welch's t-test (independent seeds) p ≈ 0.115</strong> — not
+-    significant at the conventional p&lt;0.05 bar. Small and borderline, but
+-    reproducible: dense-RLVR never drops below 99, SFT never exceeds 100. Stability (8/8) is flat.
+-    A single run had shown +7 — replication revealed SFT alone swings 95–100, so the +7 was
+-    partly seed luck. The honest effect is ~+4, not +7. The sparse run was flat, so the lift is
+-    attributable to the reward change.
++    <strong>Δ ≈ +3.7 valid@8 over both SFT and the sparse baseline — consistent in
++    direction, not statistically significant.</strong> The primary test is a prompt-level
++    paired sign-flip permutation over the 150 shared prompts: p ≈ 0.14 vs SFT, p ≈ 0.16 vs
++    sparse (Welch's t on the three run aggregates, a weaker secondary check, gives
++    p ≈ 0.115). Dense never drops below 99; SFT and sparse never exceed 100. A single run
++    had shown +7 — replication revealed SFT alone swings 95–100, so the +7 was partly
++    rerun luck. The honest effect is ~+4 as a point estimate. The sparse control being
++    exactly flat is what makes the dense lift worth reporting at all — but each arm is one
++    training run, so "the reward shape caused it" remains a supported hypothesis, not an
++    established result.
+   </p>
+   <p>
+     <code>valid_trace</code> also gates on protocol cleanliness (clean <code>FINAL</code>, no
+@@ -1275,27 +1290,35 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
+   </p>
+   <div class="panel"><img src="training_curves.svg" alt="Per-step reward and zero-advantage filter rate, dense vs compiler-aware" style="width:100%;height:auto;display:block;"></div>
+   <p>
+-    It worked exactly as designed at the mechanism level: step 0 retained 32/96 rollouts after
+-    zero-advantage filtering (the sparse run had filtered <em>all</em> 96), so the ladder did
+-    restore gradient on the hard tail, same as the dense reward.
++    At the mechanism level the ladder behaves like the dense reward: it breaks reward ties
++    inside all-fail groups whose rollouts differ in compiler progress. Step-0 zero-advantage
++    filtering barely separates the arms (sparse <code>RLVR_POOL_B_V8</code> 64/96 filtered,
++    dense <code>RLVR_VFINAL</code> 78/96, compiler-aware <code>RLVR_VFINAL2</code> 64/96) —
++    the shaping changes <em>which</em> groups tie, not the headline retention.
+   </p>
+-  <div class="panel"><img src="valid8_chart.svg" alt="valid@8 per seed: SFT base vs dense reward vs compiler-aware reward" style="width:100%;height:auto;display:block;"></div>
++  <div class="panel"><img src="valid8_chart.svg" alt="valid@8 per run: SFT base vs dense reward vs compiler-aware reward" style="width:100%;height:auto;display:block;"></div>
+   <table>
+-    <thead><tr><th>model</th><th>valid@8 per seed</th><th class="num">mean</th></tr></thead>
++    <thead><tr><th>model</th><th>valid@8 per run</th><th class="num">mean</th></tr></thead>
+     <tbody>
+       <tr><td>SFT_HALF_A_V8</td><td>95, 97, 100</td><td class="num">97.3</td></tr>
+-      <tr><td>+ dense reward (step 10)</td><td>102, 102, 99</td><td class="num hl">101.0</td></tr>
+-      <tr><td>+ compiler-aware reward (step 10)</td><td>95, 96, 94</td><td class="num">95.0</td></tr>
++      <tr><td>+ sparse RLVR (RLVR_POOL_B_V8_STEP10)</td><td>98, 96, 98</td><td class="num">97.3</td></tr>
++      <tr><td>+ dense reward (RLVR_VFINAL_STEP10)</td><td>102, 102, 99</td><td class="num hl">101.0</td></tr>
++      <tr><td>+ compiler-aware reward (RLVR_VFINAL2_STEP10)</td><td>95, 96, 94</td><td class="num">95.0</td></tr>
+     </tbody>
+   </table>
+   <p>
+-    But the outcome was worse, not better: <strong>−6.0 valid@8 vs the dense reward
+-    (p ≈ 0.012)</strong>, and even slightly below the SFT baseline. cargo@8 (ignoring trace
++    But the outcome was worse, not better: <strong>−6.0 valid@8 vs the dense reward</strong>
++    (prompt-level paired permutation p ≈ 0.014; Welch on run aggregates p ≈ 0.012; a
++    family-blocked sensitivity test, with only ~4 effective task clusters, cannot confirm
++    it), and even slightly below the SFT baseline. cargo@8 (ignoring trace
+     hygiene) tells the same story, so it's a real solve-rate drop, not a formatting artifact.
+-    The likely cause is Goodhart, not noise: "reached a later compiler phase" is a proxy for
++    A plausible cause is Goodhart: "reached a later compiler phase" is a proxy for
+     progress, not progress itself, and it's a step further from the true objective (tests
+-    passing) than the dense reward's own compile/test-fraction signal. Optimizing the proxy
+-    pulled the model toward churning on borrow-checker errors instead of toward working code.
++    passing) than the dense reward's own compile/test-fraction signal. But I haven't
++    measured the mechanism (e.g. borrow-churn in traces), and there's a mundane
++    alternative: most crates already compile at the start, so the ladder sits saturated at
++    its top rung and mainly punishes edits that break the build — a conservatism signal,
++    not a progress signal.
+   </p>
+   <p>
+     This is one coefficient (2.5) at one checkpoint (step 10), not an ablation — so the honest
+@@ -1354,9 +1377,9 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
+ 
+   <h2>What I claim / don't</h2>
+   <ul>
+-    <li><strong>Claim:</strong> a dense, unhackable partial-credit reward turns a flat RLVR result into a small, reproducible pass@8 lift, by restoring gradient on the reachable part of the hard tail.</li>
+-    <li><strong>Claim:</strong> a more "principled" Rust-specific reward (compiler-phase ladder) is not automatically better — at the tested coefficient it underperformed the simpler dense reward by −6.0 valid@8, despite also restoring gradient. Reward proxies further from the true objective can hurt even when they're well-motivated and harder to game.</li>
+-    <li><strong>Don't claim:</strong> a large RLVR win, or significance at p&lt;0.05 for the dense-vs-SFT result. Don't claim compiler-aware rewards are categorically worse — only that this one configuration was.</li>
++    <li><strong>Claim:</strong> the sparse-reward baseline (RLVR_POOL_B_V8_STEP10) is exactly flat vs SFT at pass@8 (97.3 vs 97.3, same harness, 3 reruns each), and dense partial credit (RLVR_VFINAL_STEP10) sits +3.7 above both — consistent in direction across every rerun, not statistically significant (paired prompt-level p ≈ 0.14–0.16). Each arm is one training run, so the causal role of the reward shape is a supported hypothesis, not an established result.</li>
++    <li><strong>Claim:</strong> a more "principled" Rust-specific reward (compiler-phase ladder, RLVR_VFINAL2_STEP10) is not automatically better — at the tested coefficient it underperformed the simpler dense reward by −6.0 valid@8 (paired p ≈ 0.014) despite also breaking reward ties. Reward proxies further from the true objective can hurt even when they're well-motivated.</li>
++    <li><strong>Don't claim:</strong> a large RLVR win, or significance at p&lt;0.05 for the dense-vs-SFT result, or a demonstrated mechanism for the compiler-arm regression. Don't claim compiler-aware rewards are categorically worse — only that this one configuration was.</li>
+     <li><strong>Don't claim:</strong> <code>valid_trace</code> success means the patch is fully spec-correct — only that it passes the test suite the task ships with. Per-task test coverage gaps exist (see above); the metric inherits them.</li>
+     <li><strong>Don't claim:</strong> this is evidence of systemic specification gaming. I caught one instance by reading one trace; I haven't measured how often the model exploits a verifier gap versus genuinely solving the task.</li>
+   </ul>
+@@ -1364,8 +1387,8 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
+   <h2>Reusable lessons</h2>
+   <ul>
+     <li>"Tests pass" is not "spec correct" — it's only as strong as the test suite. Specification gaming through verifier exploitation is invisible to every metric in this post; the only way I found it was reading traces, and a 28-trace audit found it again at roughly 1-in-29.</li>
+-    <li>A binary verifiable reward silently discards the hard tail via zero-advantage filtering. Dense, unhackable partial credit recovers it — but a more "principled" version of that same reward can still lose, so denser isn't automatically better.</li>
+-    <li>Greedy pass@1 hides small effects in noise; pass@k + seed replication is the minimum honest bar (a single-run +7 here was seed luck).</li>
++    <li>A sparse verifiable reward silently discards the identically-failing part of the hard tail via zero-advantage filtering. Dense partial credit breaks those ties — but a more "principled" version of that same reward can still lose, so denser isn't automatically better.</li>
++    <li>Greedy pass@1 hides small effects in noise (here it even flipped sign across harnesses); pass@k + repeated reruns and a prompt-level paired test is the minimum honest bar (a single-run +7 here was rerun luck).</li>
+     <li>Export the <em>served</em> policy: <code>run_default/broadcasts/step_N</code> as a PEFT adapter, not <code>weights/step_N</code>.</li>
+   </ul>
+ 
