@@ -44,10 +44,10 @@ def build_row(item: dict, blueprint_root: Path, trace_prefix_root: str) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build RL prompt rows from validated SFT traces.")
-    parser.add_argument("--data", type=Path, default=Path("synthetic_data/signal_1062.jsonl"))
+    parser.add_argument("--data", type=Path, default=Path("synthetic_data/signal_v3_rl_pool_b.jsonl"))
     parser.add_argument("--blueprint-root", type=Path, default=Path("synthetic_data/blueprints"))
     parser.add_argument("--trace-prefix-root", default="runs/rlvr1/rust_cases")
-    parser.add_argument("--output", type=Path, default=Path("synthetic_data/rl_prompts_1062.jsonl"))
+    parser.add_argument("--output", type=Path, default=Path("synthetic_data/rl_prompts_signal_v3_pool_b.jsonl"))
     args = parser.parse_args()
 
     rows = []

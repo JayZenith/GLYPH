@@ -8,6 +8,10 @@ real Rust crates via cargo, and it must finish with a clean `FINAL`. Built on
 
 Full write-up (deployed): <https://jayzenith.github.io/GLYPH/> (source:
 [`blog/index.html`](blog/index.html)).
+Honest experiment history (every era, including invalidated runs):
+[`docs/EXPERIMENT_HISTORY.md`](docs/EXPERIMENT_HISTORY.md). Claims audit:
+[`review/CLAIMS_AUDIT.md`](review/CLAIMS_AUDIT.md).
+
 
 Published as a standalone [`verifiers`](https://github.com/PrimeIntellect-ai/verifiers)
 environment on the [Prime Intellect Environments Hub](https://app.primeintellect.ai/dashboard/environments/jayzenith/glyph)
