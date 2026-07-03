@@ -53,5 +53,6 @@ remote_artifacts/
 
 # local run archives (raw data lives on HF: Glyph-RLVR-Eval-Results)
 glyph_results/
+archive/
 new_results/
 environments/glyph/.prime/
