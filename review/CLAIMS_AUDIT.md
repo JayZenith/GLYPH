@@ -157,6 +157,12 @@ NOT always tie. Corrections/doc-push: commit `1715d28`.
 
 Q1 reward mechanics: strong→exceptional (a,b exceptional — mean-only advantage claim
 artifact-verified; c aside on success-gating was shaky; d missed OPD terms).
+  Clarification (2026-07-03): Q1(a)/(b) were hypothetical worked arithmetic from the
+  reward table — no step-0 per-rollout data exists. Step-0 evidence is aggregate only
+  (orchestrator.log "Detected 64/96 (zero_advantage=64)"; "8 of 12 groups tied" is
+  inferred from divisibility by group size). Per-rollout reward/advantage artifacts
+  survive only at steps 10/20/29 (`rollouts_step_*/train_rollouts.jsonl`); the
+  mean-only advantage formula is verified there and assumed for step 0.
 Q2 loss/trainer: exceptional — reconstruction matched pinned prime-rl loss.py exactly
 (DPPO prob-space mask, teacher term detached into advantage, kl to inference policy);
 missed mask-sign-before-teacher-add subtlety and filtered-groups-lose-distillation corollary.
