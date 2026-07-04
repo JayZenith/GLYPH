@@ -106,6 +106,19 @@ on the Hub.
   different field/function names in both sets — a soft template overlap a
   hash can't catch, and plausible given the family concentration above.
 
+## What this demonstrates / what's next
+
+The deliverable is a working, audited post-training loop — synthetic data → SFT →
+RLVR → pass@8 eval → trace-level verification — run end to end and then checked
+against its own artifacts (see [`review/CLAIMS_AUDIT.md`](review/CLAIMS_AUDIT.md)).
+The honest-null headline is a product of that rigor, not a shortfall of it.
+
+Fixing the limitations above is a credible path toward a general Rust coding agent,
+not a guarantee of one. Next steps: out-of-template tasks the generator never emits
+(ownership/lifetime/trait-bound bugs), hidden/property tests the model can't edit,
+clustered significance tests, and multi-seed training to separate the reward effect
+from run-to-run noise.
+
 ## Hardware
 
 Run on vast.ai (NVIDIA RTX PRO 6000 Blackwell, 96 GB each):

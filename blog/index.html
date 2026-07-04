@@ -1391,6 +1391,21 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
     <li>Export the <em>served</em> policy: <code>run_default/broadcasts/step_N</code> as a PEFT adapter, not <code>weights/step_N</code>.</li>
   </ul>
 
+  <h2>What this demonstrates / what's next</h2>
+  <p>
+    The deliverable here isn't a state-of-the-art Rust agent — it's a working, audited
+    post-training loop: synthetic data &rarr; SFT &rarr; RLVR &rarr; pass@8 eval &rarr;
+    trace-level verification, run end to end and then checked against its own artifacts.
+    The honest-null headline is a product of that rigor, not a shortfall of it.
+  </p>
+  <p>
+    Fixing the limitations above is a credible path toward a general Rust coding agent, not
+    a guarantee of one. Next: out-of-template tasks the generator never emits
+    (ownership/lifetime/trait-bound bugs), hidden/property tests the model can't edit,
+    clustered significance tests, and multi-seed training to separate the reward effect from
+    run-to-run luck. I'm continuing on these.
+  </p>
+
   <p class="meta">Repro commands: github.com/JayZenith/GLYPH (README)</p>
 </main>
 </body>
