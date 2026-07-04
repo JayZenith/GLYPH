@@ -153,6 +153,22 @@ all-10.0 group (adv all 0) and a mixed-success group [10×5, 9×3] with adv ±0.
 within-success variance from failed-verifier penalties is real, so all-success groups do
 NOT always tie. Corrections/doc-push: commit `1715d28`.
 
+## Addendum (2026-07-04): tls case quantified; denominator fixed; tamper scan extended
+
+- Blog "~3%" denominator corrected to **1/12 checkable (~8%)** in commit pushed today —
+  closes the last open wording item from §5b.
+- tls-flip provenance confirmed and STRENGTHENED: the trace is from
+  `RLVR_VFINAL_STEP10/rollouts_step_10/train_rollouts.jsonl`, case `scalec500_022…` —
+  **3 of 8 rollouts in that training group flipped tls; two scored the full 10.0**
+  (identical to spec-correct rollouts). The verifier rewarded spec-violating and
+  spec-correct solutions equally during training. Blog + portfolio now state this.
+- Extended tamper scan (all 17 eval files incl. sparse pass@8 reruns + every archived
+  train_rollouts.jsonl): 54 genuine test-logic-changing patch *attempts*; exactly ONE
+  landed inside a successful rollout (`RLVR_VFINAL2_STEP10`, eval100_087 — benign: adds
+  an assert_eq self-check in a run task's main). Zero landed tamper events in RL
+  training rollouts. The published "one confirmed spec-gaming case + one blocked
+  assert-flip attempt" framing stands.
+
 ## Oral exam results (2026-07-02)
 
 Q1 reward mechanics: strong→exceptional (a,b exceptional — mean-only advantage claim
