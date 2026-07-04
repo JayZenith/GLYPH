@@ -131,8 +131,12 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
   <p>
     Success is strict <code>valid_trace</code>: terminal cargo success + one clean
     <code>FINAL</code> after it + exact <code>CALL</code> syntax + no tool use after success.
-    Cargo passing mid-trace is not success if the trace is unusable. Held-out eval: 150 unseen
-    crates, disjoint from SFT/RL data (split by <code>case_id</code>, 0 leakage).
+    Cargo passing mid-trace is not success if the trace is unusable. Held-out eval: 150 crates,
+    split from SFT/RL data by <code>case_id</code> with zero exact or normalized-hash overlap.
+    Caveat, not a clean holdout: eval and training come from the <em>same generator</em> and
+    share task families, so soft template overlap (the same logical bug under different
+    names) isn't ruled out — this measures generalization to new instances of seen task
+    types, not to unseen kinds of Rust bugs.
   </p>
 
   <!-- EXAMPLES_START -->
