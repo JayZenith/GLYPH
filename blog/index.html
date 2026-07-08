@@ -1256,14 +1256,11 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
     </tbody>
   </table>
   <p>
-    The mechanism is GRPO's own arithmetic: on prompts the model never solves, all 8
-    rollouts score identically → zero group-relative advantage → the zero-advantage
-    filter drops the group → no gradient (the training logs show the same thing — 64–78
-    of 96 rollouts filtered at step 0). On prompts near ceiling there is nothing left to
-    gain. The residual signal lives on a ~55-prompt frontier slice at roughly +3 points —
-    an order of magnitude too small to reach significance at n=150. Consistent with a
-    small real frontier effect, not proof of one: resolving it needs far more
-    frontier-band tasks in both the RL data and the eval, i.e. scale.
+    Same mechanism as the sparse flatline: never-solved prompts produce no advantage and
+    no gradient; near-ceiling prompts have nothing left to gain. The residual signal
+    lives on a ~55-prompt frontier slice at roughly +3 points — an order of magnitude
+    too small to reach significance at n=150. Consistent with a small real frontier
+    effect, not proof of one. That is the scale requirement, quantified.
   </p>
   <p>
     <code>valid_trace</code> also gates on protocol cleanliness (clean <code>FINAL</code>, no
@@ -1436,16 +1433,10 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
     The honest-null headline is a product of that rigor, not a shortfall of it.
   </p>
   <p>
-    Why this is a null and not a bug to fix: at this scale &mdash; one 4B model, ~700 RL
-    prompts, a handful of recognizable task families, one training run per arm &mdash; an
-    in-distribution RLVR lift sits below the noise floor of a 150-prompt eval. No reward
-    shape beat SFT significantly (pooled over all runs: dense +0.9 points of pass@1,
-    p &asymp; 0.29), and the band analysis localizes the residual movement to a ~55-prompt
-    frontier slice. More seeds won't recover a signal this thin: the eval-side
-    permutation is already at the noise floor before training randomness is added. The
-    well-known shape of RLVR is that a resolvable lift needs broad task coverage and scale,
-    not a bigger reward coefficient &mdash; which is the honest boundary of what a project
-    this size can show.
+    Why this is a null and not a bug to fix: the movement lives only on the frontier band,
+    and at this scale that band is too thin to resolve. More seeds won't recover it &mdash;
+    the noise is in the eval, not the training. A resolvable lift needs far more
+    frontier-band tasks, which is the honest boundary of what a project this size can show.
   </p>
 
   <p class="meta">Repro commands: github.com/JayZenith/GLYPH (README)</p>

@@ -61,17 +61,12 @@ compiler-aware arm (`RLVR_VFINAL2_STEP10`) scores progress by the furthest
 reward, it breaks ties inside all-fail groups — step-0 zero-advantage
 filtering barely separates the arms (sparse 64/96 filtered, dense 78/96,
 compiler-aware 64/96) — but it performed *worse* on the actual metric:
-
-| pass@8 valid traces / 150 | run 1 | run 2 | run 3 | mean |
-| --- | ---: | ---: | ---: | ---: |
-| SFT_HALF_A_V8 | 95 | 97 | 100 | 97.3 |
-| + sparse RLVR (RLVR_POOL_B_V8_STEP10) | 98 | 96 | 98 | 97.3 |
-| + dense reward (RLVR_VFINAL_STEP10) | 102 | 102 | 99 | **101.0** |
-| + compiler-aware reward (RLVR_VFINAL2_STEP10) | 95 | 96 | 94 | 95.0 |
+95 / 96 / 94 across runs, mean **95.0** vs dense's 101.0.
 
 **−6.0 valid@8 vs dense** (prompt-level paired permutation p ≈ 0.014, Welch
-p ≈ 0.012; a family-blocked sensitivity test — only ~4 effective task clusters
-— cannot confirm it), slightly below the SFT baseline. Possibly
+p ≈ 0.012 — though it softens to p ≈ 0.09 on pooled pass@1, and a
+family-blocked sensitivity test cannot confirm it), slightly below the SFT
+baseline. Possibly
 Goodhart: "reached a later compiler phase" is a proxy further from the true
 objective (tests passing) than the dense reward's own compile/test-fraction
 signal, so optimizing it pulled the model toward churning on borrow-checker
@@ -81,15 +76,14 @@ ablation, so the honest claim is narrow: *this* compiler-aware shaping, at
 don't work. See the [write-up](https://jayzenith.github.io/GLYPH/) for the
 full diagnosis and charts.
 
-**Where the effect lives (pooled analysis).** Pooling all 3 runs per arm gives 24
+**Where the effect lives (pooled analysis).** Pooling the 3 runs per arm gives 24
 rollouts per prompt — the highest-power test these artifacts support
 (`analysis/pooled_band_analysis.py`, reproducible from the public eval dataset).
-Arm-level, nothing moves: dense is +0.9 points of pass@1 over SFT (0.442 vs
-0.433), paired permutation p ≈ 0.29; sparse and compiler-aware are slightly
-*negative*. But splitting prompts by SFT difficulty shows the dense arm's movement
-is concentrated exactly where GRPO theory predicts — the *frontier*, prompts the
-model solves sometimes (bands defined by one SFT run, deltas measured against the
-others, so regression-to-the-mean can't manufacture the pattern):
+Arm-level, nothing moves: dense is +0.9 points of pass@1 over SFT, paired
+permutation p ≈ 0.29. But banding prompts by SFT difficulty puts the dense arm's
+movement exactly where GRPO theory predicts — the *frontier*, prompts the model
+solves sometimes (bands from one SFT run, deltas measured against the others, so
+regression-to-the-mean can't manufacture the pattern):
 
 | SFT band (solves/8) | n | Δpass@1 (dense − SFT) |
 | --- | ---: | ---: |
@@ -98,13 +92,11 @@ others, so regression-to-the-mean can't manufacture the pattern):
 | frontier (4–6) | 28 | +0.011 |
 | high (7–8) | 40 | −0.007 |
 
-Zero movement on prompts the model never solves (no within-group reward variance
-→ zero GRPO advantage → no gradient; the training logs show the same thing —
-the zero-advantage filter dropped 64–78 of 96 rollouts at step 0) and none where
-it's already near ceiling. The residual signal sits on a ~55-prompt slice at ~+3
-points — an order of magnitude too small to reach significance at n=150. This is
-*consistent with* a small real frontier effect, not proof of one: resolving it
-needs far more frontier-band tasks in both training data and eval, i.e. scale.
+Never-solved prompts produce no advantage and no gradient (the same mechanism as
+the sparse flatline); near-ceiling prompts have nothing left to gain. The residual
+~+3 points on a ~55-prompt slice is an order of magnitude too small to reach
+significance at n=150 — consistent with a small real frontier effect, not proof of
+one. That is the scale requirement, quantified.
 
 Artifacts: `JayZenith/SFT_HALF_A_V8` · dense adapters
 `JayZenith/RLVR_VFINAL_STEP{10,20,30}` · compiler-aware adapters
@@ -133,21 +125,12 @@ on the Hub.
 
 ## What this demonstrates
 
-The deliverable is a working, audited post-training loop — synthetic data → SFT →
-RLVR → pass@8 eval → trace-level verification — run end to end and checked against
-its own artifacts (see [`review/CLAIMS_AUDIT.md`](review/CLAIMS_AUDIT.md)).
-
-No reward shape produced a statistically significant *improvement* over the SFT
-base: the dense arm's +3.7 valid@8 is directional but within run-to-run noise
-(single-run p ≈ 0.14; pooled over all 3 runs, Δpass@1 = +0.009 at p ≈ 0.29), and
-the compiler-aware arm was directionally *worse* (p ≈ 0.014 on valid@8, softening
-to p ≈ 0.09 on pooled pass@1 — metric-dependent). The band analysis above localizes
-why: RLVR's movement lives only on frontier prompts, and at this scale — one 4B
-model, ~700 RL prompts, a few task families, one run per arm — that band is too
-thin to resolve. That is the finding, and it is a product of the rigor, not a
-shortfall of it. More seeds don't rescue it (the eval-side permutation is already
-at the noise floor); a resolvable lift needs more frontier-band coverage — scale —
-not a bigger reward coefficient.
+A working, audited post-training loop — synthetic data → SFT → RLVR → pass@8 eval →
+trace-level verification — run end to end and checked against its own artifacts
+([`review/CLAIMS_AUDIT.md`](review/CLAIMS_AUDIT.md)). No reward shape significantly
+beat SFT; the movement localizes to a frontier band too thin to resolve at this
+scale. More seeds can't fix that — the noise is in the eval, not the training. A
+resolvable lift needs more frontier-band coverage, not a bigger reward coefficient.
 
 ## Hardware
 
