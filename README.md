@@ -81,6 +81,31 @@ ablation, so the honest claim is narrow: *this* compiler-aware shaping, at
 don't work. See the [write-up](https://jayzenith.github.io/GLYPH/) for the
 full diagnosis and charts.
 
+**Where the effect lives (pooled analysis).** Pooling all 3 runs per arm gives 24
+rollouts per prompt — the highest-power test these artifacts support
+(`analysis/pooled_band_analysis.py`, reproducible from the public eval dataset).
+Arm-level, nothing moves: dense is +0.9 points of pass@1 over SFT (0.442 vs
+0.433), paired permutation p ≈ 0.29; sparse and compiler-aware are slightly
+*negative*. But splitting prompts by SFT difficulty shows the dense arm's movement
+is concentrated exactly where GRPO theory predicts — the *frontier*, prompts the
+model solves sometimes (bands defined by one SFT run, deltas measured against the
+others, so regression-to-the-mean can't manufacture the pattern):
+
+| SFT band (solves/8) | n | Δpass@1 (dense − SFT) |
+| --- | ---: | ---: |
+| impossible (0) | 55 | −0.004 |
+| frontier (1–3) | 27 | **+0.031** |
+| frontier (4–6) | 28 | +0.011 |
+| high (7–8) | 40 | −0.007 |
+
+Zero movement on prompts the model never solves (no within-group reward variance
+→ zero GRPO advantage → no gradient; the training logs show the same thing —
+the zero-advantage filter dropped 64–78 of 96 rollouts at step 0) and none where
+it's already near ceiling. The residual signal sits on a ~55-prompt slice at ~+3
+points — an order of magnitude too small to reach significance at n=150. This is
+*consistent with* a small real frontier effect, not proof of one: resolving it
+needs far more frontier-band tasks in both training data and eval, i.e. scale.
+
 Artifacts: `JayZenith/SFT_HALF_A_V8` · dense adapters
 `JayZenith/RLVR_VFINAL_STEP{10,20,30}` · compiler-aware adapters
 `JayZenith/RLVR_VFINAL2_STEP{5,10}` · sparse baseline
@@ -106,18 +131,23 @@ on the Hub.
   different field/function names in both sets — a soft template overlap a
   hash can't catch, and plausible given the family concentration above.
 
-## What this demonstrates / what's next
+## What this demonstrates
 
 The deliverable is a working, audited post-training loop — synthetic data → SFT →
-RLVR → pass@8 eval → trace-level verification — run end to end and then checked
-against its own artifacts (see [`review/CLAIMS_AUDIT.md`](review/CLAIMS_AUDIT.md)).
-The honest-null headline is a product of that rigor, not a shortfall of it.
+RLVR → pass@8 eval → trace-level verification — run end to end and checked against
+its own artifacts (see [`review/CLAIMS_AUDIT.md`](review/CLAIMS_AUDIT.md)).
 
-Fixing the limitations above is a credible path toward a general Rust coding agent,
-not a guarantee of one. Next steps: out-of-template tasks the generator never emits
-(ownership/lifetime/trait-bound bugs), hidden/property tests the model can't edit,
-clustered significance tests, and multi-seed training to separate the reward effect
-from run-to-run noise.
+No reward shape produced a statistically significant *improvement* over the SFT
+base: the dense arm's +3.7 valid@8 is directional but within run-to-run noise
+(single-run p ≈ 0.14; pooled over all 3 runs, Δpass@1 = +0.009 at p ≈ 0.29), and
+the compiler-aware arm was directionally *worse* (p ≈ 0.014 on valid@8, softening
+to p ≈ 0.09 on pooled pass@1 — metric-dependent). The band analysis above localizes
+why: RLVR's movement lives only on frontier prompts, and at this scale — one 4B
+model, ~700 RL prompts, a few task families, one run per arm — that band is too
+thin to resolve. That is the finding, and it is a product of the rigor, not a
+shortfall of it. More seeds don't rescue it (the eval-side permutation is already
+at the noise floor); a resolvable lift needs more frontier-band coverage — scale —
+not a bigger reward coefficient.
 
 ## Hardware
 
