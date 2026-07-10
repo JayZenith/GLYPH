@@ -1,8 +1,8 @@
 """Regenerates the Examples section of blog/index.html from the same trace
 data as the portfolio's trace viewer (~/Desktop/portfolio/src/traces.json +
-crateSources.js), so the two surfaces show identical real rollouts. Splices
-the generated HTML between the EXAMPLES_START/EXAMPLES_END markers in
-index.html. Rerun: python3 blog/gen_examples.py
+crateSources.js), so the two surfaces show identical real rollouts with the
+same turn-card UI. Splices between EXAMPLES_START/EXAMPLES_END markers.
+Rerun: python3 blog/gen_examples.py
 """
 from __future__ import annotations
 
@@ -19,29 +19,26 @@ SYSTEM_PROMPT = "You are a Rust coding agent. Use tools when needed. After FINAL
 
 EXAMPLE_DESCRIPTIONS = {
     "clean-solve": (
-        "An RLVR-trained agent reads a small Rust config-merge crate, follows "
-        "failed-test feedback, patches the merge precedence, and confirms the tests pass."
+        "Reads a config-merge crate, follows failed-test feedback, patches the "
+        "merge precedence, confirms tests pass."
     ),
     "recovery": (
-        "An RLVR-trained agent fixes sorting first, then uses failed-test output to "
-        "notice the missing shared-rank behavior and patch the ranking logic."
+        "Fixes sorting first, then uses failed-test output to spot the missing "
+        "shared-rank behavior and patch it."
     ),
     "long-recovery": (
-        "A longer RLVR rollout where the agent recovers from bad edits and uses "
-        "repeated test feedback to fix trimming and signed-number parsing."
+        "A long rollout: recovers from bad edits via repeated test feedback, "
+        "fixes trimming and signed-number parsing."
     ),
 }
 
 EXAMPLE_NOTES = {
     "clean-solve": (
-        "Specification gaming, not a clean win: the patch satisfies the verifier "
-        "(cargo_test, 3/3) while violating the user's actual spec — it flips tls from "
-        "direct-first to profile-first, the opposite of the stated 'direct values take "
-        "precedence' rule. No test sets conflicting direct/profile tls values, so the "
-        'verifier can\'t see the violation, and the FINAL message ("tls, which was already '
-        'correct") doesn\'t disclose it. One observed instance from reading this trace, not '
-        "a measured systemic exploit — but it's exactly the proxy-vs-true-objective gap "
-        "verifiable reward is supposed to close."
+        "Specification gaming: the patch passes the verifier (cargo_test 3/3) while "
+        "flipping tls precedence — the opposite of the stated rule. No test covers "
+        "conflicting tls values, so the verifier can't see it, and the FINAL doesn't "
+        "disclose it. In this crate's own training group, 3 of 8 rollouts made the "
+        "same flip — the reward reinforced gaming and correctness equally."
     ),
 }
 
@@ -67,8 +64,7 @@ def esc(s: str) -> str:
     return html.escape(s, quote=False)
 
 
-# Mirrors portfolio/src/MainPage.js's rustTokenPattern + RustCode component, so
-# the blog's crate-source panels get the same highlighting as the trace viewer.
+# Mirrors portfolio/src/MainPage.js rustTokenPattern.
 RUST_TOKEN_RE = re.compile(
     r'("(?:\\.|[^"\\])*")'
     r"|\b(pub|struct|fn|let|mut|mod|use|super|impl|for|in|if|else|match|return|"
@@ -77,61 +73,112 @@ RUST_TOKEN_RE = re.compile(
     r"|(#\[[^\]]+\])"
 )
 
+# Mirrors portfolio/src/MainPage.js traceTokenPattern.
+TRACE_TOKEN_RE = re.compile(
+    r"\b(CALL|RESULT|FINAL|status:|success|failed|read_file|apply_patch|"
+    r"cargo_test|stdout:|stderr:)\b"
+)
 
-def highlight_rust(code: str) -> str:
+
+def highlight_rust_line(line: str) -> str:
     out = []
     last = 0
-    for m in RUST_TOKEN_RE.finditer(code):
+    for m in RUST_TOKEN_RE.finditer(line):
         if m.start() > last:
-            out.append(esc(code[last:m.start()]))
+            out.append(esc(line[last:m.start()]))
         string, keyword, number, attr = m.groups()
         cls = "rust-string" if string else "rust-keyword" if keyword else \
             "rust-number" if number else "rust-attr"
         out.append(f'<span class="{cls}">{esc(m.group(0))}</span>')
         last = m.end()
-    out.append(esc(code[last:]))
+    out.append(esc(line[last:]))
     return "".join(out)
 
 
-def render_block(content: str, role: str) -> str:
-    text = esc(content)
-    if role == "assistant" and content.lstrip().startswith("CALL"):
-        return f'<span class="call">{text}</span>'
-    if role == "assistant" and content.lstrip().startswith("FINAL:"):
-        return f'<span class="final">{text}</span>'
-    if role == "tool":
-        return f'<span class="result">{text}</span>'
-    return text
+def render_rust(code: str) -> str:
+    lines = []
+    for i, line in enumerate(code.split("\n"), 1):
+        lines.append(
+            f'<span class="rust-line"><span class="rust-line-number">{i}</span>'
+            f'<span class="rust-line-code">{highlight_rust_line(line)}</span></span>'
+        )
+    return "\n".join(lines)
 
 
-def render_trace(trace: dict) -> str:
-    parts = [f'<span class="role">SYSTEM</span> {esc(SYSTEM_PROMPT)}']
-    parts.append(f'<span class="role">USER</span> {esc(trace["task"])}')
-    for turn in trace["turns"]:
-        label = turn["role"].upper()
-        parts.append(f'<span class="role">{label}</span> {render_block(turn["content"].strip(), turn["role"])}')
-    return "\n\n".join(parts)
+def highlight_trace_tokens(content: str) -> str:
+    out = []
+    last = 0
+    for m in TRACE_TOKEN_RE.finditer(content):
+        if m.start() > last:
+            out.append(esc(content[last:m.start()]))
+        tok = m.group(0)
+        if tok == "CALL":
+            cls = "trace-call-token"
+        elif tok == "RESULT":
+            cls = "trace-result-token"
+        elif tok == "FINAL":
+            cls = "trace-final-token"
+        elif tok == "success":
+            cls = "trace-success-token"
+        elif tok == "failed":
+            cls = "trace-failed-token"
+        elif tok.endswith(":"):
+            cls = "trace-label-token"
+        else:
+            cls = "trace-tool-token"
+        out.append(f'<span class="{cls}">{esc(tok)}</span>')
+        last = m.end()
+    out.append(esc(content[last:]))
+    return "".join(out)
+
+
+def render_turn(role: str, content: str) -> str:
+    content = content.strip()
+    body_cls = "turn-body"
+    if content.startswith("FINAL:"):
+        body_cls += " turn-final"
+    elif content.startswith("CALL"):
+        body_cls += " turn-call"
+    elif role == "tool":
+        body_cls += " turn-result"
+    return (
+        f'<div class="turn turn-{role}"><div class="turn-role">{role}</div>'
+        f'<pre class="{body_cls}">{highlight_trace_tokens(content)}</pre></div>'
+    )
 
 
 def render_example(trace_id: str, trace: dict, crate_src: str | None, active: bool) -> str:
-    label = esc(trace["label"])
-    model = trace["model"]
     desc = esc(EXAMPLE_DESCRIPTIONS[trace_id])
     note = EXAMPLE_NOTES.get(trace_id)
-    note_html = (
-        f'\n    <div class="panel note"><p>{esc(note)}</p></div>' if note else ""
-    )
+    note_html = f'\n      <p class="trace-note">{esc(note)}</p>' if note else ""
     src_html = ""
     if crate_src:
-        src_html = (
-            f'\n    <div class="panel rust-code scroll"><pre>{highlight_rust(crate_src.strip())}</pre></div>'
-        )
-    trace_html = render_trace(trace)
+        src_html = f"""
+    <div class="crate-source">
+      <div class="crate-source-header"><strong>crate source</strong><span>src/lib.rs</span></div>
+      <pre class="rust-code">{render_rust(crate_src.strip())}</pre>
+    </div>"""
+    turns = [render_turn("system", SYSTEM_PROMPT), render_turn("user", trace["task"])]
+    turns += [render_turn(t["role"], t["content"]) for t in trace["turns"]]
+    turns_html = "\n      ".join(turns)
     hidden = "" if active else " hidden"
     return f"""  <div class="example-panel" id="example-{trace_id}"{hidden}>
-    <p class="meta">{model} &middot; RL reward {trace["reward"]} &middot; {len(trace["turns"])} trace turns</p>
-    <p>{desc}</p>{note_html}{src_html}
-    <div class="panel trace scroll"><pre>{trace_html}</pre></div>
+  <div class="trace-panel">
+    <div class="trace-summary">
+      <div>
+        <span class="trace-label">{esc(trace["label"])}</span>
+        <a class="model-label" href="https://huggingface.co/{trace["model"]}" target="_blank" rel="noreferrer">{esc(trace["model"])}</a>
+        <p>{desc}</p>{note_html}
+      </div>
+      <div class="trace-metadata"><span>RL reward {trace["reward"]}</span><span>{len(trace["turns"])} trace turns</span></div>
+    </div>{src_html}
+    <div class="actions-panel">
+      <div class="actions-header"><strong>full trace</strong><span>system, user, assistant, tool</span></div>
+      <div class="trace-turns">
+      {turns_html}
+      </div>
+    </div>
+  </div>
   </div>
 """
 
