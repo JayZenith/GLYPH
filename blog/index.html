@@ -1171,8 +1171,30 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
   <h2>SFT built the agent</h2>
   <p>
     SFT (<code>Qwen3-4B-Base</code> → <code>SFT_HALF_A_V8</code>) learned the protocol and a
-    useful repair prior. Greedy strict pass@1: <strong>74/150</strong>.
+    useful repair prior. Greedy strict pass@1: <strong>74/150</strong>. Four data decisions
+    did the work:
   </p>
+  <ul>
+    <li><strong>The generator wrote specs, never outputs.</strong> Training traces start as
+      JSON specs — buggy crate files plus planned tool steps, each tagged
+      <code>expect_status: failed|success</code> — and are materialized by executing every
+      step through real cargo. A planned failure that doesn't actually fail, or a fix that
+      doesn't actually pass, rejects the whole case. Every compiler message in the training
+      data is real rustc output.</li>
+    <li><strong>Error recovery was engineered, not hoped for.</strong> Recover-family specs
+      are required to fail at least once before the final success, so the model trained on
+      genuine failed-test output followed by a working repair — the behavior the published
+      rollouts show.</li>
+    <li><strong>One runtime, three stages.</strong> The same executor, sandbox path-rewriting,
+      and RESULT renderer serve SFT data generation, the RL environment, and the eval harness,
+      so the model sees byte-identical formatting everywhere. Before this was locked down,
+      format drift between stages made the model hallucinate entire tool RESULTs inside its
+      own turn.</li>
+    <li><strong>Assistant-only loss masking, zero truncation.</strong> Loss is computed on
+      assistant tokens only — unmasked RESULT tokens teach a model to invent tool outputs —
+      and tokenization asserts every trace fits in context instead of silently truncating,
+      because a model trained on amputated traces reproduces the amputation.</li>
+  </ul>
 
   <h2>RLVR with a sparse reward was flat</h2>
   <p>

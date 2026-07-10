@@ -123,6 +123,28 @@ on the Hub.
   different field/function names in both sets — a soft template overlap a
   hash can't catch, and plausible given the family concentration above.
 
+## Design decisions that mattered
+
+- **One execution runtime, three stages.** `agent_runtime/` (executor, sandbox
+  path-rewriting, RESULT renderer) serves SFT data generation
+  (`synthetic_data/materialize_specs.py`), the RL environment
+  (`rl/environment.py`), and the eval harness — the model sees byte-identical
+  trace formatting in training, RL, and eval. Format drift between stages made
+  the model hallucinate whole tool RESULTs inside its own turn.
+- **SFT traces were materialized, not written.** The generator produced JSON
+  specs (crate files + tool steps tagged `expect_status: failed|success`);
+  every step was executed through real cargo, and any case whose planned
+  failure didn't fail — or whose fix didn't pass — was rejected. Recover
+  families must fail at least once before succeeding, so error recovery was
+  learned from real rustc output.
+- **Assistant-only loss masking, zero truncation** (`sft/data.py`): loss on
+  assistant tokens only (unmasked RESULT tokens teach a model to invent tool
+  outputs), and tokenization asserts every trace fits in context rather than
+  silently truncating.
+- **RLVR is anchored, not free-running:** on-policy distillation toward the
+  frozen SFT model itself (`--teacher-tau 0.2`), a small KL to the rollout
+  policy, and gibberish/repetition/zero-advantage filters all enforced.
+
 ## What this demonstrates
 
 A working, audited post-training loop — synthetic data → SFT → RLVR → pass@8 eval →
