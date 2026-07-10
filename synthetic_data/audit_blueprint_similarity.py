@@ -26,21 +26,35 @@ def read_ids(path: Path) -> list[str]:
 
 
 def source_file(root: Path, case_id: str) -> Path:
-    case_root = root / case_id
-    lib = case_root / "src" / "lib.rs"
-    main = case_root / "src" / "main.rs"
-    if lib.exists():
-        return lib
-    if main.exists():
-        return main
+    # the 150-case eval set spans two blueprint roots (eval100_* under
+    # eval_blueprints/, heldoutfail* under blueprints/)
+    for r in (root, root.parent / "blueprints"):
+        case_root = r / case_id
+        for name in ("lib.rs", "main.rs"):
+            p = case_root / "src" / name
+            if p.exists():
+                return p
     raise FileNotFoundError(f"missing Rust source for {case_id} under {root}")
 
 
 def normalize_source(text: str) -> str:
+    """Strip comments and whitespace AND normalize literals: every string
+    literal becomes "S" and every numeric literal becomes 0, so two crates
+    that differ only in field values/sample data hash identically."""
     text = re.sub(r"//.*", "", text)
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
+    text = re.sub(r'"(?:\\.|[^"\\])*"', '"S"', text)
+    text = re.sub(r"\b\d+(?:\.\d+)?(?:_?[iuf]\d+|_?usize|_?isize)?\b", "0", text)
     text = re.sub(r"\s+", " ", text)
     return text.strip()
+
+
+def _self_test() -> None:
+    a = 'fn f() { let x = 42u32; let s = "hello"; } // c'
+    b = 'fn f() { let x = 7u32;  let s = "world"; } /* d */'
+    assert normalize_source(a) == normalize_source(b), "literal normalization broken"
+    c = 'fn f() { let x = 42u32; let s = "hello"; return; }'
+    assert normalize_source(a) != normalize_source(c), "over-normalization"
 
 
 def load_sources(data: Path, root: Path) -> dict[str, str]:
@@ -67,6 +81,7 @@ def main() -> int:
     parser.add_argument("--max-source-similarity", type=float, default=0.92)
     parser.add_argument("--top-k", type=int, default=10)
     args = parser.parse_args()
+    _self_test()
 
     train = load_sources(args.train_data, args.train_blueprints)
     evals = load_sources(args.eval_data, args.eval_blueprints)

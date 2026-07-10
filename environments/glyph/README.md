@@ -51,10 +51,13 @@ env = vf.load_environment(
 The held-out eval behind the write-up's numbers is 150 cases that cluster
 into a handful of template families (config-merge precedence, enum-dispatch,
 leaderboard-ranking cover roughly half the set) — treat it as a smaller
-effective sample than n=150 suggests. The write-up's headline comparison is
-pass@8 over three independent unseeded reruns per arm (the eval harness has no
-sampling-seed control), with a sparse-reward control arm that measured exactly
-flat vs SFT; the dense-reward lift (+3.7) is consistent in direction but not
-statistically significant (prompt-level paired permutation p ≈ 0.14–0.16), and
-each reward arm is a single training run. Full methodology and raw per-rollout
-eval data: [`JayZenith/Glyph-RLVR-Eval-Results`](https://huggingface.co/datasets/JayZenith/Glyph-RLVR-Eval-Results).
+effective sample than n=150 suggests. Headline comparisons use trace-retained
+pass@8 evaluations (no sampling seed — repetitions differ only through runtime
+nondeterminism): dense reward +7 valid@8 over SFT (p ≈ 0.12, not significant),
+sparse flat, compiler-aware level with SFT; each reward arm is one training
+run, so nothing is causally attributed to reward shape. Two known verifier
+limits, both audited: per-rollout isolation is path rewriting, not a security
+containment boundary; and grading tests are model-editable (one baseline
+rollout in ~41k audited patch calls flipped a test assertion — no published
+count affected). Full methodology and raw per-rollout eval data:
+[`JayZenith/Glyph-RLVR-Eval-Results`](https://huggingface.co/datasets/JayZenith/Glyph-RLVR-Eval-Results).

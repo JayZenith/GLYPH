@@ -302,13 +302,18 @@ def main() -> int:
         )
         for offset, (item, (cargo_solves, valid_solves, rollout_rows)) in enumerate(zip(batch, batch_results)):
             band = "rlvr-target" if 0 < cargo_solves < args.samples else ("solved" if cargo_solves else "capability-gap")
+            # solves/k is the empirical per-sample success rate (empirical
+            # pass@1), NOT pass@k. Per-prompt pass@k is 1 iff solves > 0;
+            # aggregate valid@k counts prompts with valid_trace_solves > 0.
+            # Older published JSONs stored this same value under misnamed
+            # pass_at_k / cargo_pass_at_k / valid_trace_pass_at_k keys.
             row = {"name": item["name"], "solves": cargo_solves, "k": args.samples,
-                   "pass_at_k": cargo_solves / args.samples, "band": band,
+                   "sample_success_rate": cargo_solves / args.samples, "band": band,
                    "solve_metric": "cargo_verifier_success",
                    "cargo_solves": cargo_solves,
-                   "cargo_pass_at_k": cargo_solves / args.samples,
+                   "cargo_sample_success_rate": cargo_solves / args.samples,
                    "valid_trace_solves": valid_solves,
-                   "valid_trace_pass_at_k": valid_solves / args.samples}
+                   "valid_trace_sample_success_rate": valid_solves / args.samples}
             if args.save_rollouts:
                 row["rollouts"] = rollout_rows
             results.append(row)

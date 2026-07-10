@@ -82,6 +82,8 @@ checkpoint instead of the served broadcast looked like model degradation).
 - Results (valid@8/150 means): SFT 97.3 · sparse 97.3 · dense 101.0 · compiler 95.0.
   Dense vs SFT/sparse: +3.7, paired prompt-level p ≈ 0.14/0.16 — not significant;
   one training run per arm, so no causal claim. Compiler vs dense: −6.0, p ≈ 0.014.
+  **(Superseded by Era 5: these means mix trace-retained runs with
+  aggregate-only repetitions; the p ≈ 0.014 does not survive on auditable data.)**
 
 ## Era 4 — audit and corrections (Jun 30 – Jul 2)
 
@@ -96,6 +98,38 @@ checkpoint instead of the served broadcast looked like model degradation).
   std), OPD loss terms (teacher_tau 0.2 / kl_tau 0.001 / dppo_mask 0.2), attempted
   test-assertion tampering in one archived SFT rollout (blocked by find-uniqueness),
   compiler-ladder saturation on compiles-at-start crates.
+
+## Era 5 — adversarial cleanup (Jul 10)
+
+A second, adversarial audit (external) found real defects; all corrected in
+one pass (see `docs/AUDIT_2026-07.md`):
+
+- Training-curve chart was inverted (plotted filtered count as retained);
+  regenerated as (96 − filtered)/96, every point verified against raw logs.
+- Sparse filtering range corrected: 8–67% per batch (was misstated 25–83%).
+- Headline claims rebased on **trace-retained** runs only; SFT/dense/compiler
+  repetitions 2–3 survive only as per-prompt counts (aggregate-only,
+  unauditable) and were removed from claims. Retained-run stats: dense +7 vs
+  SFT p ≈ 0.12; sparse +3 p ≈ 0.55; compiler ±0 vs SFT, −7 vs dense p ≈ 0.14.
+  The Era-4 "compiler −6.0, p ≈ 0.014" claim depended on aggregate-only
+  repetitions and is demoted to an observation.
+- "Noise is in the eval, seeds can't help" removed: training-seed variance was
+  never measured (one run per arm); seeds are necessary for causal
+  reward-shape attribution.
+- Eval repetitions relabeled: no sampling seed was ever set (vLLM default);
+  they are repeated evaluations under runtime nondeterminism, not independent
+  samples. Provenance manifest: `docs/PROVENANCE.md`.
+- Frontier band analysis demoted to exploratory; bootstrap 95% CIs all include
+  zero. Direct training-artifact evidence added instead: dense broke reward
+  ties in 7/8 saved all-fail groups, compiler ladder 15/15, but all-fail
+  groups were ~10–20% of batches.
+- Test-tamper audit (`analysis/test_tamper_audit.py`): 40,982 saved eval
+  patch calls; one SFT-baseline rollout flipped a test assertion (prompt had
+  other clean solves — no count change); no counted RLVR rollout tampered.
+- Sandbox documented as path rewriting, not containment; ~135k saved calls
+  show no traversal. `pass_at_k` schema field renamed (`solves/k` is empirical
+  pass@1). Similarity auditor now actually normalizes literals (self-tested;
+  zero exact overlap reproduced; nearest pair 0.92).
 
 ## Known gaps this history cannot fill
 

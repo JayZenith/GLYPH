@@ -9,7 +9,9 @@ real Rust crates via cargo, and it must finish with a clean `FINAL`. Built on
 Full write-up (deployed): <https://jayzenith.github.io/GLYPH/> (source:
 [`blog/index.html`](blog/index.html)).
 Honest experiment history (every era, including invalidated runs):
-[`docs/EXPERIMENT_HISTORY.md`](docs/EXPERIMENT_HISTORY.md). Claims audit:
+[`docs/EXPERIMENT_HISTORY.md`](docs/EXPERIMENT_HISTORY.md). Adversarial audit
++ corrections: [`docs/AUDIT_2026-07.md`](docs/AUDIT_2026-07.md). Provenance:
+[`docs/PROVENANCE.md`](docs/PROVENANCE.md). First claims audit (historical):
 [`review/CLAIMS_AUDIT.md`](review/CLAIMS_AUDIT.md).
 
 
@@ -24,79 +26,82 @@ dataset) — install with `prime env install jayzenith/glyph`.
 Strict `valid_trace` = terminal cargo success + one clean `FINAL` after it +
 exact `CALL` syntax + no tool use after success.
 
-**The sparse-reward baseline was flat.** The sparse baseline
-(`RLVR_POOL_B_V8_STEP10`) rewards +10 only for a clean pass, with fixed failure
-penalties otherwise — sparse, but not binary. Measured under the same pass@8
-harness as every other arm (3 independent unseeded reruns each), it is exactly
-flat against the SFT base: mean 97.3 vs 97.3. The mechanism: all-fail rollout
-groups whose 8 rollouts share the same failure profile get identical rewards →
-zero group-relative advantage → the zero-advantage filter drops them, so those
-prompts contribute no verifier-driven signal (at step 0 the filter dropped
-64/96 rollouts; 25–83% per batch across the run).
+**Headline numbers use only trace-retained runs** — runs whose full
+per-rollout traces are saved and inspectable. Two additional repetitions exist
+for SFT (97, 100) and dense (102, 99), but only as per-prompt aggregate counts
+(raw traces not retained): they cannot be audited for trace validity or reward
+gaming, so they carry no evidentiary weight here. They remain in the public
+eval dataset under that label; their direction is consistent with the retained
+runs.
 
-**The dense reward measured a small, non-significant lift.** A dense
-partial-credit reward (compile + test-pass fraction) breaks the reward ties
-inside all-fail groups. All arms at **pass@8 with 3 independent unseeded
-reruns** (the harness exposes no sampling seed; greedy pass@1 is too noisy for
-an effect this size):
+| valid@8 / 150 | trace-retained run(s) |
+| --- | --- |
+| SFT_HALF_A_V8 | **95** |
+| + sparse RLVR (RLVR_POOL_B_V8_STEP10) | **98 / 96 / 98** |
+| + dense-reward RLVR (RLVR_VFINAL_STEP10) | **102** |
+| + compiler-aware RLVR (RLVR_VFINAL2_STEP10) | **95 / 96 / 94** |
 
-| pass@8 valid traces / 150 | run 1 | run 2 | run 3 | mean |
-| --- | ---: | ---: | ---: | ---: |
-| SFT_HALF_A_V8 | 95 | 97 | 100 | 97.3 |
-| + sparse RLVR (RLVR_POOL_B_V8_STEP10) | 98 | 96 | 98 | 97.3 |
-| + dense-reward RLVR (RLVR_VFINAL_STEP10) | 102 | 102 | 99 | **101.0** |
+Paired prompt-level sign-flip permutation on the retained runs: dense vs SFT
+**+7** (11 prompts up, 4 down, p ≈ 0.12); sparse vs SFT +3 (p ≈ 0.55);
+compiler-aware vs SFT ±0 (p = 1.0); compiler-aware vs dense −7 (p ≈ 0.14).
+**Nothing is significant.** Repeated evaluation of a single model moves
+valid@8 by ±2–3 prompts on its own (sparse: 98/96/98) — the size of every
+observed difference.
 
-**+3.7 valid@8 over both SFT and sparse** — consistent in direction (dense
-never below 99; SFT and sparse never above 100) but not statistically
-significant: prompt-level paired sign-flip permutation gives p ≈ 0.14 vs SFT
-and p ≈ 0.16 vs sparse (Welch on the 3-run aggregates, a weaker secondary
-check, gives p ≈ 0.115). A single run had shown +7; replication revealed
-run-to-run sampling noise. Attribution to the reward shape is bounded by
-design: each arm is a single training run.
+Two caveats bound every number above:
 
-**A Rust-compiler-aware reward (the A/B above) lost to the generic dense one.**
-Same base/data/steps/hyperparameters, only the reward shape changed: the
+- **Eval repetitions are not independent seeded samples.** The harness exposes
+  no sampling seed (vLLM default seed applies); repetitions differ only
+  through runtime nondeterminism — batching, scheduling, tool timing.
+  Sampling config: temperature 0.8, top-p 1.0 (default), max 4000 new tokens,
+  k = 8, max 20 tool rounds.
+- **Each reward arm is one training run.** Training-seed variance was never
+  measured, and evaluation variability alone is comparable to the observed
+  effect. Causal attribution of any difference to the reward shape would
+  require multiple training seeds per arm.
+
+**Why the sparse arm couldn't move: zero-advantage filtering.** The sparse
+baseline rewards +10 only for a clean pass, with fixed failure penalties —
+sparse, but not binary. All-fail rollout groups whose 8 rollouts share the
+same failure profile get identical rewards → zero group-relative advantage →
+the zero-advantage filter drops them, so those prompts contribute no
+verifier-driven signal (at step 0 the filter dropped 64/96 rollouts; 8–67% per
+batch across the 30-batch run, verified from the raw orchestrator log). A
+dense partial-credit reward (compile + test-pass fraction) was built to break
+those ties.
+
+**The compiler-aware A/B did not beat the generic dense reward.** Same
+base/data/steps/hyperparameters, only the reward shape changed: the
 compiler-aware arm (`RLVR_VFINAL2_STEP10`) scores progress by the furthest
 `rustc` phase reached (parse → type → borrow → compiles). Like the dense
-reward, it breaks ties inside all-fail groups — step-0 zero-advantage
-filtering barely separates the arms (sparse 64/96 filtered, dense 78/96,
-compiler-aware 64/96) — but it performed *worse* on the actual metric:
-95 / 96 / 94 across runs, mean **95.0** vs dense's 101.0.
+reward it breaks ties inside all-fail groups — step-0 zero-advantage filtering
+barely separates the arms (sparse 64/96 filtered, dense 78/96, compiler-aware
+64/96, from the raw logs) — but its retained runs scored **95 / 96 / 94:
+7 below the retained dense run on the paired run-1 comparison (p ≈ 0.14) and
+level with SFT**. A Goodhart story fits ("later
+compiler phase" is a proxy further from tests-passing than the dense reward's
+own compile/test-fraction signal), but with one training run per arm and
+p ≈ 0.14 on the auditable data, this is an observation, not an established
+regression. See the [write-up](https://jayzenith.github.io/GLYPH/).
 
-**−6.0 valid@8 vs dense** (prompt-level paired permutation p ≈ 0.014, Welch
-p ≈ 0.012 — though it softens to p ≈ 0.09 on pooled pass@1, and a
-family-blocked sensitivity test cannot confirm it), slightly below the SFT
-baseline. Possibly
-Goodhart: "reached a later compiler phase" is a proxy further from the true
-objective (tests passing) than the dense reward's own compile/test-fraction
-signal, so optimizing it pulled the model toward churning on borrow-checker
-errors instead of working code. One coefficient, one checkpoint — not an
-ablation, so the honest claim is narrow: *this* compiler-aware shaping, at
-*this* strength, underperformed; not that compiler-aware rewards categorically
-don't work. See the [write-up](https://jayzenith.github.io/GLYPH/) for the
-full diagnosis and charts.
+**What the saved training rollouts show (direct evidence).** From the retained
+training batches (36 groups each for sparse/dense, steps 10/20/29; 142 groups
+for compiler-aware, steps 0–11): all-fail groups were 3% of sparse batches,
+22% of dense, 11% of compiler-aware — and the shaped rewards did break reward
+ties inside them (dense 7/8 all-fail groups had >1 distinct reward,
+compiler-aware 15/15). So the shaping created within-group variance where it
+applied, but all-fail groups were a small share of batches, and 25–47% of all
+groups were still dropped whole by the zero-advantage filter. Saved steps are
+a small non-random sample of training.
 
-**Where the effect lives (pooled analysis).** Pooling the 3 runs per arm gives 24
-rollouts per prompt — the highest-power test these artifacts support
-(`analysis/pooled_band_analysis.py`, reproducible from the public eval dataset).
-Arm-level, nothing moves: dense is +0.9 points of pass@1 over SFT, paired
-permutation p ≈ 0.29. But banding prompts by SFT difficulty puts the dense arm's
-movement exactly where GRPO theory predicts — the *frontier*, prompts the model
-solves sometimes (bands from one SFT run, deltas measured against the others, so
-regression-to-the-mean can't manufacture the pattern):
-
-| SFT band (solves/8) | n | Δpass@1 (dense − SFT) |
-| --- | ---: | ---: |
-| impossible (0) | 55 | −0.004 |
-| frontier (1–3) | 27 | **+0.031** |
-| frontier (4–6) | 28 | +0.011 |
-| high (7–8) | 40 | −0.007 |
-
-Never-solved prompts produce no advantage and no gradient (the same mechanism as
-the sparse flatline); near-ceiling prompts have nothing left to gain. The residual
-~+3 points on a ~55-prompt slice is an order of magnitude too small to reach
-significance at n=150 — consistent with a small real frontier effect, not proof of
-one. That is the scale requirement, quantified.
+**Where the effect might live (exploratory).** Pooling all repetitions —
+*including the aggregate-only ones* — and banding prompts by SFT difficulty
+puts the dense arm's movement on sometimes-solved prompts: +0.031 pass@1 on
+the 1–3/8 band (n=27), ~0 elsewhere. But the bootstrap 95% CI on that band is
+**[−0.023, +0.086]** — consistent with a small frontier effect *and with
+zero*. These bands group held-out eval prompts; the GRPO zero-advantage
+mechanism operates on training groups. Connecting them is a plausible
+hypothesis, not a finding (`analysis/pooled_band_analysis.py`).
 
 Artifacts: `JayZenith/SFT_HALF_A_V8` · dense adapters
 `JayZenith/RLVR_VFINAL_STEP{10,20,30}` · compiler-aware adapters
@@ -117,11 +122,33 @@ on the Hub.
   the pass@8 numbers (and the p-values) is smaller than n=150 implies.
 - **Leakage is checked, not fully ruled out.** RL training data and the eval
   set share zero exact `case_id`/`blueprint_root` overlap, and zero crate
-  source files match after normalizing away literal numbers and strings (703
-  training crates vs. 150 eval crates, full comparison). What isn't ruled out:
+  source files match after normalizing comments, whitespace, and string/numeric
+  literals (703 training crates vs. 150 eval crates,
+  `synthetic_data/audit_blueprint_similarity.py`; nearest pair: a league-table
+  tiebreak variant at 0.92 token similarity). What isn't ruled out:
   the same *logical* bug pattern (e.g. a precedence bug) appearing under
   different field/function names in both sets — a soft template overlap a
   hash can't catch, and plausible given the family concentration above.
+- **The "sandbox" is per-rollout isolation, not containment.** Each rollout
+  patches its own crate clone via path rewriting
+  (`agent_runtime/rust/runtime.py`); absolute paths, `..` traversal, and
+  symlink escapes are not blocked. A scan of all ~135k saved headline-eval
+  tool calls found no traversal, so the published numbers are unaffected —
+  but real path containment is future work, and this is not a security
+  boundary.
+- **Grading tests are model-editable.** `apply_patch` can modify the tests the
+  reward checks. Auditing all 52,696 `apply_patch` calls in the trace-retained
+  eval runs (`analysis/test_tamper_audit.py`) found exactly one counting
+  rollout that altered a test: an *SFT-baseline* rollout flipped a test
+  assertion and passed. The same prompt had two clean solves in that run, so
+  no valid@8 count changes. No counted RLVR rollout showed tampering; the
+  aggregate-only repetitions cannot be audited for this. Immutable or
+  restored-before-verification tests are future work.
+- **Provenance is partial.** The eval JSONs record no command, commit, model
+  revision, or sampling seed; the run configuration documented above is
+  reconstructed from the repo's committed commands, and anything not
+  recoverable is marked unknown in
+  [`docs/PROVENANCE.md`](docs/PROVENANCE.md).
 
 ## Design decisions that mattered
 
@@ -147,12 +174,17 @@ on the Hub.
 
 ## What this demonstrates
 
-A working, audited post-training loop — synthetic data → SFT → RLVR → pass@8 eval →
-trace-level verification — run end to end and checked against its own artifacts
-([`review/CLAIMS_AUDIT.md`](review/CLAIMS_AUDIT.md)). No reward shape significantly
-beat SFT; the movement localizes to a frontier band too thin to resolve at this
-scale. More seeds can't fix that — the noise is in the eval, not the training. A
-resolvable lift needs more frontier-band coverage, not a bigger reward coefficient.
+A working, audited post-training loop — synthetic data → SFT → RLVR → pass@8
+eval → trace-level verification — run end to end and then audited against its
+own artifacts, including adversarially. The defensible conclusion: the
+retained dense run showed a small, non-significant improvement (+7, p ≈ 0.12);
+sparse showed no clear improvement; the retained compiler-aware run scored
+level with SFT and below dense; training-seed variance was never measured
+(one run per arm), so no difference can be causally attributed to reward
+shape; and the frontier-band story is an exploratory hypothesis whose CI
+includes zero. The strongest contribution is the audited infrastructure, the
+negative-result diagnosis, and the documented verifier weaknesses
+(spec-gaming, editable tests, path rewriting).
 
 ## Hardware
 
@@ -229,9 +261,10 @@ Both arms run the **identical** command below — same base model
 (`SFT_HALF_A_V8`), same `--data`, same `--max-steps`, same hyperparameters and
 GPU layout. Only `$REWARD_FLAGS` (and `--lora-name` / `--output`, so artifacts
 don't collide) differ. Neither `train.py` nor the eval harness exposes a seed
-flag, so each arm is one training run, compared by evaluating every resulting
-adapter under the same pass@8 harness with 3 independent unseeded reruns — not
-from a single greedy number.
+flag, so each arm is one training run, compared by evaluating each adapter
+under the same pass@8 harness with repeated evaluations (no sampling seed;
+differences arise from runtime nondeterminism) — not from a single greedy
+number.
 
 ```bash
 # Arm A — generic dense:
@@ -334,9 +367,13 @@ CUDA_VISIBLE_DEVICES=0 python -m sft.eval_formal \
 
 ## Pass@8 Eval (vLLM, the headline metric)
 
-Greedy pass@1 is too noisy for a small effect; pass@8 with repeated reruns is
-the honest bar. Note the harness has no sampling-seed flag — reruns are
-independent but unseeded (vLLM nondeterminism supplies the variation).
+Greedy pass@1 is too noisy for a small effect; pass@8 with repeated
+evaluations is the honest bar. The harness exposes no sampling-seed flag, so
+repetitions all run under vLLM's default seed and are **not** independent
+seeded samples — differences come from runtime nondeterminism (batching,
+scheduling, tool timing). Config: temperature 0.8, top-p 1.0 (default),
+max 4000 new tokens, k=8. If you extend the harness, set and record an
+explicit distinct seed per repetition.
 `--max-model-len 24576` gives headroom for tool-accumulated context at T=0.8
 (16384 overflows on long recovery rollouts).
 
@@ -381,5 +418,5 @@ CUDA_VISIBLE_DEVICES=0 python -m sft.passk_scan_vllm \
 ```
 
 For replication, rerun the same command 3× with a different `--cases-root` /
-`--output` per run and compare mean valid@8 across runs (runs are unseeded;
-see the note above).
+`--output` per run and keep `--save-rollouts` — repetitions without retained
+traces cannot be audited and shouldn't carry claims (see the note above).

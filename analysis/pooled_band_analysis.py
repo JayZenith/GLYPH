@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
-"""Pooled 3-run analysis: does any RLVR arm beat SFT, and WHERE does movement live?
+"""EXPLORATORY pooled analysis: does any RLVR arm beat SFT, and where does
+movement live?
 
-Pools the three published pass@8 runs per arm (24 rollouts/prompt) from the
-public eval dataset JayZenith/Glyph-RLVR-Eval-Results, then:
+CAVEAT: this pools three eval repetitions per arm, but for SFT and dense the
+2nd/3rd repetitions exist only as per-prompt aggregate counts (raw rollout
+traces not retained) — count-auditable, not trace-auditable. Sparse and
+compiler-aware repetitions are fully trace-retained. Treat every number below
+as exploratory; headline claims rest only on the trace-retained runs (README).
 
-  1. Arm-level: paired sign-flip permutation on per-prompt solve fractions
-     (pass@1), the highest-power test the artifacts support.
-  2. Band-level: split prompts by SFT difficulty and measure the dense arm's
-     delta per band. Bands are defined by SFT run A only, and deltas measured
-     against SFT runs B+C, so regression-to-the-mean cannot manufacture the
-     pattern (banding on the same runs you measure would inflate low bands).
+  1. Arm-level: paired sign-flip permutation on per-prompt solve fractions.
+  2. Band-level: split prompts by SFT difficulty (bands from SFT run A only;
+     deltas vs SFT runs B+C, so regression-to-the-mean cannot manufacture the
+     pattern) with a bootstrap 95% CI per band. Bands group held-out EVAL
+     prompts; they do not measure RL training groups, so any link to the GRPO
+     zero-advantage mechanism is a hypothesis, not evidence.
 
 Run:  python3 analysis/pooled_band_analysis.py   (downloads via huggingface_hub)
 """
@@ -85,14 +89,24 @@ def main() -> int:
     obs, p = paired_perm(pooled["DENSE"], pooled["COMPILER"], names, 3 * K)
     print(f"  COMPILER vs DENSE: Δpass@1 = {obs:+.4f}   p = {p:.3f}")
 
-    print("\n=== where does DENSE move? bands from SFT run A; deltas vs SFT runs B+C ===")
+    print("\n=== EXPLORATORY: DENSE by band (bands from SFT run A; deltas vs SFT runs B+C) ===")
     band_ref = runs["SFT"][0]
     sft_bc = {k: runs["SFT"][1][k] + runs["SFT"][2][k] for k in names}  # /16
+    rng = random.Random(0)
     for lo, hi, label in [(0, 0, "impossible 0/8"), (1, 3, "frontier-low 1-3"),
                           (4, 6, "frontier-mid 4-6"), (7, 8, "high 7-8")]:
         ks = [k for k in names if lo <= band_ref[k] <= hi]
-        d = sum(pooled["DENSE"][k] / 24 - sft_bc[k] / 16 for k in ks) / len(ks)
-        print(f"  {label:18} n={len(ks):3}   Δpass@1 = {d:+.4f}")
+        deltas = [pooled["DENSE"][k] / 24 - sft_bc[k] / 16 for k in ks]
+        d = sum(deltas) / len(deltas)
+        # bootstrap 95% CI over prompts within the band
+        boots = sorted(
+            sum(deltas[rng.randrange(len(deltas))] for _ in deltas) / len(deltas)
+            for _ in range(10000)
+        )
+        lo95, hi95 = boots[249], boots[9749]
+        print(f"  {label:18} n={len(ks):3}   Δpass@1 = {d:+.4f}   95% CI [{lo95:+.4f}, {hi95:+.4f}]")
+    print("\nNOTE: exploratory subgroup analysis on partially trace-unauditable data;")
+    print("band-mechanism link is a hypothesis. Headline claims: trace-retained runs only.")
     return 0
 
 

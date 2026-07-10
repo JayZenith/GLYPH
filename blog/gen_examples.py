@@ -224,8 +224,11 @@ def main():
         text,
         flags=re.DOTALL,
     )
-    if new_text == text:
+    if "<!-- EXAMPLES_START -->" not in text:
         raise SystemExit("EXAMPLES_START/EXAMPLES_END markers not found in blog/index.html")
+    if new_text == text:
+        print("examples section already up to date")
+        return
     index.write_text(new_text)
     print(f"wrote {index}")
 

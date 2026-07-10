@@ -23,7 +23,9 @@ RUNS = [
 def parse(path: Path):
     text = path.read_text()
     rewards = [(int(s), float(r)) for s, r in STEP_RE.findall(text)]
-    kept = [int(k) for k in FILTER_RE.findall(text)]  # rollouts retained after filtering, per step
+    # Log line "Detected N/96 rollouts (...), enforced N" = N rollouts FILTERED
+    # (removed). Retained = 96 - N.
+    kept = [96 - int(n) for n in FILTER_RE.findall(text)]
     return rewards, kept
 
 
@@ -42,7 +44,7 @@ MAX_STEP = 11
 svg = [
     f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg" '
     f'font-family="ui-monospace, SFMono-Regular, Menlo, monospace">',
-    f'<rect x="0" y="0" width="{W}" height="{H}" fill="#0c1712" rx="8"/>',
+    f'<rect x="0" y="0" width="{W}" height="{H}" fill="#0a0a0c" rx="8"/>',
 ]
 
 
@@ -60,14 +62,14 @@ def y1_of(r):
     return p1_top + PANEL_H * (1 - frac)
 
 
-svg.append(f'<text x="{PAD_L}" y="{p1_top - 8:.1f}" font-size="11" fill="#82998d">'
+svg.append(f'<text x="{PAD_L}" y="{p1_top - 8:.1f}" font-size="11" fill="#8b9198">'
            f'mean batch reward per orchestrator step</text>')
 for gv in (r_min, 0, r_max):
     y = y1_of(gv)
     svg.append(f'<line x1="{PAD_L}" y1="{y:.1f}" x2="{W - PAD_R}" y2="{y:.1f}" '
-               f'stroke="#1c2b24" stroke-width="1"/>')
+               f'stroke="#1e1f24" stroke-width="1"/>')
     svg.append(f'<text x="{PAD_L - 6}" y="{y + 3:.1f}" text-anchor="end" '
-               f'font-size="9.5" fill="#4d6358">{gv:g}</text>')
+               f'font-size="9.5" fill="#5a6066">{gv:g}</text>')
 
 for name, path, color in RUNS:
     rewards, _ = parse(path)
@@ -85,14 +87,14 @@ def y2_of(kept_frac):
     return p2_top + PANEL_H * (1 - kept_frac)
 
 
-svg.append(f'<text x="{PAD_L}" y="{p2_top - 8:.1f}" font-size="11" fill="#82998d">'
+svg.append(f'<text x="{PAD_L}" y="{p2_top - 8:.1f}" font-size="11" fill="#8b9198">'
            f'rollouts retained after zero-advantage filtering (of 96)</text>')
 for gv in (0, 50, 100):
     y = y2_of(gv / 100)
     svg.append(f'<line x1="{PAD_L}" y1="{y:.1f}" x2="{W - PAD_R}" y2="{y:.1f}" '
-               f'stroke="#1c2b24" stroke-width="1"/>')
+               f'stroke="#1e1f24" stroke-width="1"/>')
     svg.append(f'<text x="{PAD_L - 6}" y="{y + 3:.1f}" text-anchor="end" '
-               f'font-size="9.5" fill="#4d6358">{gv}%</text>')
+               f'font-size="9.5" fill="#5a6066">{gv}%</text>')
 
 for name, path, color in RUNS:
     _, kept = parse(path)
@@ -106,9 +108,9 @@ for name, path, color in RUNS:
 # x-axis labels (shared)
 for s in range(0, MAX_STEP + 1):
     svg.append(f'<text x="{x_of(s):.1f}" y="{H - PAD_B + 14:.1f}" text-anchor="middle" '
-               f'font-size="9" fill="#4d6358">{s}</text>')
+               f'font-size="9" fill="#5a6066">{s}</text>')
 svg.append(f'<text x="{W / 2:.1f}" y="{H - 6:.1f}" text-anchor="middle" '
-           f'font-size="10" fill="#82998d">orchestrator step</text>')
+           f'font-size="10" fill="#8b9198">orchestrator step</text>')
 
 # legend
 lx = W - PAD_R - 150
@@ -116,7 +118,7 @@ ly = PAD_T + 4
 for i, (name, _, color) in enumerate(RUNS):
     yy = ly + i * 14
     svg.append(f'<rect x="{lx}" y="{yy - 8}" width="10" height="10" fill="{color}"/>')
-    svg.append(f'<text x="{lx + 14}" y="{yy + 1}" font-size="10" fill="#bcd6c5">{name}</text>')
+    svg.append(f'<text x="{lx + 14}" y="{yy + 1}" font-size="10" fill="#c6cad0">{name}</text>')
 
 svg.append("</svg>")
 

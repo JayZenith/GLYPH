@@ -1,5 +1,14 @@
 # GLYPH Claims Audit — README.md + blog/index.html (published state)
 
+> **ERRATUM (2026-07-10, superseded in part by `docs/AUDIT_2026-07.md`):** a
+> second, adversarial audit found errors in this document's own corrections:
+> the "25–83% per batch" range it proposed is wrong (raw log: **8–67%**); the
+> compiler-vs-dense "−6.0, p ≈ 0.014" verdict depends on aggregate-only
+> repetitions whose traces were never retained and does not survive on
+> auditable data (retained-run p ≈ 0.14); and headline claims are now based
+> only on trace-retained runs (see `docs/PROVENANCE.md`). Kept as the
+> historical record of the first audit.
+
 Forensic audit, 2026-07-01. Every empirical claim traced to artifacts. Verdicts:
 **V** verified · **U** unsupported (no artifact proves it) · **C** contradicted ·
 **A** ambiguous (artifact exists but metadata/method/attribution unclear).
