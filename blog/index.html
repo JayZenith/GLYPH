@@ -1254,7 +1254,7 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
       teach a model to invent tool outputs; truncated traces teach it truncated protocol.
       Loss is assistant-only, and tokenization asserts every trace fits in context.</li>
   </ul>
-  <p class="src">evidence: synthetic_data/materialize_specs.py (spec validation + real-cargo gating; recover families must fail then pass) · masking: sft/data.py:73 · no-truncation assert: sft/data.py:53 · renderer/template byte parity asserted: assert_glyph_template_parity (environments/glyph/glyph/agent_runtime/chatml.py:98, exercised in reward_golden_tests.py)</p>
+  <p class="src">evidence: synthetic_data/materialize_specs.py (spec validation + real-cargo gating; recover families must fail then pass) · masking: sft/data.py:73 · no-truncation assert: sft/data.py:53 · renderer/template byte parity asserted: assert_glyph_template_parity (environments/glyph/glyph/agent_runtime/chatml.py:98, exercised in rl/tests/test_reward_golden.py)</p>
 
   <h2>4 · RLVR: the sparse reward was flat</h2>
   <p>
@@ -1532,7 +1532,7 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
     documented verifier weaknesses — spec-gaming, editable tests, path rewriting — found
     by reading the model's actual work.
   </p>
-  <p class="src">audits: docs/AUDIT_2026-07.md · review/CLAIMS_AUDIT.md (historical, with erratum) · provenance: docs/PROVENANCE.md · experiment history: docs/EXPERIMENT_HISTORY.md</p>
+  <p class="src">audits: docs/AUDIT_2026-07.md · docs/CLAIMS_AUDIT.md (historical, with erratum) · provenance: docs/PROVENANCE.md · experiment history: docs/EXPERIMENT_HISTORY.md</p>
 
   <p class="meta">Repro commands: github.com/JayZenith/GLYPH (README)</p>
 </main>

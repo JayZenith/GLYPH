@@ -312,3 +312,14 @@ Files:
 - sft/evals/generation.py: loop that executes model CALLs and injects real
   RESULTs.
 - agent_runtime/rust/runtime.py: shared tool execution/path rewrite helpers.
+
+
+## 2026-07-11 cleanup
+
+Raw batch outputs (`batch_*/`), materialized family intermediates
+(`*_families/`), the superseded `eval_heldout_100/`, and era-1/2 relic files
+were removed from the working tree for focused review. They remain in git
+history (pre-cleanup tree: commit c69767e5). The kept chain is:
+`materialize_specs.py` + `blueprints/` + final datasets
+(`signal_v3*.jsonl`, `rl_prompts_signal_v3_pool_b*.jsonl`,
+`eval_heldout_150.jsonl`).

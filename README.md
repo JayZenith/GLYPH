@@ -12,7 +12,7 @@ Honest experiment history (every era, including invalidated runs):
 [`docs/EXPERIMENT_HISTORY.md`](docs/EXPERIMENT_HISTORY.md). Adversarial audit
 + corrections: [`docs/AUDIT_2026-07.md`](docs/AUDIT_2026-07.md). Provenance:
 [`docs/PROVENANCE.md`](docs/PROVENANCE.md). First claims audit (historical):
-[`review/CLAIMS_AUDIT.md`](review/CLAIMS_AUDIT.md).
+[`docs/CLAIMS_AUDIT.md`](docs/CLAIMS_AUDIT.md).
 
 
 Distributed as a standalone [`verifiers`](https://github.com/PrimeIntellect-ai/verifiers)

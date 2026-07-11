@@ -2,7 +2,7 @@
 
 Written 2026-07-03 by reconstructing from surviving artifacts (git history, archived
 run configs/logs, `ARCHIVE_README.md`, `synthetic_data/data_lineage.md`,
-`review/CLAIMS_AUDIT.md`). This project was real, messy research: many runs were
+`docs/CLAIMS_AUDIT.md`). This project was real, messy research: many runs were
 throwaway, several were invalidated by infra bugs, and some early documentation
 contained claims the artifacts later contradicted (see the claims audit). This file
 is the single source of truth for *what happened when*. Where a run's purpose is not
@@ -87,7 +87,7 @@ checkpoint instead of the served broadcast looked like model degradation).
 
 ## Era 4 — audit and corrections (Jun 30 – Jul 2)
 
-- Claims audit (`review/CLAIMS_AUDIT.md`): 31 claims traced to artifacts; 5
+- Claims audit (`docs/CLAIMS_AUDIT.md`): 31 claims traced to artifacts; 5
   contradicted (binary reward, 96/96 filtering, 0/96-vs-32/96, "3-seed", "unhackable"),
   5 unsupported (incl. causal attribution), rest verified or ambiguous. Several
   overclaims were introduced by coding agents in the Jun-28/30 doc rewrites
