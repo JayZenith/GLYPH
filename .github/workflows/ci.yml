@@ -17,8 +17,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bubblewrap
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
-      - run: pip install pytest jinja2 pyyaml
+      - run: pip install pytest jinja2 pyyaml openai textual
       - run: pytest -q
         env:
           GLYPH_REQUIRE_BWRAP_TEST: "1"
-      - run: python -m py_compile agent_runtime/rust/*.py rl/environment.py rl/task_trace.py analysis/*.py
+      - run: python -m py_compile agent_runtime/rust/*.py demo_tui/*.py rl/environment.py rl/task_trace.py analysis/*.py

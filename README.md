@@ -164,6 +164,20 @@ escape hatch is `sandbox_backend="host", allow_unsafe_host_execution=True`
 (CLI: `--sandbox-backend host --allow-unsafe-host-execution`). Do not use that
 pair on a workstation: model-edited Rust is arbitrary code.
 
+## Interactive demo
+
+`demo_tui/` connects to a remote vLLM instance while running the same ChatML
+and hardened Rust tool runtime locally against a disposable crate copy:
+
+```bash
+python -m pip install -r requirements-demo.txt
+python -m demo_tui --base-url http://127.0.0.1:8000/v1 \
+  --model glyph --project synthetic_data/blueprints/<case_id>
+```
+
+See [`demo_tui/README.md`](demo_tui/README.md) for the vLLM command and safety
+requirements.
+
 ## Hardware
 
 Run on vast.ai (NVIDIA RTX PRO 6000 Blackwell, 96 GB each):
