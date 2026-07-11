@@ -89,22 +89,23 @@ def main() -> int:
     obs, p = paired_perm(pooled["DENSE"], pooled["COMPILER"], names, 3 * K)
     print(f"  COMPILER vs DENSE: Δpass@1 = {obs:+.4f}   p = {p:.3f}")
 
-    print("\n=== EXPLORATORY: DENSE by band (bands from SFT run A; deltas vs SFT runs B+C) ===")
     band_ref = runs["SFT"][0]
     sft_bc = {k: runs["SFT"][1][k] + runs["SFT"][2][k] for k in names}  # /16
     rng = random.Random(0)
-    for lo, hi, label in [(0, 0, "impossible 0/8"), (1, 3, "frontier-low 1-3"),
-                          (4, 6, "frontier-mid 4-6"), (7, 8, "high 7-8")]:
-        ks = [k for k in names if lo <= band_ref[k] <= hi]
-        deltas = [pooled["DENSE"][k] / 24 - sft_bc[k] / 16 for k in ks]
-        d = sum(deltas) / len(deltas)
-        # bootstrap 95% CI over prompts within the band
-        boots = sorted(
-            sum(deltas[rng.randrange(len(deltas))] for _ in deltas) / len(deltas)
-            for _ in range(10000)
-        )
-        lo95, hi95 = boots[249], boots[9749]
-        print(f"  {label:18} n={len(ks):3}   Δpass@1 = {d:+.4f}   95% CI [{lo95:+.4f}, {hi95:+.4f}]")
+    for arm in ["SPARSE", "DENSE", "COMPILER"]:
+        print(f"\n=== EXPLORATORY: {arm} by band (bands from SFT run A; deltas vs SFT runs B+C) ===")
+        for lo, hi, label in [(0, 0, "impossible 0/8"), (1, 3, "frontier-low 1-3"),
+                              (4, 6, "frontier-mid 4-6"), (7, 8, "high 7-8")]:
+            ks = [k for k in names if lo <= band_ref[k] <= hi]
+            deltas = [pooled[arm][k] / 24 - sft_bc[k] / 16 for k in ks]
+            d = sum(deltas) / len(deltas)
+            # bootstrap 95% CI over prompts within the band
+            boots = sorted(
+                sum(deltas[rng.randrange(len(deltas))] for _ in deltas) / len(deltas)
+                for _ in range(10000)
+            )
+            lo95, hi95 = boots[249], boots[9749]
+            print(f"  {label:18} n={len(ks):3}   Δpass@1 = {d:+.4f}   95% CI [{lo95:+.4f}, {hi95:+.4f}]")
     print("\nNOTE: exploratory subgroup analysis on partially trace-unauditable data;")
     print("band-mechanism link is a hypothesis. Headline claims: trace-retained runs only.")
     return 0

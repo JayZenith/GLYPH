@@ -57,3 +57,4 @@ archive/
 new_results/
 environments/glyph/.prime/
 GLYPH_V1_ARTIFACTS/
+# NOTE: specific evidence files under glyph_results/ are force-tracked (git add -f)

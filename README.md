@@ -95,13 +95,24 @@ groups were still dropped whole by the zero-advantage filter. Saved steps are
 a small non-random sample of training.
 
 **Where the effect might live (exploratory).** Pooling all repetitions —
-*including the aggregate-only ones* — and banding prompts by SFT difficulty
-puts the dense arm's movement on sometimes-solved prompts: +0.031 pass@1 on
-the 1–3/8 band (n=27), ~0 elsewhere. But the bootstrap 95% CI on that band is
-**[−0.023, +0.086]** — consistent with a small frontier effect *and with
-zero*. These bands group held-out eval prompts; the GRPO zero-advantage
-mechanism operates on training groups. Connecting them is a plausible
-hypothesis, not a finding (`analysis/pooled_band_analysis.py`).
+*including the aggregate-only ones* — and banding prompts by SFT difficulty,
+Δpass@1 vs SFT for every arm (`analysis/pooled_band_analysis.py`):
+
+| band (SFT solves/8) | n | sparse | dense | compiler |
+| --- | ---: | ---: | ---: | ---: |
+| never solved (0) | 55 | −0.015* | −0.004 | −0.023* |
+| sometimes (1–3) | 27 | +0.003 | **+0.031** | +0.022 |
+| sometimes (4–6) | 28 | −0.039 | +0.011 | −0.004 |
+| usually (7–8) | 40 | −0.008 | −0.007 | −0.013 |
+
+The only positive movement anywhere is the *shaped* rewards on
+sometimes-solved prompts — where the gradient mechanism would put it — and
+sparse shows none, which is the pattern the theory predicts. But every
+positive band's bootstrap 95% CI includes zero (dense 1–3: [−0.023, +0.086]),
+and the only CIs excluding zero (*) are small negatives on never-solved
+prompts, fragile under 12 comparisons. These bands group held-out eval
+prompts; the GRPO mechanism operates on training groups. The connection stays
+a plausible hypothesis, not a finding.
 
 Artifacts: `JayZenith/SFT_HALF_A_V8` · dense adapters
 `JayZenith/RLVR_VFINAL_STEP{10,20,30}` · compiler-aware adapters
@@ -329,41 +340,6 @@ python rl/scripts/export_prime_lora_adapter.py \
 
 The export contains `adapter_config.json`, `adapter_model.safetensors`, and
 `prime_lora_adapter_export.json`.
-
-## Strict Pass@1 Eval (greedy)
-
-SFT base:
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m sft.eval_formal \
-  --sft-model JayZenith/SFT_HALF_A_V8 \
-  --train-data synthetic_data/signal_v3_sft_half_a.jsonl \
-  --prompt-file sft/evals/eval_prompts_heldout_150.yaml \
-  --prompt-section post_eval_heldout_150 \
-  --cases-root runs/heldout150_sft_half_a_v8 \
-  --output results/SFT_HALF_A_V8/eval_formal_heldout_150.json \
-  --max-new-tokens 4000 \
-  --max-tool-rounds 20 \
-  --prompt-batch-size 8 \
-  --tool-workers 16
-```
-
-RL adapter — add `--sft-adapter` (loads the LoRA from HF onto the base):
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m sft.eval_formal \
-  --sft-model JayZenith/SFT_HALF_A_V8 \
-  --sft-adapter JayZenith/RLVR_VFINAL_STEP10 \
-  --train-data synthetic_data/signal_v3_sft_half_a.jsonl \
-  --prompt-file sft/evals/eval_prompts_heldout_150.yaml \
-  --prompt-section post_eval_heldout_150 \
-  --cases-root runs/heldout150_rlvr_vfinal_step10 \
-  --output results/RLVR_VFINAL_STEP10/eval_formal_heldout_150.json \
-  --max-new-tokens 4000 \
-  --max-tool-rounds 20 \
-  --prompt-batch-size 8 \
-  --tool-workers 16
-```
 
 ## Pass@8 Eval (vLLM, the headline metric)
 

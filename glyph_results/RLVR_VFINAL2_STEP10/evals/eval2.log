@@ -1,0 +1,621 @@
+===== SEED a -> results/RLVR_VFINAL2_STEP10/passk8_heldout150.json =====
+150 prompts remaining (150 total), k=8 @ T=0.8
+WARNING 06-30 01:28:42 [config.py:71] Support for Transformers v4 is deprecated. The Transformers v4 codepath will become unmaintained in vLLM v0.22.0 and will be removed in vLLM v0.24.0. Please upgrade to Transformers v5: pip install --upgrade transformers
+Fetching 4 files:   0%|          | 0/4 [00:00<?, ?it/s]Fetching 4 files:  25%|██▌       | 1/4 [00:00<00:01,  2.49it/s]Fetching 4 files:  75%|███████▌  | 3/4 [00:05<00:01,  1.94s/it]Fetching 4 files: 100%|██████████| 4/4 [00:05<00:00,  1.34s/it]
+INFO 06-30 01:28:53 [api_utils.py:273] non-default args: {'trust_remote_code': True, 'dtype': 'bfloat16', 'max_model_len': 24576, 'gpu_memory_utilization': 0.9, 'disable_log_stats': True, 'enable_lora': True, 'max_lora_rank': 64, 'model': 'JayZenith/SFT_HALF_A_V8'}
+INFO 06-30 01:29:04 [model.py:611] Resolved architecture: Qwen3ForCausalLM
+INFO 06-30 01:29:04 [model.py:1745] Using max model len 24576
+INFO 06-30 01:29:04 [scheduler.py:239] Chunked prefill is enabled with max_num_batched_tokens=16384.
+INFO 06-30 01:29:04 [vllm.py:999] Asynchronous scheduling is enabled.
+INFO 06-30 01:29:04 [kernel.py:270] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+(EngineCore pid=3483) INFO 06-30 01:29:07 [core.py:113] Initializing a V1 LLM engine (v0.23.0) with config: model='JayZenith/SFT_HALF_A_V8', speculative_config=None, tokenizer='JayZenith/SFT_HALF_A_V8', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.bfloat16, max_seq_len=24576, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, decode_context_parallel_size=1, dcp_comm_backend=ag_rs, disable_custom_all_reduce=False, quantization=None, quantization_config=None, enforce_eager=False, enable_return_routed_experts=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False), seed=0, served_model_name=JayZenith/SFT_HALF_A_V8, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'ir_enable_torch_wrap': True, 'splitting_ops': ['vllm::unified_attention_with_output', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::plamo2_mamba_mixer', 'vllm::qwen_gdn_attention_core', 'vllm::gdn_attention_core_xpu', 'vllm::olmo_hybrid_gdn_full_forward', 'vllm::kda_attention', 'vllm::sparse_attn_indexer', 'vllm::rocm_aiter_sparse_attn_indexer', 'vllm::deepseek_v4_attention', 'vllm::unified_kv_cache_update', 'vllm::unified_mla_kv_cache_update'], 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': [], 'compile_ranges_endpoints': [16384], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'size_asserts': False, 'alignment_asserts': False, 'scalar_asserts': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256, 272, 288, 304, 320, 336, 352, 368, 384, 400, 416, 432, 448, 464, 480, 496, 512], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': False, 'fuse_act_quant': False, 'fuse_attn_quant': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False, 'fuse_rope_kvcache_cat_mla': False, 'fuse_act_padding': False}, 'max_cudagraph_capture_size': 512, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': False, 'static_all_moe_layers': []}, kernel_config=KernelConfig(ir_op_priority=IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native']), enable_flashinfer_autotune=True, moe_backend='auto', linear_backend='auto')
+(EngineCore pid=3483) INFO 06-30 01:29:08 [parallel_state.py:1568] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://172.17.0.2:41253 backend=nccl
+(EngineCore pid=3483) INFO 06-30 01:29:08 [parallel_state.py:1903] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, EP rank N/A, EPLB rank N/A
+(EngineCore pid=3483) INFO 06-30 01:29:08 [gpu_worker.py:303] Using V2 Model Runner
+(EngineCore pid=3483) INFO 06-30 01:29:10 [topk_topp_sampler.py:55] Using FlashInfer for top-p & top-k sampling.
+(EngineCore pid=3483) INFO 06-30 01:29:11 [model_runner.py:298] Loading model from scratch...
+(EngineCore pid=3483) INFO 06-30 01:29:11 [cuda.py:378] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION'].
+(EngineCore pid=3483) INFO 06-30 01:29:11 [flash_attn.py:636] Using FlashAttention version 2
+(EngineCore pid=3483) <frozen importlib._bootstrap_external>:1301: FutureWarning: The cuda.cudart module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.runtime module instead.
+(EngineCore pid=3483) <frozen importlib._bootstrap_external>:1301: FutureWarning: The cuda.nvrtc module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.nvrtc module instead.
+(EngineCore pid=3483) INFO 06-30 01:29:24 [weight_utils.py:603] Time spent downloading weights for JayZenith/SFT_HALF_A_V8: 11.093380 seconds
+(EngineCore pid=3483) INFO 06-30 01:29:24 [weight_utils.py:922] Filesystem type for checkpoints: OVERLAY. Checkpoint size: 7.49 GiB. Available RAM: 237.74 GiB.
+(EngineCore pid=3483) INFO 06-30 01:29:24 [weight_utils.py:945] Auto-prefetch is disabled because the filesystem (OVERLAY) is not a recognized network FS (NFS/Lustre). If you want to force prefetching, start vLLM with --safetensors-load-strategy=prefetch.
+(EngineCore pid=3483) Loading safetensors checkpoint shards:   0% Completed | 0/2 [00:00<?, ?it/s]
+(EngineCore pid=3483) Loading safetensors checkpoint shards:  50% Completed | 1/2 [00:00<00:00,  1.92it/s]
+(EngineCore pid=3483) Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:00<00:00,  2.30it/s]
+(EngineCore pid=3483) Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:00<00:00,  2.24it/s]
+(EngineCore pid=3483) 
+(EngineCore pid=3483) INFO 06-30 01:29:25 [default_loader.py:397] Loading weights took 0.91 seconds
+(EngineCore pid=3483) INFO 06-30 01:29:25 [punica_selector.py:20] Using PunicaWrapperGPU.
+(EngineCore pid=3483) INFO 06-30 01:29:25 [model_runner.py:319] Model loading took 7.86 GiB and 15.177562 seconds
+(EngineCore pid=3483) INFO 06-30 01:29:38 [backends.py:1089] Using cache directory: /root/.cache/vllm/torch_compile_cache/3b3d0bb3c8/rank_0_0/backbone for vLLM's torch.compile
+(EngineCore pid=3483) INFO 06-30 01:29:38 [backends.py:1148] Dynamo bytecode transform time: 12.42 s
+(EngineCore pid=3483) INFO 06-30 01:29:49 [backends.py:378] Cache the graph of compile range (1, 16384) for later use
+(EngineCore pid=3483) INFO 06-30 01:29:57 [backends.py:393] Compiling a graph for compile range (1, 16384) takes 18.47 s
+(EngineCore pid=3483) INFO 06-30 01:30:05 [decorators.py:708] saved AOT compiled function to /root/.cache/vllm/torch_compile_cache/torch_aot_compile/cfec227cdc572235a1cbfad673f56ccdab7db38e1e346bd456f33745564290c1/rank_0_0/model
+(EngineCore pid=3483) INFO 06-30 01:30:05 [monitor.py:53] torch.compile took 38.73 s in total
+(EngineCore pid=3483) WARNING 06-30 01:30:05 [utils.py:279] Using default LoRA kernel configs
+(EngineCore pid=3483) INFO 06-30 01:30:08 [monitor.py:81] Initial profiling/warmup run took 3.37 s
+(EngineCore pid=3483) INFO 06-30 01:30:10 [gpu_worker.py:480] Available KV cache memory: 76.22 GiB
+(EngineCore pid=3483) INFO 06-30 01:30:10 [kv_cache_utils.py:1744] GPU KV cache size: 555,024 tokens
+(EngineCore pid=3483) INFO 06-30 01:30:10 [kv_cache_utils.py:1745] Maximum concurrency for 24,576 tokens per request: 22.58x
+(EngineCore pid=3483) 2026-06-30 01:30:10,510 - INFO - autotuner.py:622 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(EngineCore pid=3483) 2026-06-30 01:30:57,839 - INFO - autotuner.py:641 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(EngineCore pid=3483) Capturing CUDA graphs (PIECEWISE):   0%|          | 0/51 [00:00<?, ?it/s]Capturing CUDA graphs (PIECEWISE):   2%|▏         | 1/51 [00:00<00:05,  9.58it/s]Capturing CUDA graphs (PIECEWISE):   6%|▌         | 3/51 [00:00<00:04,  9.94it/s]Capturing CUDA graphs (PIECEWISE):  10%|▉         | 5/51 [00:00<00:04,  9.74it/s]Capturing CUDA graphs (PIECEWISE):  14%|█▎        | 7/51 [00:00<00:04,  9.93it/s]Capturing CUDA graphs (PIECEWISE):  18%|█▊        | 9/51 [00:00<00:04, 10.02it/s]Capturing CUDA graphs (PIECEWISE):  22%|██▏       | 11/51 [00:01<00:03, 10.08it/s]Capturing CUDA graphs (PIECEWISE):  25%|██▌       | 13/51 [00:01<00:03, 10.15it/s]Capturing CUDA graphs (PIECEWISE):  29%|██▉       | 15/51 [00:01<00:03, 10.18it/s]Capturing CUDA graphs (PIECEWISE):  33%|███▎      | 17/51 [00:01<00:03, 10.20it/s]Capturing CUDA graphs (PIECEWISE):  37%|███▋      | 19/51 [00:03<00:13,  2.35it/s]Capturing CUDA graphs (PIECEWISE):  41%|████      | 21/51 [00:04<00:09,  3.08it/s]Capturing CUDA graphs (PIECEWISE):  45%|████▌     | 23/51 [00:04<00:07,  3.91it/s]Capturing CUDA graphs (PIECEWISE):  49%|████▉     | 25/51 [00:04<00:05,  4.81it/s]Capturing CUDA graphs (PIECEWISE):  53%|█████▎    | 27/51 [00:04<00:04,  5.73it/s]Capturing CUDA graphs (PIECEWISE):  57%|█████▋    | 29/51 [00:04<00:03,  6.60it/s]Capturing CUDA graphs (PIECEWISE):  61%|██████    | 31/51 [00:05<00:02,  7.38it/s]Capturing CUDA graphs (PIECEWISE):  63%|██████▎   | 32/51 [00:05<00:02,  7.62it/s]Capturing CUDA graphs (PIECEWISE):  67%|██████▋   | 34/51 [00:06<00:05,  3.13it/s]Capturing CUDA graphs (PIECEWISE):  69%|██████▊   | 35/51 [00:07<00:08,  1.97it/s]Capturing CUDA graphs (PIECEWISE):  73%|███████▎  | 37/51 [00:08<00:05,  2.76it/s]Capturing CUDA graphs (PIECEWISE):  76%|███████▋  | 39/51 [00:08<00:03,  3.67it/s]Capturing CUDA graphs (PIECEWISE):  80%|████████  | 41/51 [00:08<00:02,  4.63it/s]Capturing CUDA graphs (PIECEWISE):  84%|████████▍ | 43/51 [00:08<00:01,  5.60it/s]Capturing CUDA graphs (PIECEWISE):  86%|████████▋ | 44/51 [00:08<00:01,  6.09it/s]Capturing CUDA graphs (PIECEWISE):  90%|█████████ | 46/51 [00:09<00:00,  7.06it/s]Capturing CUDA graphs (PIECEWISE):  94%|█████████▍| 48/51 [00:09<00:00,  7.91it/s]Capturing CUDA graphs (PIECEWISE):  98%|█████████▊| 50/51 [00:09<00:00,  8.46it/s]Capturing CUDA graphs (PIECEWISE): 100%|██████████| 51/51 [00:13<00:00,  1.24it/s]Capturing CUDA graphs (PIECEWISE): 100%|██████████| 51/51 [00:13<00:00,  3.85it/s]
+(EngineCore pid=3483) Capturing CUDA graphs (FULL):   0%|          | 0/51 [00:00<?, ?it/s]Capturing CUDA graphs (FULL):   2%|▏         | 1/51 [01:20<1:06:50, 80.22s/it]Capturing CUDA graphs (FULL):   4%|▍         | 2/51 [01:20<27:01, 33.09s/it]  Capturing CUDA graphs (FULL):   6%|▌         | 3/51 [01:20<14:25, 18.03s/it]Capturing CUDA graphs (FULL):   8%|▊         | 4/51 [01:20<08:34, 10.95s/it]Capturing CUDA graphs (FULL):  10%|▉         | 5/51 [01:20<05:23,  7.04s/it]Capturing CUDA graphs (FULL):  12%|█▏        | 6/51 [01:20<03:30,  4.68s/it]Capturing CUDA graphs (FULL):  14%|█▎        | 7/51 [01:20<02:20,  3.18s/it]Capturing CUDA graphs (FULL):  16%|█▌        | 8/51 [01:20<01:34,  2.20s/it]Capturing CUDA graphs (FULL):  18%|█▊        | 9/51 [01:21<01:04,  1.55s/it]Capturing CUDA graphs (FULL):  20%|█▉        | 10/51 [01:21<00:45,  1.10s/it]Capturing CUDA graphs (FULL):  22%|██▏       | 11/51 [01:21<00:31,  1.26it/s]Capturing CUDA graphs (FULL):  24%|██▎       | 12/51 [01:21<00:22,  1.71it/s]Capturing CUDA graphs (FULL):  25%|██▌       | 13/51 [01:21<00:16,  2.29it/s]Capturing CUDA graphs (FULL):  27%|██▋       | 14/51 [01:21<00:12,  2.98it/s]Capturing CUDA graphs (FULL):  29%|██▉       | 15/51 [01:21<00:09,  3.78it/s]Capturing CUDA graphs (FULL):  31%|███▏      | 16/51 [01:21<00:07,  4.64it/s]Capturing CUDA graphs (FULL):  33%|███▎      | 17/51 [01:21<00:06,  5.53it/s]Capturing CUDA graphs (FULL):  37%|███▋      | 19/51 [01:22<00:04,  6.98it/s]Capturing CUDA graphs (FULL):  39%|███▉      | 20/51 [01:22<00:04,  7.53it/s]Capturing CUDA graphs (FULL):  43%|████▎     | 22/51 [01:22<00:03,  8.41it/s]Capturing CUDA graphs (FULL):  47%|████▋     | 24/51 [01:22<00:03,  8.93it/s]Capturing CUDA graphs (FULL):  49%|████▉     | 25/51 [01:22<00:02,  9.13it/s]Capturing CUDA graphs (FULL):  51%|█████     | 26/51 [01:22<00:02,  9.31it/s]Capturing CUDA graphs (FULL):  53%|█████▎    | 27/51 [01:22<00:02,  9.42it/s]Capturing CUDA graphs (FULL):  55%|█████▍    | 28/51 [01:22<00:02,  9.53it/s]Capturing CUDA graphs (FULL):  59%|█████▉    | 30/51 [01:23<00:02,  9.74it/s]Capturing CUDA graphs (FULL):  61%|██████    | 31/51 [01:23<00:02,  9.78it/s]Capturing CUDA graphs (FULL):  65%|██████▍   | 33/51 [01:23<00:01,  9.87it/s]Capturing CUDA graphs (FULL):  67%|██████▋   | 34/51 [01:23<00:01,  9.89it/s]Capturing CUDA graphs (FULL):  69%|██████▊   | 35/51 [01:23<00:01,  9.88it/s]Capturing CUDA graphs (FULL):  71%|███████   | 36/51 [01:23<00:01,  9.89it/s]Capturing CUDA graphs (FULL):  75%|███████▍  | 38/51 [01:23<00:01,  9.98it/s]Capturing CUDA graphs (FULL):  76%|███████▋  | 39/51 [01:24<00:01,  9.97it/s]Capturing CUDA graphs (FULL):  80%|████████  | 41/51 [01:24<00:00, 10.01it/s]Capturing CUDA graphs (FULL):  84%|████████▍ | 43/51 [01:24<00:00, 10.04it/s]Capturing CUDA graphs (FULL):  88%|████████▊ | 45/51 [01:24<00:00, 10.06it/s]Capturing CUDA graphs (FULL):  92%|█████████▏| 47/51 [01:24<00:00, 10.09it/s]Capturing CUDA graphs (FULL):  96%|█████████▌| 49/51 [01:25<00:00, 10.14it/s]Capturing CUDA graphs (FULL): 100%|██████████| 51/51 [01:25<00:00, 10.20it/s]Capturing CUDA graphs (FULL): 100%|██████████| 51/51 [01:25<00:00,  1.67s/it]
+(EngineCore pid=3483) INFO 06-30 01:32:36 [model_runner.py:701] Graph capturing finished in 99 secs, took 0.66 GiB
+(EngineCore pid=3483) INFO 06-30 01:34:04 [jit_monitor.py:54] Kernel JIT monitor activated — Triton JIT compilations during inference will be logged as warnings.
+(EngineCore pid=3483) INFO 06-30 01:34:05 [core.py:306] init engine (profile, create kv cache, warmup model) took 279.11 s (compilation: 38.73 s)
+(EngineCore pid=3483) INFO 06-30 01:34:05 [kernel.py:270] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+WARNING 06-30 01:34:05 [input_processor.py:157] vLLM has deprecated support for supporting different tokenizers for different LoRAs. By default, vLLM uses base model's tokenizer. If you are using a LoRA with its own tokenizer, consider specifying `--tokenizer [lora_path]` to use the LoRA tokenizer.
+[1/150] eval100_045_patch_test_recover_011_daily_sales_region_summary_recovery -> cargo 0/8, valid 0/8 capability-gap
+[2/150] eval100_013_patch_test_pass_014_dispatch_policy_match_order -> cargo 3/8, valid 2/8 rlvr-target
+[3/150] eval100_074_patch_run_recover_010_league_table_sort_tiebreak_recover -> cargo 8/8, valid 8/8 solved
+[4/150] eval100_009_patch_test_pass_010_leaderboard_rank_tiebreak_name_order -> cargo 8/8, valid 8/8 solved
+[5/150] eval100_016_patch_test_pass_017_key_value_required_equals_validation -> cargo 8/8, valid 8/8 solved
+[6/150] eval100_097_run_only_003_department_expense_summary_report -> cargo 8/8, valid 8/8 solved
+[7/150] eval100_040_patch_test_recover_006_route_action_enum_branch_recovery -> cargo 0/8, valid 0/8 capability-gap
+[8/150] eval100_044_patch_test_recover_010_rank_players_dense_tiebreak_recover -> cargo 2/8, valid 2/8 rlvr-target
+[9/150] eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix -> cargo 0/8, valid 0/8 capability-gap
+[10/150] eval100_006_patch_test_pass_007_layered_profile_override_precedence -> cargo 6/8, valid 6/8 rlvr-target
+[11/150] eval100_011_patch_test_pass_012_ticket_lifecycle_reopen_transition_fix -> cargo 8/8, valid 8/8 solved
+[12/150] eval100_093_test_only_004_account_freeze_reopen_transitions -> cargo 8/8, valid 8/8 solved
+[13/150] eval100_004_patch_test_pass_005_collect_even_name_lengths_fix -> cargo 8/8, valid 8/8 solved
+[14/150] eval100_066_patch_run_recover_002_leaderboard_multi_tiebreak_recovery -> cargo 3/8, valid 3/8 rlvr-target
+[15/150] eval100_087_patch_run_recover_023_layered_config_merge_precedence_23 -> cargo 5/8, valid 5/8 rlvr-target
+[16/150] eval100_076_patch_run_recover_012_ticket_state_recovery_summary -> cargo 8/8, valid 8/8 solved
+[17/150] eval100_085_patch_run_recover_021_log_window_filter_map_recover -> cargo 1/8, valid 1/8 rlvr-target
+[18/150] eval100_000_patch_test_pass_001_validate_record_missing_score_check -> cargo 8/8, valid 8/8 solved
+[19/150] eval100_079_patch_run_recover_015_layered_config_merge_precedence_report -> cargo 8/8, valid 8/8 solved
+[20/150] eval100_035_patch_test_recover_001_record_line_parse_validate_recover -> cargo 0/8, valid 0/8 capability-gap
+[21/150] eval100_037_patch_test_recover_003_weekly_region_summary_recover -> cargo 1/8, valid 1/8 rlvr-target
+[22/150] eval100_090_test_only_001_test_only_record_line_parsing_validation -> cargo 8/8, valid 8/8 solved
+[23/150] eval100_042_patch_test_recover_008_booking_conflict_adjacent_and_contained -> cargo 8/8, valid 8/8 solved
+[24/150] eval100_052_patch_test_recover_018_rank_players_multi_tiebreak_recover -> cargo 7/8, valid 7/8 rlvr-target
+[25/150] eval100_033_patch_run_pass_014_shipping_label_match_enum_priority -> cargo 0/8, valid 0/8 capability-gap
+[26/150] eval100_021_patch_run_pass_002_leaderboard_sort_points_name_tiebreak -> cargo 8/8, valid 8/8 solved
+[27/150] eval100_056_patch_test_recover_022_event_action_match_branch_repair -> cargo 6/8, valid 6/8 rlvr-target
+[28/150] eval100_095_run_only_001_csv_record_validation_report -> cargo 8/8, valid 8/8 solved
+[29/150] eval100_043_patch_test_recover_009_record_line_parser_validates_fields -> cargo 2/8, valid 2/8 rlvr-target
+[30/150] eval100_003_patch_test_pass_004_workflow_state_transition_reopen_rules -> cargo 8/8, valid 8/8 solved
+[31/150] eval100_020_patch_run_pass_001_parse_records_validate_age_and_name -> cargo 3/8, valid 3/8 rlvr-target
+[32/150] eval100_014_patch_test_pass_015_layered_config_env_does_not_override_explicit_file -> cargo 1/8, valid 1/8 rlvr-target
+[33/150] eval100_019_patch_test_pass_020_workflow_reopen_preserves_completion -> cargo 8/8, valid 8/8 solved
+[34/150] eval100_047_patch_test_recover_013_collect_visible_tags_skip_empty_and_keep_order -> cargo 6/8, valid 6/8 rlvr-target
+[35/150] eval100_024_patch_run_pass_005_active_tags_filter_map_join -> cargo 8/8, valid 8/8 solved
+[36/150] eval100_012_patch_test_pass_013_collect_active_even_lengths -> cargo 8/8, valid 8/8 solved
+[37/150] eval100_018_patch_test_pass_019_category_summary_skips_zero_counts_and_sorts -> cargo 7/8, valid 7/8 rlvr-target
+[38/150] eval100_038_patch_test_recover_004_ticket_lifecycle_reopen_and_close -> cargo 8/8, valid 8/8 solved
+[39/150] eval100_048_patch_test_recover_014_dispatch_action_match_branch_repair -> cargo 6/8, valid 6/8 rlvr-target
+[40/150] eval100_094_test_only_005_keep_even_square_sum_test_only -> cargo 8/8, valid 8/8 solved
+[41/150] eval100_001_patch_test_pass_002_rank_players_points_name_tiebreak -> cargo 7/8, valid 7/8 rlvr-target
+[42/150] eval100_060_patch_test_recover_026_rank_players_points_name_tiebreak_recover -> cargo 8/8, valid 8/8 solved
+[43/150] eval100_022_patch_run_pass_003_department_report_filters_zero_and_formats_top -> cargo 2/8, valid 2/8 rlvr-target
+[44/150] eval100_058_patch_test_recover_024_booking_overlap_half_open_recover_24 -> cargo 7/8, valid 7/8 rlvr-target
+[45/150] eval100_070_patch_run_recover_006_dispatch_report_match_branch_recovery -> cargo 6/8, valid 6/8 rlvr-target
+[46/150] eval100_026_patch_run_pass_007_layered_config_override_empty_env -> cargo 6/8, valid 5/8 rlvr-target
+[47/150] eval100_086_patch_run_recover_022_status_dispatch_summary_recover22 -> cargo 4/8, valid 4/8 rlvr-target
+[48/150] eval100_091_test_only_002_rank_players_wins_then_diff_then_name -> cargo 8/8, valid 8/8 solved
+[49/150] eval100_041_patch_test_recover_007_layered_config_merge_precedence_recover7 -> cargo 6/8, valid 6/8 rlvr-target
+[50/150] eval100_005_patch_test_pass_006_dispatch_route_mode_branch_fix -> cargo 4/8, valid 4/8 rlvr-target
+[51/150] eval100_092_test_only_003_department_hours_summary_tests_only -> cargo 8/8, valid 8/8 solved
+[52/150] eval100_051_patch_test_recover_017_csv_record_required_key_recovery -> cargo 3/8, valid 3/8 rlvr-target
+[53/150] eval100_071_patch_run_recover_007_layered_flags_cli_precedence_recover -> cargo 0/8, valid 0/8 capability-gap
+[54/150] eval100_036_patch_test_recover_002_leaderboard_sort_recover_tiebreak_chain -> cargo 1/8, valid 1/8 rlvr-target
+[55/150] eval100_007_patch_test_pass_008_booking_half_open_and_zero_length_rules -> cargo 8/8, valid 8/8 solved
+[56/150] eval100_028_patch_run_pass_009_csv_record_validation_skip_blank_lines -> cargo 8/8, valid 8/8 solved
+[57/150] eval100_078_patch_run_recover_014_dispatch_message_recovery_case14 -> cargo 7/8, valid 7/8 rlvr-target
+[58/150] eval100_096_run_only_002_team_score_ranking_tiebreaks_run_02 -> cargo 8/8, valid 8/8 solved
+[59/150] eval100_063_patch_test_recover_029_extract_tags_skip_blank_and_comments -> cargo 4/8, valid 3/8 rlvr-target
+[60/150] eval100_015_patch_test_pass_016_booking_half_open_merge_conflict -> cargo 8/8, valid 7/8 solved
+[61/150] eval100_057_patch_test_recover_023_config_merge_precedence_env_overrides_file_defaults -> cargo 6/8, valid 6/8 rlvr-target
+[62/150] eval100_034_patch_run_pass_015_config_merge_precedence_env_default_override -> cargo 8/8, valid 8/8 solved
+[63/150] eval100_050_patch_test_recover_016_booking_overlap_adjacent_and_contained -> cargo 7/8, valid 7/8 rlvr-target
+[64/150] eval100_099_run_only_005_filter_map_inventory_restock_report -> cargo 8/8, valid 8/8 solved
+[65/150] eval100_064_patch_test_recover_030_patch_test_recover_enum_routing_policy_30 -> cargo 0/8, valid 0/8 capability-gap
+[66/150] eval100_055_patch_test_recover_021_select_active_scores_filter_recover -> cargo 6/8, valid 6/8 rlvr-target
+[67/150] eval100_025_patch_run_pass_006_dispatch_summary_enum_branches -> cargo 2/8, valid 2/8 rlvr-target
+[68/150] eval100_059_patch_test_recover_025_record_parser_validate_field_count_and_score_bounds -> cargo 6/8, valid 6/8 rlvr-target
+[69/150] eval100_098_run_only_004_ticket_state_timeline_report -> cargo 8/8, valid 8/8 solved
+[70/150] heldoutfail48_005_patch_test_pass_006_config_merge_precedence_env_fills_only -> cargo 6/8, valid 6/8 rlvr-target
+[71/150] heldoutfail48_016_patch_test_pass_017_config_merge_file_user_over_env_fill_missing -> cargo 0/8, valid 0/8 capability-gap
+[72/150] heldoutfail48_027_patch_test_pass_028_config_merge_precedence_env_fills_only_missing -> cargo 4/8, valid 2/8 rlvr-target
+[73/150] heldoutfail48_038_patch_test_pass_039_config_merge_file_user_beats_env_fill_missing -> cargo 8/8, valid 7/8 solved
+[74/150] heldoutfail48_002_patch_run_pass_003_regional_department_report_zero_suppressed -> cargo 0/8, valid 0/8 capability-gap
+[75/150] heldoutfail48_004_patch_run_pass_005_enum_dispatch_priority_summary -> cargo 6/8, valid 6/8 rlvr-target
+[76/150] heldoutfail48_007_patch_run_pass_008_shipping_label_branch_priority_exact_stdout -> cargo 4/8, valid 4/8 rlvr-target
+[77/150] heldoutfail48_015_patch_run_pass_016_enum_dispatch_priority_summary_labels -> cargo 0/8, valid 0/8 capability-gap
+[78/150] heldoutfail48_018_patch_run_pass_019_shipping_command_label_branch_priority -> cargo 2/8, valid 1/8 rlvr-target
+[79/150] heldoutfail48_037_patch_run_pass_038_enum_dispatch_priority_summary_labels -> cargo 0/8, valid 0/8 capability-gap
+[80/150] heldoutfail48_040_patch_run_pass_041_shipping_command_match_priority_labels -> cargo 0/8, valid 0/8 capability-gap
+[81/150] heldoutfail48_041_patch_run_pass_042_record_validator_exact_fields_ranges_names -> cargo 0/8, valid 0/8 capability-gap
+[82/150] heldoutfail48_046_patch_run_pass_047_department_report_zero_suppression_ordering -> cargo 0/8, valid 0/8 capability-gap
+[83/150] heldoutfail48_000_patch_test_recover_001_router_policy_branch_repair -> cargo 0/8, valid 0/8 capability-gap
+[84/150] heldoutfail48_006_patch_test_recover_007_select_visible_candidates_filter_recovery -> cargo 0/8, valid 0/8 capability-gap
+[85/150] heldoutfail48_011_patch_test_recover_012_enum_policy_dispatch_repair_cycle -> cargo 0/8, valid 0/8 capability-gap
+[86/150] heldoutfail48_025_patch_test_recover_026_dense_rank_duplicate_merge_tiebreak_chain -> cargo 1/8, valid 1/8 rlvr-target
+[87/150] heldoutfail48_042_patch_test_recover_043_line_record_parser_rejects_missing_and_bad_tags -> cargo 0/8, valid 0/8 capability-gap
+[88/150] heldoutfail48_045_patch_run_recover_046_layered_config_empty_false_precedence_recover -> cargo 7/8, valid 7/8 rlvr-target
+[89/150] heldoutfailplus150_003_patch_test_recover_004_dense_rank_merge_tiebreak_repair -> cargo 0/8, valid 0/8 capability-gap
+[90/150] heldoutfailplus150_004_patch_run_pass_005_enum_dispatch_priority_summary_labels -> cargo 0/8, valid 0/8 capability-gap
+[91/150] heldoutfailplus150_005_patch_test_pass_006_config_merge_user_beats_env_fills_gaps -> cargo 4/8, valid 4/8 rlvr-target
+[92/150] heldoutfailplus150_007_patch_run_pass_008_shipping_command_enum_priority_labels -> cargo 0/8, valid 0/8 capability-gap
+[93/150] heldoutfailplus150_011_patch_test_recover_012_enum_policy_router_recovery_v12 -> cargo 0/8, valid 0/8 capability-gap
+[94/150] heldoutfailplus150_013_patch_run_pass_014_department_region_report_zero_suppression -> cargo 0/8, valid 0/8 capability-gap
+[95/150] heldoutfailplus150_014_patch_test_recover_015_dense_rank_duplicate_merge_tiebreak_recovery -> cargo 0/8, valid 0/8 capability-gap
+[96/150] heldoutfailplus150_015_patch_run_pass_016_enum_dispatch_priority_summary_labels -> cargo 1/8, valid 0/8 rlvr-target
+[97/150] heldoutfailplus150_016_patch_test_pass_017_config_merge_file_user_beats_env_fill_missing -> cargo 1/8, valid 1/8 rlvr-target
+[98/150] heldoutfailplus150_022_patch_test_recover_023_policy_dispatch_enum_repair -> cargo 0/8, valid 0/8 capability-gap
+[99/150] heldoutfailplus150_024_patch_run_pass_025_department_report_zero_suppression_sorting -> cargo 3/8, valid 3/8 rlvr-target
+[100/150] heldoutfailplus150_026_patch_run_pass_027_dispatch_label_summary_priority_branches -> cargo 0/8, valid 0/8 capability-gap
+[101/150] heldoutfailplus150_027_patch_test_pass_028_config_merge_file_user_beats_env_fill_missing -> cargo 6/8, valid 6/8 rlvr-target
+[102/150] heldoutfailplus150_029_patch_run_pass_030_shipping_label_enum_priority_manifest -> cargo 1/8, valid 1/8 rlvr-target
+[103/150] heldoutfailplus150_032_patch_test_recover_033_weekly_sales_valid_report_recovery -> cargo 0/8, valid 0/8 capability-gap
+[104/150] heldoutfailplus150_033_patch_test_recover_034_route_policy_enum_repair_34 -> cargo 0/8, valid 0/8 capability-gap
+[105/150] heldoutfailplus150_035_patch_run_pass_036_department_region_report_zero_suppression -> cargo 0/8, valid 0/8 capability-gap
+[106/150] heldoutfailplus150_036_patch_test_recover_037_dense_rank_dedup_multi_tiebreak_repair -> cargo 0/8, valid 0/8 capability-gap
+[107/150] heldoutfailplus150_037_patch_run_pass_038_enum_dispatch_priority_summary_labels -> cargo 4/8, valid 4/8 rlvr-target
+[108/150] heldoutfailplus150_038_patch_test_pass_039_config_merge_file_user_over_env_fill_only -> cargo 8/8, valid 8/8 solved
+[109/150] heldoutfailplus150_040_patch_run_pass_041_shipping_label_enum_priority_41 -> cargo 2/8, valid 2/8 rlvr-target
+[110/150] heldoutfailplus150_043_patch_test_recover_044_weekly_sales_region_summary_repair -> cargo 0/8, valid 0/8 capability-gap
+[111/150] heldoutfailplus150_046_patch_run_pass_047_department_region_report_zero_suppression -> cargo 0/8, valid 0/8 capability-gap
+[112/150] heldoutfailplus150_048_patch_run_pass_049_enum_dispatch_priority_summary_labels -> cargo 0/8, valid 0/8 capability-gap
+[113/150] heldoutfailplus150_049_patch_test_pass_050_config_merge_precedence_file_user_over_env_fill_missing -> cargo 7/8, valid 7/8 rlvr-target
+[114/150] heldoutfailplus150_052_patch_run_pass_053_record_parser_exact_fields_lowercase_ranges -> cargo 0/8, valid 0/8 capability-gap
+[115/150] heldoutfailplus150_054_patch_test_recover_055_weekly_sales_summary_valid_filtering_recover55 -> cargo 0/8, valid 0/8 capability-gap
+[116/150] heldoutfailplus150_059_patch_run_pass_060_enum_dispatch_priority_label_summary -> cargo 0/8, valid 0/8 capability-gap
+[117/150] heldoutfailplus150_060_patch_test_pass_061_config_merge_precedence_env_fill_only -> cargo 8/8, valid 8/8 solved
+[118/150] heldoutfailplus150_061_patch_test_recover_062_eligible_task_names_iterator_filters -> cargo 0/8, valid 0/8 capability-gap
+[119/150] heldoutfailplus150_062_patch_run_pass_063_shipping_label_enum_priority_exact_stdout -> cargo 0/8, valid 0/8 capability-gap
+[120/150] heldoutfailplus150_064_patch_test_recover_065_line_record_parser_missing_field_tag_validation -> cargo 0/8, valid 0/8 capability-gap
+[121/150] heldoutfailplus150_066_patch_test_recover_067_route_policy_enum_branch_repair -> cargo 1/8, valid 1/8 rlvr-target
+[122/150] heldoutfailplus150_068_patch_run_pass_069_department_region_report_filters_zero_suppression -> cargo 0/8, valid 0/8 capability-gap
+[123/150] heldoutfailplus150_071_patch_test_pass_072_config_merge_precedence_env_only_fills_missing -> cargo 3/8, valid 3/8 rlvr-target
+[124/150] heldoutfailplus150_073_patch_run_pass_074_shipping_command_match_priority_labels -> cargo 4/8, valid 4/8 rlvr-target
+[125/150] heldoutfailplus150_081_patch_run_pass_082_enum_dispatch_priority_summary -> cargo 1/8, valid 1/8 rlvr-target
+[126/150] heldoutfailplus150_082_patch_test_pass_083_layered_config_env_fill_precedence_case -> cargo 5/8, valid 5/8 rlvr-target
+[127/150] heldoutfailplus150_084_patch_run_pass_085_shipping_command_enum_priority_labels -> cargo 0/8, valid 0/8 capability-gap
+[128/150] heldoutfailplus150_086_patch_test_recover_087_record_line_parser_validation_recover_87 -> cargo 0/8, valid 0/8 capability-gap
+[129/150] heldoutfailplus150_087_patch_test_recover_088_weekly_sales_region_summary_repair -> cargo 2/8, valid 2/8 rlvr-target
+[130/150] heldoutfailplus150_091_patch_test_recover_092_dense_rank_merge_tiebreak_recovery_92 -> cargo 0/8, valid 0/8 capability-gap
+[131/150] heldoutfailplus150_092_patch_run_pass_093_enum_dispatch_priority_summary_93 -> cargo 0/8, valid 0/8 capability-gap
+[132/150] heldoutfailplus150_093_patch_test_pass_094_config_merge_precedence_env_fill_only -> cargo 8/8, valid 7/8 solved
+[133/150] heldoutfailplus150_095_patch_run_pass_096_shipping_command_branch_priority_labels -> cargo 0/8, valid 0/8 capability-gap
+[134/150] heldoutfailplus150_097_patch_test_recover_098_record_parser_tag_value_validation_recover98 -> cargo 0/8, valid 0/8 capability-gap
+[135/150] heldoutfailplus150_099_patch_test_recover_100_enum_route_policy_repair -> cargo 0/8, valid 0/8 capability-gap
+[136/150] heldoutfailplus150_102_patch_test_recover_103_dense_rank_duplicate_merge_tiebreak_repair -> cargo 0/8, valid 0/8 capability-gap
+[137/150] heldoutfailplus150_103_patch_run_pass_104_enum_dispatch_priority_summary_labels -> cargo 0/8, valid 0/8 capability-gap
+[138/150] heldoutfailplus150_104_patch_test_pass_105_config_merge_precedence_file_beats_env_fill_missing -> cargo 5/8, valid 5/8 rlvr-target
+[139/150] heldoutfailplus150_106_patch_run_pass_107_shipping_label_match_priority_107 -> cargo 0/8, valid 0/8 capability-gap
+[140/150] heldoutfailplus150_108_patch_test_recover_109_tagged_record_parser_recovery_109 -> cargo 0/8, valid 0/8 capability-gap
+[141/150] heldoutfailplus150_109_patch_test_recover_110_weekly_sales_region_summary_repair -> cargo 0/8, valid 0/8 capability-gap
+[142/150] heldoutfailplus150_112_patch_run_pass_113_department_region_report_zero_suppression -> cargo 0/8, valid 0/8 capability-gap
+[143/150] heldoutfailplus150_115_patch_test_pass_116_config_merge_precedence_env_fills_only_missing -> cargo 1/8, valid 1/8 rlvr-target
+[144/150] heldoutfailplus150_120_patch_test_recover_121_weekly_sales_summary_valid_filters_unique_counts -> cargo 3/8, valid 3/8 rlvr-target
+[145/150] heldoutfailplus150_121_patch_test_recover_122_route_policy_enum_dispatch_repair -> cargo 0/8, valid 0/8 capability-gap
+[146/150] heldoutfailplus150_126_patch_test_pass_127_config_merge_file_user_over_env_fill_missing -> cargo 4/8, valid 4/8 rlvr-target
+[147/150] heldoutfailplus150_132_patch_test_recover_133_router_policy_branch_matrix_repair -> cargo 1/8, valid 1/8 rlvr-target
+[148/150] heldoutfailplus150_137_patch_test_pass_138_config_merge_precedence_env_fills_only_missing -> cargo 4/8, valid 4/8 rlvr-target
+[149/150] heldoutfailplus150_141_patch_test_recover_142_line_record_parser_missing_fields_tag_value_checks -> cargo 1/8, valid 1/8 rlvr-target
+[150/150] heldoutfailplus150_148_patch_test_pass_149_merge_layers_user_file_over_env_fill_missing -> cargo 3/8, valid 3/8 rlvr-target
+
+rlvr-targets: 62  capability-gap: 54  solved: 34
+wrote results/RLVR_VFINAL2_STEP10/passk8_heldout150.json
+(EngineCore pid=3483) INFO 06-30 02:24:18 [core.py:1178] [shutdown] EngineCore: trigger received signal=SIGTERM
+(EngineCore pid=3483) INFO 06-30 02:24:18 [core.py:1297] [shutdown] EngineCore: start mode=abort timeout=0s
+(EngineCore pid=3483) INFO 06-30 02:24:18 [core.py:1328] [shutdown] EngineCore: request processing complete; starting resource teardown
+(EngineCore pid=3483) INFO 06-30 02:24:18 [core.py:1191] [shutdown] EngineCore: exiting busy loop
+===== SEED b -> results/RLVR_VFINAL2_STEP10/seeds/step10_seedB.json =====
+150 prompts remaining (150 total), k=8 @ T=0.8
+WARNING 06-30 02:24:35 [config.py:71] Support for Transformers v4 is deprecated. The Transformers v4 codepath will become unmaintained in vLLM v0.22.0 and will be removed in vLLM v0.24.0. Please upgrade to Transformers v5: pip install --upgrade transformers
+Fetching 4 files:   0%|          | 0/4 [00:00<?, ?it/s]Fetching 4 files: 100%|██████████| 4/4 [00:00<00:00, 68200.07it/s]
+INFO 06-30 02:24:38 [api_utils.py:273] non-default args: {'trust_remote_code': True, 'dtype': 'bfloat16', 'max_model_len': 24576, 'gpu_memory_utilization': 0.9, 'disable_log_stats': True, 'enable_lora': True, 'max_lora_rank': 64, 'model': 'JayZenith/SFT_HALF_A_V8'}
+INFO 06-30 02:24:39 [model.py:611] Resolved architecture: Qwen3ForCausalLM
+INFO 06-30 02:24:39 [model.py:1745] Using max model len 24576
+INFO 06-30 02:24:39 [scheduler.py:239] Chunked prefill is enabled with max_num_batched_tokens=16384.
+INFO 06-30 02:24:39 [vllm.py:999] Asynchronous scheduling is enabled.
+INFO 06-30 02:24:39 [kernel.py:270] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+(EngineCore pid=254671) INFO 06-30 02:24:42 [core.py:113] Initializing a V1 LLM engine (v0.23.0) with config: model='JayZenith/SFT_HALF_A_V8', speculative_config=None, tokenizer='JayZenith/SFT_HALF_A_V8', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.bfloat16, max_seq_len=24576, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, decode_context_parallel_size=1, dcp_comm_backend=ag_rs, disable_custom_all_reduce=False, quantization=None, quantization_config=None, enforce_eager=False, enable_return_routed_experts=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False), seed=0, served_model_name=JayZenith/SFT_HALF_A_V8, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'ir_enable_torch_wrap': True, 'splitting_ops': ['vllm::unified_attention_with_output', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::plamo2_mamba_mixer', 'vllm::qwen_gdn_attention_core', 'vllm::gdn_attention_core_xpu', 'vllm::olmo_hybrid_gdn_full_forward', 'vllm::kda_attention', 'vllm::sparse_attn_indexer', 'vllm::rocm_aiter_sparse_attn_indexer', 'vllm::deepseek_v4_attention', 'vllm::unified_kv_cache_update', 'vllm::unified_mla_kv_cache_update'], 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': [], 'compile_ranges_endpoints': [16384], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'size_asserts': False, 'alignment_asserts': False, 'scalar_asserts': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256, 272, 288, 304, 320, 336, 352, 368, 384, 400, 416, 432, 448, 464, 480, 496, 512], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': False, 'fuse_act_quant': False, 'fuse_attn_quant': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False, 'fuse_rope_kvcache_cat_mla': False, 'fuse_act_padding': False}, 'max_cudagraph_capture_size': 512, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': False, 'static_all_moe_layers': []}, kernel_config=KernelConfig(ir_op_priority=IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native']), enable_flashinfer_autotune=True, moe_backend='auto', linear_backend='auto')
+(EngineCore pid=254671) INFO 06-30 02:24:43 [parallel_state.py:1568] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://172.17.0.2:50569 backend=nccl
+(EngineCore pid=254671) INFO 06-30 02:24:43 [parallel_state.py:1903] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, EP rank N/A, EPLB rank N/A
+(EngineCore pid=254671) INFO 06-30 02:24:43 [gpu_worker.py:303] Using V2 Model Runner
+(EngineCore pid=254671) INFO 06-30 02:24:44 [topk_topp_sampler.py:55] Using FlashInfer for top-p & top-k sampling.
+(EngineCore pid=254671) INFO 06-30 02:24:44 [model_runner.py:298] Loading model from scratch...
+(EngineCore pid=254671) INFO 06-30 02:24:45 [cuda.py:378] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION'].
+(EngineCore pid=254671) INFO 06-30 02:24:45 [flash_attn.py:636] Using FlashAttention version 2
+(EngineCore pid=254671) <frozen importlib._bootstrap_external>:1301: FutureWarning: The cuda.cudart module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.runtime module instead.
+(EngineCore pid=254671) <frozen importlib._bootstrap_external>:1301: FutureWarning: The cuda.nvrtc module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.nvrtc module instead.
+(EngineCore pid=254671) INFO 06-30 02:24:46 [weight_utils.py:922] Filesystem type for checkpoints: OVERLAY. Checkpoint size: 7.49 GiB. Available RAM: 238.58 GiB.
+(EngineCore pid=254671) INFO 06-30 02:24:46 [weight_utils.py:945] Auto-prefetch is disabled because the filesystem (OVERLAY) is not a recognized network FS (NFS/Lustre). If you want to force prefetching, start vLLM with --safetensors-load-strategy=prefetch.
+(EngineCore pid=254671) Loading safetensors checkpoint shards:   0% Completed | 0/2 [00:00<?, ?it/s]
+(EngineCore pid=254671) Loading safetensors checkpoint shards:  50% Completed | 1/2 [00:00<00:00,  1.88it/s]
+(EngineCore pid=254671) Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:00<00:00,  2.29it/s]
+(EngineCore pid=254671) Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:00<00:00,  2.22it/s]
+(EngineCore pid=254671) 
+(EngineCore pid=254671) INFO 06-30 02:24:46 [default_loader.py:397] Loading weights took 0.92 seconds
+(EngineCore pid=254671) INFO 06-30 02:24:47 [punica_selector.py:20] Using PunicaWrapperGPU.
+(EngineCore pid=254671) INFO 06-30 02:24:47 [model_runner.py:319] Model loading took 7.86 GiB and 3.025823 seconds
+(EngineCore pid=254671) INFO 06-30 02:24:52 [backends.py:1089] Using cache directory: /root/.cache/vllm/torch_compile_cache/3b3d0bb3c8/rank_0_0/backbone for vLLM's torch.compile
+(EngineCore pid=254671) INFO 06-30 02:24:52 [backends.py:1148] Dynamo bytecode transform time: 4.41 s
+(EngineCore pid=254671) INFO 06-30 02:24:56 [backends.py:292] Directly load the compiled graph(s) for compile range (1, 16384) from the cache, took 3.323 s
+(EngineCore pid=254671) INFO 06-30 02:24:56 [decorators.py:311] Directly load AOT compilation from path /root/.cache/vllm/torch_compile_cache/torch_aot_compile/cfec227cdc572235a1cbfad673f56ccdab7db38e1e346bd456f33745564290c1/rank_0_0/model
+(EngineCore pid=254671) INFO 06-30 02:24:56 [monitor.py:53] torch.compile took 8.31 s in total
+(EngineCore pid=254671) WARNING 06-30 02:24:56 [utils.py:279] Using default LoRA kernel configs
+(EngineCore pid=254671) INFO 06-30 02:24:59 [monitor.py:81] Initial profiling/warmup run took 3.44 s
+(EngineCore pid=254671) INFO 06-30 02:25:01 [gpu_worker.py:480] Available KV cache memory: 76.22 GiB
+(EngineCore pid=254671) INFO 06-30 02:25:01 [kv_cache_utils.py:1744] GPU KV cache size: 555,024 tokens
+(EngineCore pid=254671) INFO 06-30 02:25:01 [kv_cache_utils.py:1745] Maximum concurrency for 24,576 tokens per request: 22.58x
+(EngineCore pid=254671) 2026-06-30 02:25:01,530 - INFO - autotuner.py:622 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(EngineCore pid=254671) 2026-06-30 02:25:01,654 - INFO - autotuner.py:641 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(EngineCore pid=254671) Capturing CUDA graphs (PIECEWISE):   0%|          | 0/51 [00:00<?, ?it/s]Capturing CUDA graphs (PIECEWISE):   2%|▏         | 1/51 [00:00<00:05,  9.89it/s]Capturing CUDA graphs (PIECEWISE):   6%|▌         | 3/51 [00:00<00:04, 10.15it/s]Capturing CUDA graphs (PIECEWISE):  10%|▉         | 5/51 [00:00<00:04,  9.48it/s]Capturing CUDA graphs (PIECEWISE):  12%|█▏        | 6/51 [00:00<00:04,  9.60it/s]Capturing CUDA graphs (PIECEWISE):  14%|█▎        | 7/51 [00:00<00:04,  9.67it/s]Capturing CUDA graphs (PIECEWISE):  16%|█▌        | 8/51 [00:00<00:04,  9.72it/s]Capturing CUDA graphs (PIECEWISE):  18%|█▊        | 9/51 [00:00<00:04,  9.73it/s]Capturing CUDA graphs (PIECEWISE):  20%|█▉        | 10/51 [00:01<00:04,  9.75it/s]Capturing CUDA graphs (PIECEWISE):  22%|██▏       | 11/51 [00:01<00:04,  9.80it/s]Capturing CUDA graphs (PIECEWISE):  24%|██▎       | 12/51 [00:01<00:03,  9.81it/s]Capturing CUDA graphs (PIECEWISE):  25%|██▌       | 13/51 [00:01<00:03,  9.83it/s]Capturing CUDA graphs (PIECEWISE):  27%|██▋       | 14/51 [00:01<00:03,  9.86it/s]Capturing CUDA graphs (PIECEWISE):  29%|██▉       | 15/51 [00:01<00:03,  9.89it/s]Capturing CUDA graphs (PIECEWISE):  31%|███▏      | 16/51 [00:01<00:03,  9.87it/s]Capturing CUDA graphs (PIECEWISE):  33%|███▎      | 17/51 [00:01<00:03,  9.86it/s]Capturing CUDA graphs (PIECEWISE):  35%|███▌      | 18/51 [00:03<00:24,  1.36it/s]Capturing CUDA graphs (PIECEWISE):  37%|███▋      | 19/51 [00:04<00:17,  1.84it/s]Capturing CUDA graphs (PIECEWISE):  41%|████      | 21/51 [00:04<00:10,  2.95it/s]Capturing CUDA graphs (PIECEWISE):  45%|████▌     | 23/51 [00:04<00:06,  4.09it/s]Capturing CUDA graphs (PIECEWISE):  47%|████▋     | 24/51 [00:04<00:05,  4.70it/s]Capturing CUDA graphs (PIECEWISE):  49%|████▉     | 25/51 [00:04<00:04,  5.39it/s]Capturing CUDA graphs (PIECEWISE):  51%|█████     | 26/51 [00:04<00:04,  6.10it/s]Capturing CUDA graphs (PIECEWISE):  53%|█████▎    | 27/51 [00:04<00:03,  6.79it/s]Capturing CUDA graphs (PIECEWISE):  55%|█████▍    | 28/51 [00:04<00:03,  7.43it/s]Capturing CUDA graphs (PIECEWISE):  57%|█████▋    | 29/51 [00:05<00:02,  7.98it/s]Capturing CUDA graphs (PIECEWISE):  59%|█████▉    | 30/51 [00:05<00:02,  8.45it/s]Capturing CUDA graphs (PIECEWISE):  61%|██████    | 31/51 [00:05<00:02,  8.84it/s]Capturing CUDA graphs (PIECEWISE):  63%|██████▎   | 32/51 [00:05<00:02,  8.40it/s]Capturing CUDA graphs (PIECEWISE):  65%|██████▍   | 33/51 [00:05<00:02,  8.80it/s]Capturing CUDA graphs (PIECEWISE):  67%|██████▋   | 34/51 [00:06<00:07,  2.15it/s]Capturing CUDA graphs (PIECEWISE):  69%|██████▊   | 35/51 [00:08<00:11,  1.39it/s]Capturing CUDA graphs (PIECEWISE):  71%|███████   | 36/51 [00:08<00:08,  1.87it/s]Capturing CUDA graphs (PIECEWISE):  73%|███████▎  | 37/51 [00:08<00:05,  2.47it/s]Capturing CUDA graphs (PIECEWISE):  75%|███████▍  | 38/51 [00:08<00:04,  3.18it/s]Capturing CUDA graphs (PIECEWISE):  76%|███████▋  | 39/51 [00:08<00:03,  3.99it/s]Capturing CUDA graphs (PIECEWISE):  78%|███████▊  | 40/51 [00:08<00:02,  4.84it/s]Capturing CUDA graphs (PIECEWISE):  80%|████████  | 41/51 [00:08<00:01,  5.72it/s]Capturing CUDA graphs (PIECEWISE):  82%|████████▏ | 42/51 [00:08<00:01,  6.55it/s]Capturing CUDA graphs (PIECEWISE):  84%|████████▍ | 43/51 [00:08<00:01,  7.27it/s]Capturing CUDA graphs (PIECEWISE):  86%|████████▋ | 44/51 [00:09<00:00,  7.85it/s]Capturing CUDA graphs (PIECEWISE):  88%|████████▊ | 45/51 [00:09<00:00,  8.36it/s]Capturing CUDA graphs (PIECEWISE):  90%|█████████ | 46/51 [00:09<00:00,  8.75it/s]Capturing CUDA graphs (PIECEWISE):  94%|█████████▍| 48/51 [00:09<00:00,  9.33it/s]Capturing CUDA graphs (PIECEWISE):  96%|█████████▌| 49/51 [00:09<00:00,  9.45it/s]Capturing CUDA graphs (PIECEWISE): 100%|██████████| 51/51 [00:13<00:00,  1.14it/s]Capturing CUDA graphs (PIECEWISE): 100%|██████████| 51/51 [00:13<00:00,  3.79it/s]
+(EngineCore pid=254671) Capturing CUDA graphs (FULL):   0%|          | 0/51 [00:00<?, ?it/s]Capturing CUDA graphs (FULL):   2%|▏         | 1/51 [00:00<00:11,  4.38it/s]Capturing CUDA graphs (FULL):   4%|▍         | 2/51 [00:00<00:07,  6.44it/s]Capturing CUDA graphs (FULL):   6%|▌         | 3/51 [00:00<00:06,  7.59it/s]Capturing CUDA graphs (FULL):   8%|▊         | 4/51 [00:00<00:05,  8.24it/s]Capturing CUDA graphs (FULL):  10%|▉         | 5/51 [00:00<00:05,  8.68it/s]Capturing CUDA graphs (FULL):  12%|█▏        | 6/51 [00:00<00:05,  9.00it/s]Capturing CUDA graphs (FULL):  14%|█▎        | 7/51 [00:00<00:04,  9.20it/s]Capturing CUDA graphs (FULL):  16%|█▌        | 8/51 [00:00<00:04,  9.29it/s]Capturing CUDA graphs (FULL):  18%|█▊        | 9/51 [00:01<00:04,  9.40it/s]Capturing CUDA graphs (FULL):  20%|█▉        | 10/51 [00:01<00:04,  9.47it/s]Capturing CUDA graphs (FULL):  22%|██▏       | 11/51 [00:01<00:04,  9.52it/s]Capturing CUDA graphs (FULL):  24%|██▎       | 12/51 [00:01<00:04,  9.51it/s]Capturing CUDA graphs (FULL):  25%|██▌       | 13/51 [00:01<00:03,  9.55it/s]Capturing CUDA graphs (FULL):  27%|██▋       | 14/51 [00:01<00:03,  9.58it/s]Capturing CUDA graphs (FULL):  29%|██▉       | 15/51 [00:01<00:03,  9.61it/s]Capturing CUDA graphs (FULL):  31%|███▏      | 16/51 [00:01<00:03,  9.60it/s]Capturing CUDA graphs (FULL):  33%|███▎      | 17/51 [00:01<00:03,  9.64it/s]Capturing CUDA graphs (FULL):  35%|███▌      | 18/51 [00:01<00:03,  9.69it/s]Capturing CUDA graphs (FULL):  37%|███▋      | 19/51 [00:02<00:03,  9.74it/s]Capturing CUDA graphs (FULL):  39%|███▉      | 20/51 [00:02<00:03,  9.70it/s]Capturing CUDA graphs (FULL):  41%|████      | 21/51 [00:02<00:03,  9.70it/s]Capturing CUDA graphs (FULL):  43%|████▎     | 22/51 [00:02<00:02,  9.70it/s]Capturing CUDA graphs (FULL):  45%|████▌     | 23/51 [00:02<00:02,  9.73it/s]Capturing CUDA graphs (FULL):  47%|████▋     | 24/51 [00:02<00:02,  9.65it/s]Capturing CUDA graphs (FULL):  49%|████▉     | 25/51 [00:02<00:02,  9.67it/s]Capturing CUDA graphs (FULL):  51%|█████     | 26/51 [00:02<00:02,  9.68it/s]Capturing CUDA graphs (FULL):  53%|█████▎    | 27/51 [00:02<00:02,  9.64it/s]Capturing CUDA graphs (FULL):  55%|█████▍    | 28/51 [00:03<00:02,  9.63it/s]Capturing CUDA graphs (FULL):  57%|█████▋    | 29/51 [00:03<00:02,  9.67it/s]Capturing CUDA graphs (FULL):  59%|█████▉    | 30/51 [00:03<00:02,  9.69it/s]Capturing CUDA graphs (FULL):  61%|██████    | 31/51 [00:03<00:02,  9.63it/s]Capturing CUDA graphs (FULL):  63%|██████▎   | 32/51 [00:03<00:01,  9.66it/s]Capturing CUDA graphs (FULL):  65%|██████▍   | 33/51 [00:03<00:01,  9.66it/s]Capturing CUDA graphs (FULL):  67%|██████▋   | 34/51 [00:03<00:01,  9.67it/s]Capturing CUDA graphs (FULL):  69%|██████▊   | 35/51 [00:03<00:01,  9.57it/s]Capturing CUDA graphs (FULL):  71%|███████   | 36/51 [00:03<00:01,  9.61it/s]Capturing CUDA graphs (FULL):  73%|███████▎  | 37/51 [00:03<00:01,  9.68it/s]Capturing CUDA graphs (FULL):  75%|███████▍  | 38/51 [00:04<00:01,  9.73it/s]Capturing CUDA graphs (FULL):  76%|███████▋  | 39/51 [00:04<00:01,  9.68it/s]Capturing CUDA graphs (FULL):  78%|███████▊  | 40/51 [00:04<00:01,  9.69it/s]Capturing CUDA graphs (FULL):  80%|████████  | 41/51 [00:04<00:01,  9.73it/s]Capturing CUDA graphs (FULL):  82%|████████▏ | 42/51 [00:04<00:00,  9.77it/s]Capturing CUDA graphs (FULL):  84%|████████▍ | 43/51 [00:04<00:00,  9.73it/s]Capturing CUDA graphs (FULL):  86%|████████▋ | 44/51 [00:04<00:00,  9.76it/s]Capturing CUDA graphs (FULL):  88%|████████▊ | 45/51 [00:04<00:00,  9.78it/s]Capturing CUDA graphs (FULL):  90%|█████████ | 46/51 [00:04<00:00,  9.79it/s]Capturing CUDA graphs (FULL):  92%|█████████▏| 47/51 [00:04<00:00,  9.80it/s]Capturing CUDA graphs (FULL):  94%|█████████▍| 48/51 [00:05<00:00,  9.86it/s]Capturing CUDA graphs (FULL):  96%|█████████▌| 49/51 [00:05<00:00,  9.87it/s]Capturing CUDA graphs (FULL):  98%|█████████▊| 50/51 [00:05<00:00,  9.86it/s]Capturing CUDA graphs (FULL): 100%|██████████| 51/51 [00:05<00:00,  9.88it/s]Capturing CUDA graphs (FULL): 100%|██████████| 51/51 [00:05<00:00,  9.47it/s]
+(EngineCore pid=254671) INFO 06-30 02:25:20 [model_runner.py:701] Graph capturing finished in 19 secs, took 0.64 GiB
+(EngineCore pid=254671) INFO 06-30 02:25:28 [jit_monitor.py:54] Kernel JIT monitor activated — Triton JIT compilations during inference will be logged as warnings.
+(EngineCore pid=254671) INFO 06-30 02:25:28 [core.py:306] init engine (profile, create kv cache, warmup model) took 40.83 s (compilation: 8.31 s)
+(EngineCore pid=254671) INFO 06-30 02:25:28 [kernel.py:270] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+WARNING 06-30 02:25:28 [input_processor.py:157] vLLM has deprecated support for supporting different tokenizers for different LoRAs. By default, vLLM uses base model's tokenizer. If you are using a LoRA with its own tokenizer, consider specifying `--tokenizer [lora_path]` to use the LoRA tokenizer.
+[1/150] eval100_045_patch_test_recover_011_daily_sales_region_summary_recovery -> cargo 0/8, valid 0/8 capability-gap
+[2/150] eval100_013_patch_test_pass_014_dispatch_policy_match_order -> cargo 7/8, valid 5/8 rlvr-target
+[3/150] eval100_074_patch_run_recover_010_league_table_sort_tiebreak_recover -> cargo 8/8, valid 8/8 solved
+[4/150] eval100_009_patch_test_pass_010_leaderboard_rank_tiebreak_name_order -> cargo 8/8, valid 8/8 solved
+[5/150] eval100_016_patch_test_pass_017_key_value_required_equals_validation -> cargo 7/8, valid 7/8 rlvr-target
+[6/150] eval100_097_run_only_003_department_expense_summary_report -> cargo 8/8, valid 8/8 solved
+[7/150] eval100_040_patch_test_recover_006_route_action_enum_branch_recovery -> cargo 0/8, valid 0/8 capability-gap
+[8/150] eval100_044_patch_test_recover_010_rank_players_dense_tiebreak_recover -> cargo 2/8, valid 2/8 rlvr-target
+[9/150] eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix -> cargo 0/8, valid 0/8 capability-gap
+[10/150] eval100_006_patch_test_pass_007_layered_profile_override_precedence -> cargo 7/8, valid 7/8 rlvr-target
+[11/150] eval100_011_patch_test_pass_012_ticket_lifecycle_reopen_transition_fix -> cargo 8/8, valid 8/8 solved
+[12/150] eval100_093_test_only_004_account_freeze_reopen_transitions -> cargo 8/8, valid 8/8 solved
+[13/150] eval100_004_patch_test_pass_005_collect_even_name_lengths_fix -> cargo 8/8, valid 8/8 solved
+[14/150] eval100_066_patch_run_recover_002_leaderboard_multi_tiebreak_recovery -> cargo 5/8, valid 5/8 rlvr-target
+[15/150] eval100_087_patch_run_recover_023_layered_config_merge_precedence_23 -> cargo 7/8, valid 7/8 rlvr-target
+[16/150] eval100_076_patch_run_recover_012_ticket_state_recovery_summary -> cargo 8/8, valid 8/8 solved
+[17/150] eval100_085_patch_run_recover_021_log_window_filter_map_recover -> cargo 4/8, valid 4/8 rlvr-target
+[18/150] eval100_000_patch_test_pass_001_validate_record_missing_score_check -> cargo 8/8, valid 8/8 solved
+[19/150] eval100_079_patch_run_recover_015_layered_config_merge_precedence_report -> cargo 8/8, valid 8/8 solved
+[20/150] eval100_035_patch_test_recover_001_record_line_parse_validate_recover -> cargo 0/8, valid 0/8 capability-gap
+[21/150] eval100_037_patch_test_recover_003_weekly_region_summary_recover -> cargo 2/8, valid 2/8 rlvr-target
+[22/150] eval100_090_test_only_001_test_only_record_line_parsing_validation -> cargo 8/8, valid 8/8 solved
+[23/150] eval100_042_patch_test_recover_008_booking_conflict_adjacent_and_contained -> cargo 8/8, valid 8/8 solved
+[24/150] eval100_052_patch_test_recover_018_rank_players_multi_tiebreak_recover -> cargo 5/8, valid 5/8 rlvr-target
+[25/150] eval100_033_patch_run_pass_014_shipping_label_match_enum_priority -> cargo 0/8, valid 0/8 capability-gap
+[26/150] eval100_021_patch_run_pass_002_leaderboard_sort_points_name_tiebreak -> cargo 8/8, valid 8/8 solved
+[27/150] eval100_056_patch_test_recover_022_event_action_match_branch_repair -> cargo 6/8, valid 6/8 rlvr-target
+[28/150] eval100_095_run_only_001_csv_record_validation_report -> cargo 8/8, valid 8/8 solved
+[29/150] eval100_043_patch_test_recover_009_record_line_parser_validates_fields -> cargo 5/8, valid 5/8 rlvr-target
+[30/150] eval100_003_patch_test_pass_004_workflow_state_transition_reopen_rules -> cargo 7/8, valid 7/8 rlvr-target
+[31/150] eval100_020_patch_run_pass_001_parse_records_validate_age_and_name -> cargo 4/8, valid 4/8 rlvr-target
+[32/150] eval100_014_patch_test_pass_015_layered_config_env_does_not_override_explicit_file -> cargo 1/8, valid 1/8 rlvr-target
+[33/150] eval100_019_patch_test_pass_020_workflow_reopen_preserves_completion -> cargo 8/8, valid 8/8 solved
+[34/150] eval100_047_patch_test_recover_013_collect_visible_tags_skip_empty_and_keep_order -> cargo 6/8, valid 6/8 rlvr-target
+[35/150] eval100_024_patch_run_pass_005_active_tags_filter_map_join -> cargo 8/8, valid 8/8 solved
+[36/150] eval100_012_patch_test_pass_013_collect_active_even_lengths -> cargo 8/8, valid 8/8 solved
+[37/150] eval100_018_patch_test_pass_019_category_summary_skips_zero_counts_and_sorts -> cargo 8/8, valid 8/8 solved
+[38/150] eval100_038_patch_test_recover_004_ticket_lifecycle_reopen_and_close -> cargo 8/8, valid 8/8 solved
+[39/150] eval100_048_patch_test_recover_014_dispatch_action_match_branch_repair -> cargo 7/8, valid 7/8 rlvr-target
+[40/150] eval100_094_test_only_005_keep_even_square_sum_test_only -> cargo 8/8, valid 8/8 solved
+[41/150] eval100_001_patch_test_pass_002_rank_players_points_name_tiebreak -> cargo 8/8, valid 8/8 solved
+[42/150] eval100_060_patch_test_recover_026_rank_players_points_name_tiebreak_recover -> cargo 6/8, valid 6/8 rlvr-target
+[43/150] eval100_022_patch_run_pass_003_department_report_filters_zero_and_formats_top -> cargo 2/8, valid 2/8 rlvr-target
+[44/150] eval100_058_patch_test_recover_024_booking_overlap_half_open_recover_24 -> cargo 8/8, valid 8/8 solved
+[45/150] eval100_070_patch_run_recover_006_dispatch_report_match_branch_recovery -> cargo 8/8, valid 8/8 solved
+[46/150] eval100_026_patch_run_pass_007_layered_config_override_empty_env -> cargo 4/8, valid 4/8 rlvr-target
+[47/150] eval100_086_patch_run_recover_022_status_dispatch_summary_recover22 -> cargo 3/8, valid 3/8 rlvr-target
+[48/150] eval100_091_test_only_002_rank_players_wins_then_diff_then_name -> cargo 8/8, valid 8/8 solved
+[49/150] eval100_041_patch_test_recover_007_layered_config_merge_precedence_recover7 -> cargo 4/8, valid 4/8 rlvr-target
+[50/150] eval100_005_patch_test_pass_006_dispatch_route_mode_branch_fix -> cargo 5/8, valid 5/8 rlvr-target
+[51/150] eval100_092_test_only_003_department_hours_summary_tests_only -> cargo 8/8, valid 8/8 solved
+[52/150] eval100_051_patch_test_recover_017_csv_record_required_key_recovery -> cargo 2/8, valid 2/8 rlvr-target
+[53/150] eval100_071_patch_run_recover_007_layered_flags_cli_precedence_recover -> cargo 0/8, valid 0/8 capability-gap
+[54/150] eval100_036_patch_test_recover_002_leaderboard_sort_recover_tiebreak_chain -> cargo 3/8, valid 3/8 rlvr-target
+[55/150] eval100_007_patch_test_pass_008_booking_half_open_and_zero_length_rules -> cargo 6/8, valid 6/8 rlvr-target
+[56/150] eval100_028_patch_run_pass_009_csv_record_validation_skip_blank_lines -> cargo 8/8, valid 8/8 solved
+[57/150] eval100_078_patch_run_recover_014_dispatch_message_recovery_case14 -> cargo 7/8, valid 7/8 rlvr-target
+[58/150] eval100_096_run_only_002_team_score_ranking_tiebreaks_run_02 -> cargo 8/8, valid 8/8 solved
+[59/150] eval100_063_patch_test_recover_029_extract_tags_skip_blank_and_comments -> cargo 2/8, valid 2/8 rlvr-target
+[60/150] eval100_015_patch_test_pass_016_booking_half_open_merge_conflict -> cargo 8/8, valid 8/8 solved
+[61/150] eval100_057_patch_test_recover_023_config_merge_precedence_env_overrides_file_defaults -> cargo 8/8, valid 6/8 solved
+[62/150] eval100_034_patch_run_pass_015_config_merge_precedence_env_default_override -> cargo 8/8, valid 8/8 solved
+[63/150] eval100_050_patch_test_recover_016_booking_overlap_adjacent_and_contained -> cargo 8/8, valid 8/8 solved
+[64/150] eval100_099_run_only_005_filter_map_inventory_restock_report -> cargo 8/8, valid 8/8 solved
+[65/150] eval100_064_patch_test_recover_030_patch_test_recover_enum_routing_policy_30 -> cargo 2/8, valid 2/8 rlvr-target
+[66/150] eval100_055_patch_test_recover_021_select_active_scores_filter_recover -> cargo 6/8, valid 6/8 rlvr-target
+[67/150] eval100_025_patch_run_pass_006_dispatch_summary_enum_branches -> cargo 2/8, valid 2/8 rlvr-target
+[68/150] eval100_059_patch_test_recover_025_record_parser_validate_field_count_and_score_bounds -> cargo 5/8, valid 5/8 rlvr-target
+[69/150] eval100_098_run_only_004_ticket_state_timeline_report -> cargo 8/8, valid 8/8 solved
+[70/150] heldoutfail48_005_patch_test_pass_006_config_merge_precedence_env_fills_only -> cargo 4/8, valid 4/8 rlvr-target
+[71/150] heldoutfail48_016_patch_test_pass_017_config_merge_file_user_over_env_fill_missing -> cargo 0/8, valid 0/8 capability-gap
+[72/150] heldoutfail48_027_patch_test_pass_028_config_merge_precedence_env_fills_only_missing -> cargo 3/8, valid 3/8 rlvr-target
+[73/150] heldoutfail48_038_patch_test_pass_039_config_merge_file_user_beats_env_fill_missing -> cargo 7/8, valid 6/8 rlvr-target
+[74/150] heldoutfail48_002_patch_run_pass_003_regional_department_report_zero_suppressed -> cargo 0/8, valid 0/8 capability-gap
+[75/150] heldoutfail48_004_patch_run_pass_005_enum_dispatch_priority_summary -> cargo 6/8, valid 5/8 rlvr-target
+[76/150] heldoutfail48_007_patch_run_pass_008_shipping_label_branch_priority_exact_stdout -> cargo 2/8, valid 2/8 rlvr-target
+[77/150] heldoutfail48_015_patch_run_pass_016_enum_dispatch_priority_summary_labels -> cargo 1/8, valid 1/8 rlvr-target
+[78/150] heldoutfail48_018_patch_run_pass_019_shipping_command_label_branch_priority -> cargo 3/8, valid 1/8 rlvr-target
+[79/150] heldoutfail48_037_patch_run_pass_038_enum_dispatch_priority_summary_labels -> cargo 0/8, valid 0/8 capability-gap
+[80/150] heldoutfail48_040_patch_run_pass_041_shipping_command_match_priority_labels -> cargo 0/8, valid 0/8 capability-gap
+[81/150] heldoutfail48_041_patch_run_pass_042_record_validator_exact_fields_ranges_names -> cargo 1/8, valid 1/8 rlvr-target
+[82/150] heldoutfail48_046_patch_run_pass_047_department_report_zero_suppression_ordering -> cargo 0/8, valid 0/8 capability-gap
+[83/150] heldoutfail48_000_patch_test_recover_001_router_policy_branch_repair -> cargo 0/8, valid 0/8 capability-gap
+[84/150] heldoutfail48_006_patch_test_recover_007_select_visible_candidates_filter_recovery -> cargo 0/8, valid 0/8 capability-gap
+[85/150] heldoutfail48_011_patch_test_recover_012_enum_policy_dispatch_repair_cycle -> cargo 0/8, valid 0/8 capability-gap
+[86/150] heldoutfail48_025_patch_test_recover_026_dense_rank_duplicate_merge_tiebreak_chain -> cargo 0/8, valid 0/8 capability-gap
+[87/150] heldoutfail48_042_patch_test_recover_043_line_record_parser_rejects_missing_and_bad_tags -> cargo 0/8, valid 0/8 capability-gap
+[88/150] heldoutfail48_045_patch_run_recover_046_layered_config_empty_false_precedence_recover -> cargo 3/8, valid 3/8 rlvr-target
+[89/150] heldoutfailplus150_003_patch_test_recover_004_dense_rank_merge_tiebreak_repair -> cargo 0/8, valid 0/8 capability-gap
+[90/150] heldoutfailplus150_004_patch_run_pass_005_enum_dispatch_priority_summary_labels -> cargo 0/8, valid 0/8 capability-gap
+[91/150] heldoutfailplus150_005_patch_test_pass_006_config_merge_user_beats_env_fills_gaps -> cargo 4/8, valid 3/8 rlvr-target
+[92/150] heldoutfailplus150_007_patch_run_pass_008_shipping_command_enum_priority_labels -> cargo 0/8, valid 0/8 capability-gap
+[93/150] heldoutfailplus150_011_patch_test_recover_012_enum_policy_router_recovery_v12 -> cargo 0/8, valid 0/8 capability-gap
+[94/150] heldoutfailplus150_013_patch_run_pass_014_department_region_report_zero_suppression -> cargo 0/8, valid 0/8 capability-gap
+[95/150] heldoutfailplus150_014_patch_test_recover_015_dense_rank_duplicate_merge_tiebreak_recovery -> cargo 0/8, valid 0/8 capability-gap
+[96/150] heldoutfailplus150_015_patch_run_pass_016_enum_dispatch_priority_summary_labels -> cargo 1/8, valid 1/8 rlvr-target
+[97/150] heldoutfailplus150_016_patch_test_pass_017_config_merge_file_user_beats_env_fill_missing -> cargo 3/8, valid 3/8 rlvr-target
+[98/150] heldoutfailplus150_022_patch_test_recover_023_policy_dispatch_enum_repair -> cargo 0/8, valid 0/8 capability-gap
+[99/150] heldoutfailplus150_024_patch_run_pass_025_department_report_zero_suppression_sorting -> cargo 1/8, valid 1/8 rlvr-target
+[100/150] heldoutfailplus150_026_patch_run_pass_027_dispatch_label_summary_priority_branches -> cargo 2/8, valid 2/8 rlvr-target
+[101/150] heldoutfailplus150_027_patch_test_pass_028_config_merge_file_user_beats_env_fill_missing -> cargo 8/8, valid 8/8 solved
+[102/150] heldoutfailplus150_029_patch_run_pass_030_shipping_label_enum_priority_manifest -> cargo 0/8, valid 0/8 capability-gap
+[103/150] heldoutfailplus150_032_patch_test_recover_033_weekly_sales_valid_report_recovery -> cargo 0/8, valid 0/8 capability-gap
+[104/150] heldoutfailplus150_033_patch_test_recover_034_route_policy_enum_repair_34 -> cargo 1/8, valid 1/8 rlvr-target
+[105/150] heldoutfailplus150_035_patch_run_pass_036_department_region_report_zero_suppression -> cargo 0/8, valid 0/8 capability-gap
+[106/150] heldoutfailplus150_036_patch_test_recover_037_dense_rank_dedup_multi_tiebreak_repair -> cargo 0/8, valid 0/8 capability-gap
+[107/150] heldoutfailplus150_037_patch_run_pass_038_enum_dispatch_priority_summary_labels -> cargo 3/8, valid 3/8 rlvr-target
+[108/150] heldoutfailplus150_038_patch_test_pass_039_config_merge_file_user_over_env_fill_only -> cargo 8/8, valid 8/8 solved
+[109/150] heldoutfailplus150_040_patch_run_pass_041_shipping_label_enum_priority_41 -> cargo 4/8, valid 4/8 rlvr-target
+[110/150] heldoutfailplus150_043_patch_test_recover_044_weekly_sales_region_summary_repair -> cargo 0/8, valid 0/8 capability-gap
+[111/150] heldoutfailplus150_046_patch_run_pass_047_department_region_report_zero_suppression -> cargo 0/8, valid 0/8 capability-gap
+[112/150] heldoutfailplus150_048_patch_run_pass_049_enum_dispatch_priority_summary_labels -> cargo 3/8, valid 3/8 rlvr-target
+[113/150] heldoutfailplus150_049_patch_test_pass_050_config_merge_precedence_file_user_over_env_fill_missing -> cargo 8/8, valid 8/8 solved
+[114/150] heldoutfailplus150_052_patch_run_pass_053_record_parser_exact_fields_lowercase_ranges -> cargo 0/8, valid 0/8 capability-gap
+[115/150] heldoutfailplus150_054_patch_test_recover_055_weekly_sales_summary_valid_filtering_recover55 -> cargo 0/8, valid 0/8 capability-gap
+[116/150] heldoutfailplus150_059_patch_run_pass_060_enum_dispatch_priority_label_summary -> cargo 0/8, valid 0/8 capability-gap
+[117/150] heldoutfailplus150_060_patch_test_pass_061_config_merge_precedence_env_fill_only -> cargo 7/8, valid 7/8 rlvr-target
+[118/150] heldoutfailplus150_061_patch_test_recover_062_eligible_task_names_iterator_filters -> cargo 0/8, valid 0/8 capability-gap
+[119/150] heldoutfailplus150_062_patch_run_pass_063_shipping_label_enum_priority_exact_stdout -> cargo 0/8, valid 0/8 capability-gap
+[120/150] heldoutfailplus150_064_patch_test_recover_065_line_record_parser_missing_field_tag_validation -> cargo 0/8, valid 0/8 capability-gap
+[121/150] heldoutfailplus150_066_patch_test_recover_067_route_policy_enum_branch_repair -> cargo 4/8, valid 4/8 rlvr-target
+[122/150] heldoutfailplus150_068_patch_run_pass_069_department_region_report_filters_zero_suppression -> cargo 0/8, valid 0/8 capability-gap
+[123/150] heldoutfailplus150_071_patch_test_pass_072_config_merge_precedence_env_only_fills_missing -> cargo 1/8, valid 0/8 rlvr-target
+[124/150] heldoutfailplus150_073_patch_run_pass_074_shipping_command_match_priority_labels -> cargo 6/8, valid 6/8 rlvr-target
+[125/150] heldoutfailplus150_081_patch_run_pass_082_enum_dispatch_priority_summary -> cargo 0/8, valid 0/8 capability-gap
+[126/150] heldoutfailplus150_082_patch_test_pass_083_layered_config_env_fill_precedence_case -> cargo 5/8, valid 5/8 rlvr-target
+[127/150] heldoutfailplus150_084_patch_run_pass_085_shipping_command_enum_priority_labels -> cargo 1/8, valid 0/8 rlvr-target
+[128/150] heldoutfailplus150_086_patch_test_recover_087_record_line_parser_validation_recover_87 -> cargo 0/8, valid 0/8 capability-gap
+[129/150] heldoutfailplus150_087_patch_test_recover_088_weekly_sales_region_summary_repair -> cargo 6/8, valid 6/8 rlvr-target
+[130/150] heldoutfailplus150_091_patch_test_recover_092_dense_rank_merge_tiebreak_recovery_92 -> cargo 0/8, valid 0/8 capability-gap
+[131/150] heldoutfailplus150_092_patch_run_pass_093_enum_dispatch_priority_summary_93 -> cargo 0/8, valid 0/8 capability-gap
+[132/150] heldoutfailplus150_093_patch_test_pass_094_config_merge_precedence_env_fill_only -> cargo 7/8, valid 7/8 rlvr-target
+[133/150] heldoutfailplus150_095_patch_run_pass_096_shipping_command_branch_priority_labels -> cargo 0/8, valid 0/8 capability-gap
+[134/150] heldoutfailplus150_097_patch_test_recover_098_record_parser_tag_value_validation_recover98 -> cargo 0/8, valid 0/8 capability-gap
+[135/150] heldoutfailplus150_099_patch_test_recover_100_enum_route_policy_repair -> cargo 0/8, valid 0/8 capability-gap
+[136/150] heldoutfailplus150_102_patch_test_recover_103_dense_rank_duplicate_merge_tiebreak_repair -> cargo 0/8, valid 0/8 capability-gap
+[137/150] heldoutfailplus150_103_patch_run_pass_104_enum_dispatch_priority_summary_labels -> cargo 0/8, valid 0/8 capability-gap
+[138/150] heldoutfailplus150_104_patch_test_pass_105_config_merge_precedence_file_beats_env_fill_missing -> cargo 6/8, valid 6/8 rlvr-target
+[139/150] heldoutfailplus150_106_patch_run_pass_107_shipping_label_match_priority_107 -> cargo 0/8, valid 0/8 capability-gap
+[140/150] heldoutfailplus150_108_patch_test_recover_109_tagged_record_parser_recovery_109 -> cargo 0/8, valid 0/8 capability-gap
+[141/150] heldoutfailplus150_109_patch_test_recover_110_weekly_sales_region_summary_repair -> cargo 0/8, valid 0/8 capability-gap
+[142/150] heldoutfailplus150_112_patch_run_pass_113_department_region_report_zero_suppression -> cargo 0/8, valid 0/8 capability-gap
+[143/150] heldoutfailplus150_115_patch_test_pass_116_config_merge_precedence_env_fills_only_missing -> cargo 2/8, valid 2/8 rlvr-target
+[144/150] heldoutfailplus150_120_patch_test_recover_121_weekly_sales_summary_valid_filters_unique_counts -> cargo 4/8, valid 4/8 rlvr-target
+[145/150] heldoutfailplus150_121_patch_test_recover_122_route_policy_enum_dispatch_repair -> cargo 0/8, valid 0/8 capability-gap
+[146/150] heldoutfailplus150_126_patch_test_pass_127_config_merge_file_user_over_env_fill_missing -> cargo 4/8, valid 4/8 rlvr-target
+[147/150] heldoutfailplus150_132_patch_test_recover_133_router_policy_branch_matrix_repair -> cargo 0/8, valid 0/8 capability-gap
+[148/150] heldoutfailplus150_137_patch_test_pass_138_config_merge_precedence_env_fills_only_missing -> cargo 2/8, valid 2/8 rlvr-target
+[149/150] heldoutfailplus150_141_patch_test_recover_142_line_record_parser_missing_fields_tag_value_checks -> cargo 1/8, valid 0/8 rlvr-target
+[150/150] heldoutfailplus150_148_patch_test_pass_149_merge_layers_user_file_over_env_fill_missing -> cargo 4/8, valid 4/8 rlvr-target
+
+rlvr-targets: 64  capability-gap: 51  solved: 35
+wrote results/RLVR_VFINAL2_STEP10/seeds/step10_seedB.json
+(EngineCore pid=254671) INFO 06-30 03:15:55 [core.py:1178] [shutdown] EngineCore: trigger received signal=SIGTERM
+(EngineCore pid=254671) INFO 06-30 03:15:55 [core.py:1297] [shutdown] EngineCore: start mode=abort timeout=0s
+(EngineCore pid=254671) INFO 06-30 03:15:55 [core.py:1328] [shutdown] EngineCore: request processing complete; starting resource teardown
+(EngineCore pid=254671) INFO 06-30 03:15:55 [core.py:1191] [shutdown] EngineCore: exiting busy loop
+===== SEED c -> results/RLVR_VFINAL2_STEP10/seeds/step10_seedC.json =====
+150 prompts remaining (150 total), k=8 @ T=0.8
+WARNING 06-30 03:16:13 [config.py:71] Support for Transformers v4 is deprecated. The Transformers v4 codepath will become unmaintained in vLLM v0.22.0 and will be removed in vLLM v0.24.0. Please upgrade to Transformers v5: pip install --upgrade transformers
+Fetching 4 files:   0%|          | 0/4 [00:00<?, ?it/s]Fetching 4 files: 100%|██████████| 4/4 [00:00<00:00, 72005.22it/s]
+INFO 06-30 03:16:16 [api_utils.py:273] non-default args: {'trust_remote_code': True, 'dtype': 'bfloat16', 'max_model_len': 24576, 'gpu_memory_utilization': 0.9, 'disable_log_stats': True, 'enable_lora': True, 'max_lora_rank': 64, 'model': 'JayZenith/SFT_HALF_A_V8'}
+INFO 06-30 03:16:16 [model.py:611] Resolved architecture: Qwen3ForCausalLM
+INFO 06-30 03:16:16 [model.py:1745] Using max model len 24576
+INFO 06-30 03:16:16 [scheduler.py:239] Chunked prefill is enabled with max_num_batched_tokens=16384.
+INFO 06-30 03:16:16 [vllm.py:999] Asynchronous scheduling is enabled.
+INFO 06-30 03:16:17 [kernel.py:270] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+(EngineCore pid=509164) INFO 06-30 03:16:20 [core.py:113] Initializing a V1 LLM engine (v0.23.0) with config: model='JayZenith/SFT_HALF_A_V8', speculative_config=None, tokenizer='JayZenith/SFT_HALF_A_V8', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.bfloat16, max_seq_len=24576, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, decode_context_parallel_size=1, dcp_comm_backend=ag_rs, disable_custom_all_reduce=False, quantization=None, quantization_config=None, enforce_eager=False, enable_return_routed_experts=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False), seed=0, served_model_name=JayZenith/SFT_HALF_A_V8, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'ir_enable_torch_wrap': True, 'splitting_ops': ['vllm::unified_attention_with_output', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::plamo2_mamba_mixer', 'vllm::qwen_gdn_attention_core', 'vllm::gdn_attention_core_xpu', 'vllm::olmo_hybrid_gdn_full_forward', 'vllm::kda_attention', 'vllm::sparse_attn_indexer', 'vllm::rocm_aiter_sparse_attn_indexer', 'vllm::deepseek_v4_attention', 'vllm::unified_kv_cache_update', 'vllm::unified_mla_kv_cache_update'], 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': [], 'compile_ranges_endpoints': [16384], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'size_asserts': False, 'alignment_asserts': False, 'scalar_asserts': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256, 272, 288, 304, 320, 336, 352, 368, 384, 400, 416, 432, 448, 464, 480, 496, 512], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': False, 'fuse_act_quant': False, 'fuse_attn_quant': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False, 'fuse_rope_kvcache_cat_mla': False, 'fuse_act_padding': False}, 'max_cudagraph_capture_size': 512, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': False, 'static_all_moe_layers': []}, kernel_config=KernelConfig(ir_op_priority=IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native']), enable_flashinfer_autotune=True, moe_backend='auto', linear_backend='auto')
+(EngineCore pid=509164) INFO 06-30 03:16:20 [parallel_state.py:1568] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://172.17.0.2:49063 backend=nccl
+(EngineCore pid=509164) INFO 06-30 03:16:20 [parallel_state.py:1903] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, EP rank N/A, EPLB rank N/A
+(EngineCore pid=509164) INFO 06-30 03:16:20 [gpu_worker.py:303] Using V2 Model Runner
+(EngineCore pid=509164) INFO 06-30 03:16:22 [topk_topp_sampler.py:55] Using FlashInfer for top-p & top-k sampling.
+(EngineCore pid=509164) INFO 06-30 03:16:22 [model_runner.py:298] Loading model from scratch...
+(EngineCore pid=509164) INFO 06-30 03:16:22 [cuda.py:378] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION'].
+(EngineCore pid=509164) INFO 06-30 03:16:22 [flash_attn.py:636] Using FlashAttention version 2
+(EngineCore pid=509164) <frozen importlib._bootstrap_external>:1301: FutureWarning: The cuda.cudart module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.runtime module instead.
+(EngineCore pid=509164) <frozen importlib._bootstrap_external>:1301: FutureWarning: The cuda.nvrtc module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.nvrtc module instead.
+(EngineCore pid=509164) INFO 06-30 03:16:23 [weight_utils.py:922] Filesystem type for checkpoints: OVERLAY. Checkpoint size: 7.49 GiB. Available RAM: 238.57 GiB.
+(EngineCore pid=509164) INFO 06-30 03:16:23 [weight_utils.py:945] Auto-prefetch is disabled because the filesystem (OVERLAY) is not a recognized network FS (NFS/Lustre). If you want to force prefetching, start vLLM with --safetensors-load-strategy=prefetch.
+(EngineCore pid=509164) Loading safetensors checkpoint shards:   0% Completed | 0/2 [00:00<?, ?it/s]
+(EngineCore pid=509164) Loading safetensors checkpoint shards:  50% Completed | 1/2 [00:00<00:00,  1.89it/s]
+(EngineCore pid=509164) Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:00<00:00,  2.30it/s]
+(EngineCore pid=509164) Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:00<00:00,  2.23it/s]
+(EngineCore pid=509164) 
+(EngineCore pid=509164) INFO 06-30 03:16:24 [default_loader.py:397] Loading weights took 0.91 seconds
+(EngineCore pid=509164) INFO 06-30 03:16:24 [punica_selector.py:20] Using PunicaWrapperGPU.
+(EngineCore pid=509164) INFO 06-30 03:16:25 [model_runner.py:319] Model loading took 7.86 GiB and 3.076276 seconds
+(EngineCore pid=509164) INFO 06-30 03:16:30 [backends.py:1089] Using cache directory: /root/.cache/vllm/torch_compile_cache/3b3d0bb3c8/rank_0_0/backbone for vLLM's torch.compile
+(EngineCore pid=509164) INFO 06-30 03:16:30 [backends.py:1148] Dynamo bytecode transform time: 4.47 s
+(EngineCore pid=509164) INFO 06-30 03:16:33 [backends.py:292] Directly load the compiled graph(s) for compile range (1, 16384) from the cache, took 3.200 s
+(EngineCore pid=509164) INFO 06-30 03:16:33 [decorators.py:311] Directly load AOT compilation from path /root/.cache/vllm/torch_compile_cache/torch_aot_compile/cfec227cdc572235a1cbfad673f56ccdab7db38e1e346bd456f33745564290c1/rank_0_0/model
+(EngineCore pid=509164) INFO 06-30 03:16:33 [monitor.py:53] torch.compile took 8.25 s in total
+(EngineCore pid=509164) WARNING 06-30 03:16:33 [utils.py:279] Using default LoRA kernel configs
+(EngineCore pid=509164) INFO 06-30 03:16:34 [monitor.py:81] Initial profiling/warmup run took 0.29 s
+(EngineCore pid=509164) INFO 06-30 03:16:35 [gpu_worker.py:480] Available KV cache memory: 76.22 GiB
+(EngineCore pid=509164) INFO 06-30 03:16:35 [kv_cache_utils.py:1744] GPU KV cache size: 555,024 tokens
+(EngineCore pid=509164) INFO 06-30 03:16:35 [kv_cache_utils.py:1745] Maximum concurrency for 24,576 tokens per request: 22.58x
+(EngineCore pid=509164) 2026-06-30 03:16:35,287 - INFO - autotuner.py:622 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(EngineCore pid=509164) 2026-06-30 03:16:35,410 - INFO - autotuner.py:641 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(EngineCore pid=509164) Capturing CUDA graphs (PIECEWISE):   0%|          | 0/51 [00:00<?, ?it/s]Capturing CUDA graphs (PIECEWISE):   2%|▏         | 1/51 [00:00<00:05,  9.82it/s]Capturing CUDA graphs (PIECEWISE):   6%|▌         | 3/51 [00:00<00:04, 10.15it/s]Capturing CUDA graphs (PIECEWISE):  10%|▉         | 5/51 [00:00<00:04,  9.55it/s]Capturing CUDA graphs (PIECEWISE):  14%|█▎        | 7/51 [00:00<00:04,  9.78it/s]Capturing CUDA graphs (PIECEWISE):  16%|█▌        | 8/51 [00:00<00:04,  9.81it/s]Capturing CUDA graphs (PIECEWISE):  20%|█▉        | 10/51 [00:01<00:04,  9.91it/s]Capturing CUDA graphs (PIECEWISE):  24%|██▎       | 12/51 [00:01<00:03,  9.98it/s]Capturing CUDA graphs (PIECEWISE):  25%|██▌       | 13/51 [00:01<00:03,  9.98it/s]Capturing CUDA graphs (PIECEWISE):  29%|██▉       | 15/51 [00:01<00:03, 10.02it/s]Capturing CUDA graphs (PIECEWISE):  33%|███▎      | 17/51 [00:01<00:03, 10.03it/s]Capturing CUDA graphs (PIECEWISE):  37%|███▋      | 19/51 [00:01<00:03,  9.82it/s]Capturing CUDA graphs (PIECEWISE):  41%|████      | 21/51 [00:02<00:03,  9.87it/s]Capturing CUDA graphs (PIECEWISE):  45%|████▌     | 23/51 [00:02<00:02,  9.93it/s]Capturing CUDA graphs (PIECEWISE):  47%|████▋     | 24/51 [00:02<00:02,  9.92it/s]Capturing CUDA graphs (PIECEWISE):  51%|█████     | 26/51 [00:02<00:02,  9.95it/s]Capturing CUDA graphs (PIECEWISE):  53%|█████▎    | 27/51 [00:02<00:02,  9.94it/s]Capturing CUDA graphs (PIECEWISE):  55%|█████▍    | 28/51 [00:02<00:02,  9.95it/s]Capturing CUDA graphs (PIECEWISE):  57%|█████▋    | 29/51 [00:02<00:02,  9.94it/s]Capturing CUDA graphs (PIECEWISE):  59%|█████▉    | 30/51 [00:03<00:02,  9.94it/s]Capturing CUDA graphs (PIECEWISE):  61%|██████    | 31/51 [00:03<00:02,  9.95it/s]Capturing CUDA graphs (PIECEWISE):  63%|██████▎   | 32/51 [00:03<00:02,  9.15it/s]Capturing CUDA graphs (PIECEWISE):  65%|██████▍   | 33/51 [00:03<00:01,  9.35it/s]Capturing CUDA graphs (PIECEWISE):  67%|██████▋   | 34/51 [00:03<00:01,  9.34it/s]Capturing CUDA graphs (PIECEWISE):  69%|██████▊   | 35/51 [00:03<00:01,  9.30it/s]Capturing CUDA graphs (PIECEWISE):  71%|███████   | 36/51 [00:03<00:01,  9.49it/s]Capturing CUDA graphs (PIECEWISE):  73%|███████▎  | 37/51 [00:03<00:01,  9.60it/s]Capturing CUDA graphs (PIECEWISE):  76%|███████▋  | 39/51 [00:03<00:01,  9.80it/s]Capturing CUDA graphs (PIECEWISE):  78%|███████▊  | 40/51 [00:04<00:01,  9.77it/s]Capturing CUDA graphs (PIECEWISE):  82%|████████▏ | 42/51 [00:04<00:00,  9.90it/s]Capturing CUDA graphs (PIECEWISE):  84%|████████▍ | 43/51 [00:04<00:00,  9.90it/s]Capturing CUDA graphs (PIECEWISE):  88%|████████▊ | 45/51 [00:04<00:00,  9.95it/s]Capturing CUDA graphs (PIECEWISE):  90%|█████████ | 46/51 [00:04<00:00,  9.94it/s]Capturing CUDA graphs (PIECEWISE):  94%|█████████▍| 48/51 [00:04<00:00, 10.04it/s]Capturing CUDA graphs (PIECEWISE):  96%|█████████▌| 49/51 [00:04<00:00, 10.01it/s]Capturing CUDA graphs (PIECEWISE): 100%|██████████| 51/51 [00:05<00:00,  9.41it/s]Capturing CUDA graphs (PIECEWISE): 100%|██████████| 51/51 [00:05<00:00,  9.79it/s]
+(EngineCore pid=509164) Capturing CUDA graphs (FULL):   0%|          | 0/51 [00:00<?, ?it/s]Capturing CUDA graphs (FULL):   2%|▏         | 1/51 [00:00<00:11,  4.44it/s]Capturing CUDA graphs (FULL):   4%|▍         | 2/51 [00:00<00:07,  6.53it/s]Capturing CUDA graphs (FULL):   6%|▌         | 3/51 [00:00<00:06,  7.68it/s]Capturing CUDA graphs (FULL):   8%|▊         | 4/51 [00:00<00:05,  8.33it/s]Capturing CUDA graphs (FULL):  10%|▉         | 5/51 [00:00<00:05,  8.75it/s]Capturing CUDA graphs (FULL):  12%|█▏        | 6/51 [00:00<00:04,  9.05it/s]Capturing CUDA graphs (FULL):  14%|█▎        | 7/51 [00:00<00:04,  9.26it/s]Capturing CUDA graphs (FULL):  16%|█▌        | 8/51 [00:00<00:04,  9.35it/s]Capturing CUDA graphs (FULL):  18%|█▊        | 9/51 [00:01<00:04,  9.45it/s]Capturing CUDA graphs (FULL):  20%|█▉        | 10/51 [00:01<00:04,  9.54it/s]Capturing CUDA graphs (FULL):  22%|██▏       | 11/51 [00:01<00:04,  9.59it/s]Capturing CUDA graphs (FULL):  24%|██▎       | 12/51 [00:01<00:04,  9.58it/s]Capturing CUDA graphs (FULL):  25%|██▌       | 13/51 [00:01<00:03,  9.64it/s]Capturing CUDA graphs (FULL):  27%|██▋       | 14/51 [00:01<00:03,  9.69it/s]Capturing CUDA graphs (FULL):  29%|██▉       | 15/51 [00:01<00:03,  9.72it/s]Capturing CUDA graphs (FULL):  31%|███▏      | 16/51 [00:01<00:03,  9.70it/s]Capturing CUDA graphs (FULL):  33%|███▎      | 17/51 [00:01<00:03,  9.72it/s]Capturing CUDA graphs (FULL):  35%|███▌      | 18/51 [00:01<00:03,  9.76it/s]Capturing CUDA graphs (FULL):  37%|███▋      | 19/51 [00:02<00:03,  9.79it/s]Capturing CUDA graphs (FULL):  39%|███▉      | 20/51 [00:02<00:03,  9.75it/s]Capturing CUDA graphs (FULL):  41%|████      | 21/51 [00:02<00:03,  9.70it/s]Capturing CUDA graphs (FULL):  43%|████▎     | 22/51 [00:02<00:02,  9.75it/s]Capturing CUDA graphs (FULL):  45%|████▌     | 23/51 [00:02<00:02,  9.79it/s]Capturing CUDA graphs (FULL):  47%|████▋     | 24/51 [00:02<00:02,  9.72it/s]Capturing CUDA graphs (FULL):  49%|████▉     | 25/51 [00:02<00:02,  9.73it/s]Capturing CUDA graphs (FULL):  51%|█████     | 26/51 [00:02<00:02,  9.76it/s]Capturing CUDA graphs (FULL):  53%|█████▎    | 27/51 [00:02<00:02,  9.69it/s]Capturing CUDA graphs (FULL):  55%|█████▍    | 28/51 [00:03<00:02,  9.68it/s]Capturing CUDA graphs (FULL):  57%|█████▋    | 29/51 [00:03<00:02,  9.71it/s]Capturing CUDA graphs (FULL):  59%|█████▉    | 30/51 [00:03<00:02,  9.75it/s]Capturing CUDA graphs (FULL):  61%|██████    | 31/51 [00:03<00:02,  9.71it/s]Capturing CUDA graphs (FULL):  63%|██████▎   | 32/51 [00:03<00:01,  9.74it/s]Capturing CUDA graphs (FULL):  65%|██████▍   | 33/51 [00:03<00:01,  9.76it/s]Capturing CUDA graphs (FULL):  67%|██████▋   | 34/51 [00:03<00:01,  9.76it/s]Capturing CUDA graphs (FULL):  69%|██████▊   | 35/51 [00:03<00:01,  9.71it/s]Capturing CUDA graphs (FULL):  71%|███████   | 36/51 [00:03<00:01,  9.72it/s]Capturing CUDA graphs (FULL):  73%|███████▎  | 37/51 [00:03<00:01,  9.78it/s]Capturing CUDA graphs (FULL):  75%|███████▍  | 38/51 [00:04<00:01,  9.80it/s]Capturing CUDA graphs (FULL):  76%|███████▋  | 39/51 [00:04<00:01,  9.73it/s]Capturing CUDA graphs (FULL):  78%|███████▊  | 40/51 [00:04<00:01,  9.75it/s]Capturing CUDA graphs (FULL):  80%|████████  | 41/51 [00:04<00:01,  9.80it/s]Capturing CUDA graphs (FULL):  82%|████████▏ | 42/51 [00:04<00:00,  9.85it/s]Capturing CUDA graphs (FULL):  84%|████████▍ | 43/51 [00:04<00:00,  9.84it/s]Capturing CUDA graphs (FULL):  86%|████████▋ | 44/51 [00:04<00:00,  9.88it/s]Capturing CUDA graphs (FULL):  88%|████████▊ | 45/51 [00:04<00:00,  9.89it/s]Capturing CUDA graphs (FULL):  90%|█████████ | 46/51 [00:04<00:00,  9.89it/s]Capturing CUDA graphs (FULL):  92%|█████████▏| 47/51 [00:04<00:00,  9.89it/s]Capturing CUDA graphs (FULL):  96%|█████████▌| 49/51 [00:05<00:00,  9.94it/s]Capturing CUDA graphs (FULL): 100%|██████████| 51/51 [00:05<00:00,  9.99it/s]Capturing CUDA graphs (FULL): 100%|██████████| 51/51 [00:05<00:00,  9.55it/s]
+(EngineCore pid=509164) INFO 06-30 03:16:46 [model_runner.py:701] Graph capturing finished in 11 secs, took 0.64 GiB
+(EngineCore pid=509164) INFO 06-30 03:16:46 [jit_monitor.py:54] Kernel JIT monitor activated — Triton JIT compilations during inference will be logged as warnings.
+(EngineCore pid=509164) INFO 06-30 03:16:47 [core.py:306] init engine (profile, create kv cache, warmup model) took 21.99 s (compilation: 8.25 s)
+(EngineCore pid=509164) INFO 06-30 03:16:47 [kernel.py:270] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+WARNING 06-30 03:16:47 [input_processor.py:157] vLLM has deprecated support for supporting different tokenizers for different LoRAs. By default, vLLM uses base model's tokenizer. If you are using a LoRA with its own tokenizer, consider specifying `--tokenizer [lora_path]` to use the LoRA tokenizer.
+[1/150] eval100_045_patch_test_recover_011_daily_sales_region_summary_recovery -> cargo 0/8, valid 0/8 capability-gap
+[2/150] eval100_013_patch_test_pass_014_dispatch_policy_match_order -> cargo 5/8, valid 5/8 rlvr-target
+[3/150] eval100_074_patch_run_recover_010_league_table_sort_tiebreak_recover -> cargo 8/8, valid 8/8 solved
+[4/150] eval100_009_patch_test_pass_010_leaderboard_rank_tiebreak_name_order -> cargo 8/8, valid 8/8 solved
+[5/150] eval100_016_patch_test_pass_017_key_value_required_equals_validation -> cargo 7/8, valid 7/8 rlvr-target
+[6/150] eval100_097_run_only_003_department_expense_summary_report -> cargo 8/8, valid 8/8 solved
+[7/150] eval100_040_patch_test_recover_006_route_action_enum_branch_recovery -> cargo 0/8, valid 0/8 capability-gap
+[8/150] eval100_044_patch_test_recover_010_rank_players_dense_tiebreak_recover -> cargo 3/8, valid 3/8 rlvr-target
+[9/150] eval100_039_patch_test_recover_005_select_event_codes_partial_then_full_fix -> cargo 2/8, valid 2/8 rlvr-target
+[10/150] eval100_006_patch_test_pass_007_layered_profile_override_precedence -> cargo 8/8, valid 8/8 solved
+[11/150] eval100_011_patch_test_pass_012_ticket_lifecycle_reopen_transition_fix -> cargo 8/8, valid 8/8 solved
+[12/150] eval100_093_test_only_004_account_freeze_reopen_transitions -> cargo 8/8, valid 8/8 solved
+[13/150] eval100_004_patch_test_pass_005_collect_even_name_lengths_fix -> cargo 8/8, valid 8/8 solved
+[14/150] eval100_066_patch_run_recover_002_leaderboard_multi_tiebreak_recovery -> cargo 4/8, valid 4/8 rlvr-target
+[15/150] eval100_087_patch_run_recover_023_layered_config_merge_precedence_23 -> cargo 6/8, valid 6/8 rlvr-target
+[16/150] eval100_076_patch_run_recover_012_ticket_state_recovery_summary -> cargo 8/8, valid 8/8 solved
+[17/150] eval100_085_patch_run_recover_021_log_window_filter_map_recover -> cargo 2/8, valid 2/8 rlvr-target
+[18/150] eval100_000_patch_test_pass_001_validate_record_missing_score_check -> cargo 8/8, valid 8/8 solved
+[19/150] eval100_079_patch_run_recover_015_layered_config_merge_precedence_report -> cargo 8/8, valid 8/8 solved
+[20/150] eval100_035_patch_test_recover_001_record_line_parse_validate_recover -> cargo 0/8, valid 0/8 capability-gap
+[21/150] eval100_037_patch_test_recover_003_weekly_region_summary_recover -> cargo 0/8, valid 0/8 capability-gap
+[22/150] eval100_090_test_only_001_test_only_record_line_parsing_validation -> cargo 8/8, valid 8/8 solved
+[23/150] eval100_042_patch_test_recover_008_booking_conflict_adjacent_and_contained -> cargo 8/8, valid 8/8 solved
+[24/150] eval100_052_patch_test_recover_018_rank_players_multi_tiebreak_recover -> cargo 5/8, valid 5/8 rlvr-target
+[25/150] eval100_033_patch_run_pass_014_shipping_label_match_enum_priority -> cargo 0/8, valid 0/8 capability-gap
+[26/150] eval100_021_patch_run_pass_002_leaderboard_sort_points_name_tiebreak -> cargo 7/8, valid 7/8 rlvr-target
+[27/150] eval100_056_patch_test_recover_022_event_action_match_branch_repair -> cargo 7/8, valid 7/8 rlvr-target
+[28/150] eval100_095_run_only_001_csv_record_validation_report -> cargo 8/8, valid 8/8 solved
+[29/150] eval100_043_patch_test_recover_009_record_line_parser_validates_fields -> cargo 4/8, valid 2/8 rlvr-target
+[30/150] eval100_003_patch_test_pass_004_workflow_state_transition_reopen_rules -> cargo 7/8, valid 7/8 rlvr-target
+[31/150] eval100_020_patch_run_pass_001_parse_records_validate_age_and_name -> cargo 2/8, valid 2/8 rlvr-target
+[32/150] eval100_014_patch_test_pass_015_layered_config_env_does_not_override_explicit_file -> cargo 2/8, valid 2/8 rlvr-target
+[33/150] eval100_019_patch_test_pass_020_workflow_reopen_preserves_completion -> cargo 8/8, valid 8/8 solved
+[34/150] eval100_047_patch_test_recover_013_collect_visible_tags_skip_empty_and_keep_order -> cargo 6/8, valid 6/8 rlvr-target
+[35/150] eval100_024_patch_run_pass_005_active_tags_filter_map_join -> cargo 8/8, valid 8/8 solved
+[36/150] eval100_012_patch_test_pass_013_collect_active_even_lengths -> cargo 8/8, valid 8/8 solved
+[37/150] eval100_018_patch_test_pass_019_category_summary_skips_zero_counts_and_sorts -> cargo 5/8, valid 5/8 rlvr-target
+[38/150] eval100_038_patch_test_recover_004_ticket_lifecycle_reopen_and_close -> cargo 8/8, valid 8/8 solved
+[39/150] eval100_048_patch_test_recover_014_dispatch_action_match_branch_repair -> cargo 7/8, valid 7/8 rlvr-target
+[40/150] eval100_094_test_only_005_keep_even_square_sum_test_only -> cargo 8/8, valid 8/8 solved
+[41/150] eval100_001_patch_test_pass_002_rank_players_points_name_tiebreak -> cargo 8/8, valid 8/8 solved
+[42/150] eval100_060_patch_test_recover_026_rank_players_points_name_tiebreak_recover -> cargo 7/8, valid 7/8 rlvr-target
+[43/150] eval100_022_patch_run_pass_003_department_report_filters_zero_and_formats_top -> cargo 1/8, valid 1/8 rlvr-target
+[44/150] eval100_058_patch_test_recover_024_booking_overlap_half_open_recover_24 -> cargo 8/8, valid 8/8 solved
+[45/150] eval100_070_patch_run_recover_006_dispatch_report_match_branch_recovery -> cargo 7/8, valid 7/8 rlvr-target
+[46/150] eval100_026_patch_run_pass_007_layered_config_override_empty_env -> cargo 8/8, valid 8/8 solved
+[47/150] eval100_086_patch_run_recover_022_status_dispatch_summary_recover22 -> cargo 4/8, valid 4/8 rlvr-target
+[48/150] eval100_091_test_only_002_rank_players_wins_then_diff_then_name -> cargo 8/8, valid 8/8 solved
+[49/150] eval100_041_patch_test_recover_007_layered_config_merge_precedence_recover7 -> cargo 5/8, valid 5/8 rlvr-target
+[50/150] eval100_005_patch_test_pass_006_dispatch_route_mode_branch_fix -> cargo 6/8, valid 6/8 rlvr-target
+[51/150] eval100_092_test_only_003_department_hours_summary_tests_only -> cargo 8/8, valid 8/8 solved
+[52/150] eval100_051_patch_test_recover_017_csv_record_required_key_recovery -> cargo 2/8, valid 2/8 rlvr-target
+[53/150] eval100_071_patch_run_recover_007_layered_flags_cli_precedence_recover -> cargo 0/8, valid 0/8 capability-gap
+[54/150] eval100_036_patch_test_recover_002_leaderboard_sort_recover_tiebreak_chain -> cargo 5/8, valid 5/8 rlvr-target
+[55/150] eval100_007_patch_test_pass_008_booking_half_open_and_zero_length_rules -> cargo 8/8, valid 8/8 solved
+[56/150] eval100_028_patch_run_pass_009_csv_record_validation_skip_blank_lines -> cargo 8/8, valid 8/8 solved
+[57/150] eval100_078_patch_run_recover_014_dispatch_message_recovery_case14 -> cargo 8/8, valid 8/8 solved
+[58/150] eval100_096_run_only_002_team_score_ranking_tiebreaks_run_02 -> cargo 8/8, valid 8/8 solved
+[59/150] eval100_063_patch_test_recover_029_extract_tags_skip_blank_and_comments -> cargo 5/8, valid 5/8 rlvr-target
+[60/150] eval100_015_patch_test_pass_016_booking_half_open_merge_conflict -> cargo 6/8, valid 6/8 rlvr-target
+[61/150] eval100_057_patch_test_recover_023_config_merge_precedence_env_overrides_file_defaults -> cargo 5/8, valid 5/8 rlvr-target
+[62/150] eval100_034_patch_run_pass_015_config_merge_precedence_env_default_override -> cargo 8/8, valid 8/8 solved
+[63/150] eval100_050_patch_test_recover_016_booking_overlap_adjacent_and_contained -> cargo 8/8, valid 8/8 solved
+[64/150] eval100_099_run_only_005_filter_map_inventory_restock_report -> cargo 8/8, valid 8/8 solved
+[65/150] eval100_064_patch_test_recover_030_patch_test_recover_enum_routing_policy_30 -> cargo 0/8, valid 0/8 capability-gap
+[66/150] eval100_055_patch_test_recover_021_select_active_scores_filter_recover -> cargo 7/8, valid 7/8 rlvr-target
+[67/150] eval100_025_patch_run_pass_006_dispatch_summary_enum_branches -> cargo 3/8, valid 3/8 rlvr-target
+[68/150] eval100_059_patch_test_recover_025_record_parser_validate_field_count_and_score_bounds -> cargo 8/8, valid 8/8 solved
+[69/150] eval100_098_run_only_004_ticket_state_timeline_report -> cargo 8/8, valid 8/8 solved
+[70/150] heldoutfail48_005_patch_test_pass_006_config_merge_precedence_env_fills_only -> cargo 7/8, valid 7/8 rlvr-target
+[71/150] heldoutfail48_016_patch_test_pass_017_config_merge_file_user_over_env_fill_missing -> cargo 0/8, valid 0/8 capability-gap
+[72/150] heldoutfail48_027_patch_test_pass_028_config_merge_precedence_env_fills_only_missing -> cargo 3/8, valid 3/8 rlvr-target
+[73/150] heldoutfail48_038_patch_test_pass_039_config_merge_file_user_beats_env_fill_missing -> cargo 7/8, valid 7/8 rlvr-target
+[74/150] heldoutfail48_002_patch_run_pass_003_regional_department_report_zero_suppressed -> cargo 0/8, valid 0/8 capability-gap
+[75/150] heldoutfail48_004_patch_run_pass_005_enum_dispatch_priority_summary -> cargo 6/8, valid 6/8 rlvr-target
+[76/150] heldoutfail48_007_patch_run_pass_008_shipping_label_branch_priority_exact_stdout -> cargo 3/8, valid 2/8 rlvr-target
+[77/150] heldoutfail48_015_patch_run_pass_016_enum_dispatch_priority_summary_labels -> cargo 0/8, valid 0/8 capability-gap
+[78/150] heldoutfail48_018_patch_run_pass_019_shipping_command_label_branch_priority -> cargo 1/8, valid 1/8 rlvr-target
+[79/150] heldoutfail48_037_patch_run_pass_038_enum_dispatch_priority_summary_labels -> cargo 0/8, valid 0/8 capability-gap
+[80/150] heldoutfail48_040_patch_run_pass_041_shipping_command_match_priority_labels -> cargo 0/8, valid 0/8 capability-gap
+[81/150] heldoutfail48_041_patch_run_pass_042_record_validator_exact_fields_ranges_names -> cargo 1/8, valid 1/8 rlvr-target
+[82/150] heldoutfail48_046_patch_run_pass_047_department_report_zero_suppression_ordering -> cargo 0/8, valid 0/8 capability-gap
+[83/150] heldoutfail48_000_patch_test_recover_001_router_policy_branch_repair -> cargo 0/8, valid 0/8 capability-gap
+[84/150] heldoutfail48_006_patch_test_recover_007_select_visible_candidates_filter_recovery -> cargo 0/8, valid 0/8 capability-gap
+[85/150] heldoutfail48_011_patch_test_recover_012_enum_policy_dispatch_repair_cycle -> cargo 0/8, valid 0/8 capability-gap
+[86/150] heldoutfail48_025_patch_test_recover_026_dense_rank_duplicate_merge_tiebreak_chain -> cargo 0/8, valid 0/8 capability-gap
+[87/150] heldoutfail48_042_patch_test_recover_043_line_record_parser_rejects_missing_and_bad_tags -> cargo 0/8, valid 0/8 capability-gap
+[88/150] heldoutfail48_045_patch_run_recover_046_layered_config_empty_false_precedence_recover -> cargo 3/8, valid 3/8 rlvr-target
+[89/150] heldoutfailplus150_003_patch_test_recover_004_dense_rank_merge_tiebreak_repair -> cargo 0/8, valid 0/8 capability-gap
+[90/150] heldoutfailplus150_004_patch_run_pass_005_enum_dispatch_priority_summary_labels -> cargo 0/8, valid 0/8 capability-gap
+[91/150] heldoutfailplus150_005_patch_test_pass_006_config_merge_user_beats_env_fills_gaps -> cargo 2/8, valid 2/8 rlvr-target
+[92/150] heldoutfailplus150_007_patch_run_pass_008_shipping_command_enum_priority_labels -> cargo 0/8, valid 0/8 capability-gap
+[93/150] heldoutfailplus150_011_patch_test_recover_012_enum_policy_router_recovery_v12 -> cargo 0/8, valid 0/8 capability-gap
+[94/150] heldoutfailplus150_013_patch_run_pass_014_department_region_report_zero_suppression -> cargo 0/8, valid 0/8 capability-gap
+[95/150] heldoutfailplus150_014_patch_test_recover_015_dense_rank_duplicate_merge_tiebreak_recovery -> cargo 1/8, valid 1/8 rlvr-target
+[96/150] heldoutfailplus150_015_patch_run_pass_016_enum_dispatch_priority_summary_labels -> cargo 0/8, valid 0/8 capability-gap
+[97/150] heldoutfailplus150_016_patch_test_pass_017_config_merge_file_user_beats_env_fill_missing -> cargo 2/8, valid 2/8 rlvr-target
+[98/150] heldoutfailplus150_022_patch_test_recover_023_policy_dispatch_enum_repair -> cargo 0/8, valid 0/8 capability-gap
+[99/150] heldoutfailplus150_024_patch_run_pass_025_department_report_zero_suppression_sorting -> cargo 3/8, valid 3/8 rlvr-target
+[100/150] heldoutfailplus150_026_patch_run_pass_027_dispatch_label_summary_priority_branches -> cargo 0/8, valid 0/8 capability-gap
+[101/150] heldoutfailplus150_027_patch_test_pass_028_config_merge_file_user_beats_env_fill_missing -> cargo 7/8, valid 7/8 rlvr-target
+[102/150] heldoutfailplus150_029_patch_run_pass_030_shipping_label_enum_priority_manifest -> cargo 0/8, valid 0/8 capability-gap
+[103/150] heldoutfailplus150_032_patch_test_recover_033_weekly_sales_valid_report_recovery -> cargo 0/8, valid 0/8 capability-gap
+[104/150] heldoutfailplus150_033_patch_test_recover_034_route_policy_enum_repair_34 -> cargo 0/8, valid 0/8 capability-gap
+[105/150] heldoutfailplus150_035_patch_run_pass_036_department_region_report_zero_suppression -> cargo 0/8, valid 0/8 capability-gap
+[106/150] heldoutfailplus150_036_patch_test_recover_037_dense_rank_dedup_multi_tiebreak_repair -> cargo 0/8, valid 0/8 capability-gap
+[107/150] heldoutfailplus150_037_patch_run_pass_038_enum_dispatch_priority_summary_labels -> cargo 4/8, valid 2/8 rlvr-target
+[108/150] heldoutfailplus150_038_patch_test_pass_039_config_merge_file_user_over_env_fill_only -> cargo 5/8, valid 5/8 rlvr-target
+[109/150] heldoutfailplus150_040_patch_run_pass_041_shipping_label_enum_priority_41 -> cargo 2/8, valid 2/8 rlvr-target
+[110/150] heldoutfailplus150_043_patch_test_recover_044_weekly_sales_region_summary_repair -> cargo 0/8, valid 0/8 capability-gap
+[111/150] heldoutfailplus150_046_patch_run_pass_047_department_region_report_zero_suppression -> cargo 0/8, valid 0/8 capability-gap
+[112/150] heldoutfailplus150_048_patch_run_pass_049_enum_dispatch_priority_summary_labels -> cargo 1/8, valid 1/8 rlvr-target
+[113/150] heldoutfailplus150_049_patch_test_pass_050_config_merge_precedence_file_user_over_env_fill_missing -> cargo 8/8, valid 8/8 solved
+[114/150] heldoutfailplus150_052_patch_run_pass_053_record_parser_exact_fields_lowercase_ranges -> cargo 0/8, valid 0/8 capability-gap
+[115/150] heldoutfailplus150_054_patch_test_recover_055_weekly_sales_summary_valid_filtering_recover55 -> cargo 1/8, valid 0/8 rlvr-target
+[116/150] heldoutfailplus150_059_patch_run_pass_060_enum_dispatch_priority_label_summary -> cargo 0/8, valid 0/8 capability-gap
+[117/150] heldoutfailplus150_060_patch_test_pass_061_config_merge_precedence_env_fill_only -> cargo 7/8, valid 7/8 rlvr-target
+[118/150] heldoutfailplus150_061_patch_test_recover_062_eligible_task_names_iterator_filters -> cargo 0/8, valid 0/8 capability-gap
+[119/150] heldoutfailplus150_062_patch_run_pass_063_shipping_label_enum_priority_exact_stdout -> cargo 0/8, valid 0/8 capability-gap
+[120/150] heldoutfailplus150_064_patch_test_recover_065_line_record_parser_missing_field_tag_validation -> cargo 0/8, valid 0/8 capability-gap
+[121/150] heldoutfailplus150_066_patch_test_recover_067_route_policy_enum_branch_repair -> cargo 2/8, valid 2/8 rlvr-target
+[122/150] heldoutfailplus150_068_patch_run_pass_069_department_region_report_filters_zero_suppression -> cargo 0/8, valid 0/8 capability-gap
+[123/150] heldoutfailplus150_071_patch_test_pass_072_config_merge_precedence_env_only_fills_missing -> cargo 5/8, valid 5/8 rlvr-target
+[124/150] heldoutfailplus150_073_patch_run_pass_074_shipping_command_match_priority_labels -> cargo 3/8, valid 3/8 rlvr-target
+[125/150] heldoutfailplus150_081_patch_run_pass_082_enum_dispatch_priority_summary -> cargo 0/8, valid 0/8 capability-gap
+[126/150] heldoutfailplus150_082_patch_test_pass_083_layered_config_env_fill_precedence_case -> cargo 7/8, valid 7/8 rlvr-target
+[127/150] heldoutfailplus150_084_patch_run_pass_085_shipping_command_enum_priority_labels -> cargo 0/8, valid 0/8 capability-gap
+[128/150] heldoutfailplus150_086_patch_test_recover_087_record_line_parser_validation_recover_87 -> cargo 0/8, valid 0/8 capability-gap
+[129/150] heldoutfailplus150_087_patch_test_recover_088_weekly_sales_region_summary_repair -> cargo 5/8, valid 5/8 rlvr-target
+[130/150] heldoutfailplus150_091_patch_test_recover_092_dense_rank_merge_tiebreak_recovery_92 -> cargo 0/8, valid 0/8 capability-gap
+[131/150] heldoutfailplus150_092_patch_run_pass_093_enum_dispatch_priority_summary_93 -> cargo 0/8, valid 0/8 capability-gap
+[132/150] heldoutfailplus150_093_patch_test_pass_094_config_merge_precedence_env_fill_only -> cargo 8/8, valid 8/8 solved
+[133/150] heldoutfailplus150_095_patch_run_pass_096_shipping_command_branch_priority_labels -> cargo 2/8, valid 2/8 rlvr-target
+[134/150] heldoutfailplus150_097_patch_test_recover_098_record_parser_tag_value_validation_recover98 -> cargo 0/8, valid 0/8 capability-gap
+[135/150] heldoutfailplus150_099_patch_test_recover_100_enum_route_policy_repair -> cargo 0/8, valid 0/8 capability-gap
+[136/150] heldoutfailplus150_102_patch_test_recover_103_dense_rank_duplicate_merge_tiebreak_repair -> cargo 0/8, valid 0/8 capability-gap
+[137/150] heldoutfailplus150_103_patch_run_pass_104_enum_dispatch_priority_summary_labels -> cargo 0/8, valid 0/8 capability-gap
+[138/150] heldoutfailplus150_104_patch_test_pass_105_config_merge_precedence_file_beats_env_fill_missing -> cargo 6/8, valid 6/8 rlvr-target
+[139/150] heldoutfailplus150_106_patch_run_pass_107_shipping_label_match_priority_107 -> cargo 0/8, valid 0/8 capability-gap
+[140/150] heldoutfailplus150_108_patch_test_recover_109_tagged_record_parser_recovery_109 -> cargo 0/8, valid 0/8 capability-gap
+[141/150] heldoutfailplus150_109_patch_test_recover_110_weekly_sales_region_summary_repair -> cargo 0/8, valid 0/8 capability-gap
+[142/150] heldoutfailplus150_112_patch_run_pass_113_department_region_report_zero_suppression -> cargo 0/8, valid 0/8 capability-gap
+[143/150] heldoutfailplus150_115_patch_test_pass_116_config_merge_precedence_env_fills_only_missing -> cargo 0/8, valid 0/8 capability-gap
+[144/150] heldoutfailplus150_120_patch_test_recover_121_weekly_sales_summary_valid_filters_unique_counts -> cargo 4/8, valid 4/8 rlvr-target
+[145/150] heldoutfailplus150_121_patch_test_recover_122_route_policy_enum_dispatch_repair -> cargo 0/8, valid 0/8 capability-gap
+[146/150] heldoutfailplus150_126_patch_test_pass_127_config_merge_file_user_over_env_fill_missing -> cargo 3/8, valid 3/8 rlvr-target
+[147/150] heldoutfailplus150_132_patch_test_recover_133_router_policy_branch_matrix_repair -> cargo 1/8, valid 1/8 rlvr-target
+[148/150] heldoutfailplus150_137_patch_test_pass_138_config_merge_precedence_env_fills_only_missing -> cargo 3/8, valid 3/8 rlvr-target
+[149/150] heldoutfailplus150_141_patch_test_recover_142_line_record_parser_missing_fields_tag_value_checks -> cargo 1/8, valid 0/8 rlvr-target
+[150/150] heldoutfailplus150_148_patch_test_pass_149_merge_layers_user_file_over_env_fill_missing -> cargo 4/8, valid 4/8 rlvr-target
+
+rlvr-targets: 62  capability-gap: 54  solved: 34
+wrote results/RLVR_VFINAL2_STEP10/seeds/step10_seedC.json
+(EngineCore pid=509164) INFO 06-30 04:06:22 [core.py:1178] [shutdown] EngineCore: trigger received signal=SIGTERM
+(EngineCore pid=509164) INFO 06-30 04:06:22 [core.py:1297] [shutdown] EngineCore: start mode=abort timeout=0s
+(EngineCore pid=509164) INFO 06-30 04:06:22 [core.py:1328] [shutdown] EngineCore: request processing complete; starting resource teardown
+(EngineCore pid=509164) INFO 06-30 04:06:22 [core.py:1191] [shutdown] EngineCore: exiting busy loop
+===== ALL SEEDS DONE =====

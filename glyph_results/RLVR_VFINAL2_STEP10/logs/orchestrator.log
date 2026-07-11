@@ -1,0 +1,124 @@
+/workspace/prime-rl-src/.venv/lib/python3.12/site-packages/tyro/_resolver.py:601: TyroWarning: <class 'prime_rl.configs.orchestrator.DefaultAdvantageConfig'> does not match any type in Union: [<class 'types.UnionType'>, <class 'NoneType'>]
+  warnings.warn(
+/workspace/prime-rl-src/.venv/lib/python3.12/site-packages/tyro/_parsers.py:562: UserWarning: Duplicate subcommand name detected: 'advantage:default-advantage-config' is already used for typing.Annotated but will be overwritten by prime_rl.configs.orchestrator.DefaultAdvantageConfig. Only the last type (prime_rl.configs.orchestrator.DefaultAdvantageConfig) will be accessible via this subcommand. Consider using distinct class names or use tyro.conf.subcommand() to specify explicit subcommand names.
+  warnings.warn(
+[2m00:57:18[0m [1m   INFO[0m [1m[22mStarting orchestrator[0m[0m
+[2m00:57:18[0m [1m   INFO[0m [1m[22mSetting default executor to ThreadPoolExecutor(max_workers=64)[0m[0m
+[2m00:57:18[0m [1m   INFO[0m [1m[22mInitializing teacher inference pool (base_url=http://localhost:8001/v1, model=/workspace/glyph/outputs/RLVR_POOL_B_COMPILER_AWARE_R64_A128/glyph_chat_models/JayZenith__SFT_HALF_A_V8)[0m[0m
+[2m00:57:18[0m [1m   INFO[0m [1m[22mInitializing static inference pool (base_url=http://localhost:8001/v1, dp_rank_count=1, api_key_var=VLLM_API_KEY, headers={})[0m[0m
+[2m00:57:18[0m [1m   INFO[0m [1m[22mInitializing tokenizer (name='/workspace/glyph/outputs/RLVR_POOL_B_COMPILER_AWARE_R64_A128/glyph_chat_models/JayZenith__SFT_HALF_A_V8' trust_remote_code=False chat_template=None)[0m[0m
+[2m00:57:19[0m [1m   INFO[0m [1m[22mInitialized DefaultRenderer for /workspace/glyph/outputs/RLVR_POOL_B_COMPILER_AWARE_R64_A128/glyph_chat_models/JayZenith__SFT_HALF_A_V8[0m[0m
+[2m00:57:19[0m [1m   INFO[0m [1m[22mInitializing static inference pool (base_url=http://localhost:8000/v1, dp_rank_count=1, api_key_var=VLLM_API_KEY, headers={})[0m[0m
+[2m00:57:19[0m [1m   INFO[0m [1m[22mUsing direct renderer rollout client[0m[0m
+[2m00:57:19[0m [1m   INFO[0m [1m[22mInitializing monitor (wandb=project='prime-rl' entity=None name=None group=None tags=None offline=True log_extras=LogExtrasConfig(samples=True, distributions=True, interval=10, sample_ratio=None), prime_monitor=None)[0m[0m
+[2m00:57:19[0m [1m   INFO[0m [1m[22mInitializing WandbMonitor (project='prime-rl' entity=None name=None group=None tags=None offline=True log_extras=LogExtrasConfig(samples=True, distributions=True, interval=10, sample_ratio=None))[0m[0m
+wandb: Tracking run with wandb version 0.26.1
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /workspace/glyph/outputs/RLVR_POOL_B_COMPILER_AWARE_R64_A128/run_default/wandb/offline-run-20260630_005719-z659fuyo
+wandb: Detected [anthropic, openai, verifiers] in use.
+wandb: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+wandb: For more information, check out the docs at: https://weave-docs.wandb.ai
+[2m00:57:20[0m [1m   INFO[0m [1m[22mConfigured 3 rollout filter(s):[0m[0m
+[2m00:57:20[0m [1m   INFO[0m [1m[22m  Enforcing gibberish filter (type=gibberish, enforce=True, token_id_threshold=100000, logprob_offset=2.0)[0m[0m
+[2m00:57:20[0m [1m   INFO[0m [1m[22m  Enforcing repetition filter (type=repetition, enforce=True, window=3000, prob_threshold=0.99)[0m[0m
+[2m00:57:20[0m [1m   INFO[0m [1m[22m  Enforcing zero_advantage filter (type=zero_advantage, enforce=True)[0m[0m
+[2m00:57:20[0m [1m   INFO[0m [1m[22mLoading training environments[0m[0m
+[2m00:57:20[0m [1m   INFO[0m [1m[22mInitializing task-trace (id='task-trace' name=None args={'data_path': '/workspace/glyph/synthetic_data/rl_prompts_signal_v3_pool_b_mixed_oversampled.jsonl', 'timeout': 30, 'max_tool_rounds': 15, 'progress_error_ladder_bonus': 2.5} extra_env_kwargs={'max_total_completion_tokens': -1, 'max_seq_len': 16384} address=None num_workers=1 ratio=None max_retries=0 max_total_completion_tokens=-1 timeout=None sampling=TrainSamplingConfig(temperature=0.8, repetition_penalty=1.0, max_completion_tokens=4000, min_tokens=0, seed=None, extra_body={'stop_token_ids': [151644, 151645], 'stop': ['<|im_end|>', '<|im_start|>'], 'top_k': -1, 'min_p': 0.0, 'return_token_ids': True, 'logit_bias': {'151669': -100.0, '151670': -100.0, '151671': -100.0, '151672': -100.0, '151673': -100.0, '151674': -100.0, '151675': -100.0, '151676': -100.0, '151677': -100.0, '151678': -100.0, '151679': -100.0, '151680': -100.0, '151681': -100.0, '151682': -100.0, '151683': -100.0, '151684': -100.0, '151685': -100.0, '151686': -100.0, '151687': -100.0, '151688': -100.0, '151689': -100.0, '151690': -100.0, '151691': -100.0, '151692': -100.0, '151693': -100.0, '151694': -100.0, '151695': -100.0, '151696': -100.0, '151697': -100.0, '151698': -100.0, '151699': -100.0, '151700': -100.0, '151701': -100.0, '151702': -100.0, '151703': -100.0, '151704': -100.0, '151705': -100.0, '151706': -100.0, '151707': -100.0, '151708': -100.0, '151709': -100.0, '151710': -100.0, '151711': -100.0, '151712': -100.0, '151713': -100.0, '151714': -100.0, '151715': -100.0, '151716': -100.0, '151717': -100.0, '151718': -100.0, '151719': -100.0, '151720': -100.0, '151721': -100.0, '151722': -100.0, '151723': -100.0, '151724': -100.0, '151725': -100.0, '151726': -100.0, '151727': -100.0, '151728': -100.0, '151729': -100.0, '151730': -100.0, '151731': -100.0, '151732': -100.0, '151733': -100.0, '151734': -100.0, '151735': -100.0, '151736': -100.0, '151737': -100.0, '151738': -100.0, '151739': -100.0, '151740': -100.0, '151741': -100.0, '151742': -100.0, '151743': -100.0, '151744': -100.0, '151745': -100.0, '151746': -100.0, '151747': -100.0, '151748': -100.0, '151749': -100.0, '151750': -100.0, '151751': -100.0, '151752': -100.0, '151753': -100.0, '151754': -100.0, '151755': -100.0, '151756': -100.0, '151757': -100.0, '151758': -100.0, '151759': -100.0, '151760': -100.0, '151761': -100.0, '151762': -100.0, '151763': -100.0, '151764': -100.0, '151765': -100.0, '151766': -100.0, '151767': -100.0, '151768': -100.0, '151769': -100.0, '151770': -100.0, '151771': -100.0, '151772': -100.0, '151773': -100.0, '151774': -100.0, '151775': -100.0, '151776': -100.0, '151777': -100.0, '151778': -100.0, '151779': -100.0, '151780': -100.0, '151781': -100.0, '151782': -100.0, '151783': -100.0, '151784': -100.0, '151785': -100.0, '151786': -100.0, '151787': -100.0, '151788': -100.0, '151789': -100.0, '151790': -100.0, '151791': -100.0, '151792': -100.0, '151793': -100.0, '151794': -100.0, '151795': -100.0, '151796': -100.0, '151797': -100.0, '151798': -100.0, '151799': -100.0, '151800': -100.0, '151801': -100.0, '151802': -100.0, '151803': -100.0, '151804': -100.0, '151805': -100.0, '151806': -100.0, '151807': -100.0, '151808': -100.0, '151809': -100.0, '151810': -100.0, '151811': -100.0, '151812': -100.0, '151813': -100.0, '151814': -100.0, '151815': -100.0, '151816': -100.0, '151817': -100.0, '151818': -100.0, '151819': -100.0, '151820': -100.0, '151821': -100.0, '151822': -100.0, '151823': -100.0, '151824': -100.0, '151825': -100.0, '151826': -100.0, '151827': -100.0, '151828': -100.0, '151829': -100.0, '151830': -100.0, '151831': -100.0, '151832': -100.0, '151833': -100.0, '151834': -100.0, '151835': -100.0, '151836': -100.0, '151837': -100.0, '151838': -100.0, '151839': -100.0, '151840': -100.0, '151841': -100.0, '151842': -100.0, '151843': -100.0, '151844': -100.0, '151845': -100.0, '151846': -100.0, '151847': -100.0, '151848': -100.0, '151849': -100.0, '151850': -100.0, '151851': -100.0, '151852': -100.0, '151853': -100.0, '151854': -100.0, '151855': -100.0, '151856': -100.0, '151857': -100.0, '151858': -100.0, '151859': -100.0, '151860': -100.0, '151861': -100.0, '151862': -100.0, '151863': -100.0, '151864': -100.0, '151865': -100.0, '151866': -100.0, '151867': -100.0, '151868': -100.0, '151869': -100.0, '151870': -100.0, '151871': -100.0, '151872': -100.0, '151873': -100.0, '151874': -100.0, '151875': -100.0, '151876': -100.0, '151877': -100.0, '151878': -100.0, '151879': -100.0, '151880': -100.0, '151881': -100.0, '151882': -100.0, '151883': -100.0, '151884': -100.0, '151885': -100.0, '151886': -100.0, '151887': -100.0, '151888': -100.0, '151889': -100.0, '151890': -100.0, '151891': -100.0, '151892': -100.0, '151893': -100.0, '151894': -100.0, '151895': -100.0, '151896': -100.0, '151897': -100.0, '151898': -100.0, '151899': -100.0, '151900': -100.0, '151901': -100.0, '151902': -100.0, '151903': -100.0, '151904': -100.0, '151905': -100.0, '151906': -100.0, '151907': -100.0, '151908': -100.0, '151909': -100.0, '151910': -100.0, '151911': -100.0, '151912': -100.0, '151913': -100.0, '151914': -100.0, '151915': -100.0, '151916': -100.0, '151917': -100.0, '151918': -100.0, '151919': -100.0, '151920': -100.0, '151921': -100.0, '151922': -100.0, '151923': -100.0, '151924': -100.0, '151925': -100.0, '151926': -100.0, '151927': -100.0, '151928': -100.0, '151929': -100.0, '151930': -100.0, '151931': -100.0, '151932': -100.0, '151933': -100.0, '151934': -100.0, '151935': -100.0}}))[0m[0m
+[2m00:57:21[0m [1m   INFO[0m [1m[22mLoaded 1 training environment(s) (task-trace)[0m[0m
+[2m00:57:29[0m [32m[1mSUCCESS[0m [32m[1m[22mTrain environment(s) ready[0m[0m
+[2m00:57:29[0m [1m   INFO[0m [1m[22mSetting up buffer (seed=None easy_threshold=None hard_threshold=None easy_fraction=0.0 hard_fraction=0.0 online_difficulty_filtering=False hash_keys=['env_name', 'prompt'])[0m[0m
+[2m00:57:29[0m [1m   INFO[0m [1m[22mInitializing checkpoint manager (interval=5 resume_step=None wait_for_weights_timeout=None keep_last=None keep_interval=None skip_progress=False skip_buffer=False)[0m[0m
+[2m00:57:29[0m [1m   INFO[0m [1m[22mWaiting for inference pool to be ready[0m[0m
+[2m00:57:39[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 10 seconds (Error: All connection attempts failed) on http://localhost:8000[0m[0m
+[2m00:57:49[0m [32m[1mSUCCESS[0m [32m[1m[22mInference pool ready[0m[0m
+[2m00:57:49[0m [1m   INFO[0m [1m[22mWaiting for teacher inference pool to be ready[0m[0m
+[2m00:57:49[0m [32m[1mSUCCESS[0m [32m[1m[22mTeacher inference pool ready[0m[0m
+[2m00:57:49[0m [1m   INFO[0m [1m[22mInitializing weight broadcast (type='filesystem')[0m[0m
+[2m00:57:49[0m [1m   INFO[0m [1m[22mInitializing training batch sender (type='filesystem')[0m[0m
+[2m00:57:49[0m [1m   INFO[0m [1m[22mTraining from scratch[0m[0m
+[2m00:57:49[0m [1m   INFO[0m [1m[22mStarting orchestrator loop (max_steps=30)[0m[0m
+[2m00:57:49[0m [1m   INFO[0m [1m[22mStarting orchestrator step 0[0m[0m
+Generating rollouts (train):   0%|          | 0/96 [00:00<?, ?it/s][fastokens] patch_transformers: successfully patched transformers v5.5.0
+Generating rollouts (train):   8%|▊         | 8/96 [01:31<16:51, 11.50s/it]Generating rollouts (train):  17%|█▋        | 16/96 [01:33<06:29,  4.87s/it]Generating rollouts (train):  25%|██▌       | 24/96 [01:52<04:29,  3.74s/it]Generating rollouts (train):  33%|███▎      | 32/96 [02:41<04:57,  4.65s/it]Generating rollouts (train):  42%|████▏     | 40/96 [02:48<03:04,  3.30s/it]Generating rollouts (train):  50%|█████     | 48/96 [02:48<01:44,  2.18s/it]Generating rollouts (train):  58%|█████▊    | 56/96 [02:59<01:16,  1.92s/it]Generating rollouts (train):  67%|██████▋   | 64/96 [03:04<00:48,  1.50s/it]Generating rollouts (train):  75%|███████▌  | 72/96 [03:07<00:27,  1.13s/it]Generating rollouts (train):  83%|████████▎ | 80/96 [03:08<00:13,  1.18it/s]Generating rollouts (train):  92%|█████████▏| 88/96 [03:22<00:08,  1.12s/it]Generating rollouts (train): 100%|██████████| 96/96 [03:23<00:00,  1.27it/s]Generating rollouts (train): 100%|██████████| 96/96 [03:23<00:00,  2.12s/it]
+[2m01:01:12[0m [1m   INFO[0m [1m[22mDetected 65/96 rollouts (gibberish=1, zero_advantage=64), enforced 65[0m[0m
+[2m01:01:12[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 42 training examples[0m[0m
+[2m01:01:17[0m [1m   INFO[0m [1m[22mLogging 96 samples to W&B table at step 0[0m[0m
+[2m01:01:18[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 0 | Time: 208.51s | Reward: 9.0469 | Seq. Length: 1533.0 tokens/sample | Max. Off-Policy Level: 0[0m[0m
+[2m01:01:18[0m [1m   INFO[0m [1m[22mStarting orchestrator step 1[0m[0m
+Generating rollouts (train):   0%|          | 0/96 [00:00<?, ?it/s]Generating rollouts (train):  17%|█▋        | 16/96 [00:00<00:03, 22.92it/s]Generating rollouts (train):  25%|██▌       | 24/96 [00:02<00:07,  9.45it/s]Generating rollouts (train):  42%|████▏     | 40/96 [00:07<00:13,  4.13it/s]Generating rollouts (train):  50%|█████     | 48/96 [00:13<00:17,  2.82it/s]Generating rollouts (train):  67%|██████▋   | 64/96 [00:22<00:14,  2.21it/s]Generating rollouts (train):  75%|███████▌  | 72/96 [00:22<00:08,  2.83it/s]Generating rollouts (train):  83%|████████▎ | 80/96 [00:26<00:06,  2.49it/s]Generating rollouts (train):  92%|█████████▏| 88/96 [00:36<00:04,  1.63it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:48<00:00,  1.19it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:48<00:00,  2.00it/s]
+[2m01:02:06[0m [1m   INFO[0m [1m[22mDetected 16/96 rollouts (zero_advantage=16), enforced 16[0m[0m
+[2m01:02:06[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 97 training examples[0m[0m
+[2m01:02:21[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 1 | Time: 62.96s | Reward: 2.8411 | Seq. Length: 3383.2 tokens/sample | Max. Off-Policy Level: 1[0m[0m
+[2m01:02:21[0m [1m   INFO[0m [1m[22mStarting orchestrator step 2[0m[0m
+Generating rollouts (train):   0%|          | 0/96 [00:00<?, ?it/s]Generating rollouts (train):  42%|████▏     | 40/96 [00:12<00:17,  3.20it/s]Generating rollouts (train):  50%|█████     | 48/96 [00:27<00:31,  1.51it/s]Generating rollouts (train):  58%|█████▊    | 56/96 [00:29<00:22,  1.76it/s]Generating rollouts (train):  67%|██████▋   | 64/96 [00:30<00:14,  2.18it/s]Generating rollouts (train):  75%|███████▌  | 72/96 [00:40<00:15,  1.54it/s]Generating rollouts (train):  92%|█████████▏| 88/96 [00:52<00:05,  1.40it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:59<00:00,  1.38it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:59<00:00,  1.63it/s]
+[2m01:03:20[0m [1m   INFO[0m [1m[22mDetected 39/96 rollouts (gibberish=1, zero_advantage=38), enforced 39[0m[0m
+[2m01:03:21[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 71 training examples[0m[0m
+[2m01:03:27[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 2 | Time: 65.85s | Reward: 5.3672 | Seq. Length: 1968.9 tokens/sample | Max. Off-Policy Level: 1[0m[0m
+[2m01:03:28[0m [1m   INFO[0m [1m[22mStarting orchestrator step 3[0m[0m
+[2m01:03:28[0m [1m   INFO[0m [1m[22mOrchestrator paused: waiting for trainer process to complete checkpoint 2 (>1 step(s) ahead). Training is progressing normally.[0m[0m
+[2m01:04:55[0m [1m   INFO[0m [1m[22mOrchestrator resumed: checkpoint 2 ready (after 87.11s)[0m[0m
+Generating rollouts (train):   0%|          | 0/96 [00:00<?, ?it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:00<00:00, 7129.13it/s]
+[2m01:04:55[0m [1m   INFO[0m [1m[22mDetected 1/96 rollouts (gibberish=1), enforced 1[0m[0m
+[2m01:04:56[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 111 training examples[0m[0m
+[2m01:05:18[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 3 | Time: 110.80s | Reward: -3.1634 | Seq. Length: 5371.0 tokens/sample | Max. Off-Policy Level: 2[0m[0m
+[2m01:05:19[0m [1m   INFO[0m [1m[22mStarting orchestrator step 4[0m[0m
+[2m01:05:19[0m [1m   INFO[0m [1m[22mOrchestrator paused: waiting for trainer process to complete checkpoint 3 (>1 step(s) ahead). Training is progressing normally.[0m[0m
+[2m01:06:11[0m [1m   INFO[0m [1m[22mOrchestrator resumed: checkpoint 3 ready (after 52.07s)[0m[0m
+Generating rollouts (train):   0%|          | 0/96 [00:00<?, ?it/s]Generating rollouts (train):  92%|█████████▏| 88/96 [00:10<00:00,  8.76it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:10<00:00,  9.74it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:10<00:00,  9.45it/s]
+[2m01:06:21[0m [1m   INFO[0m [1m[22mDetected 45/96 rollouts (gibberish=1, zero_advantage=44), enforced 45[0m[0m
+[2m01:06:22[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 53 training examples[0m[0m
+[2m01:06:27[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 4 | Time: 67.93s | Reward: 7.4034 | Seq. Length: 1802.1 tokens/sample | Max. Off-Policy Level: 1[0m[0m
+[2m01:06:27[0m [1m   INFO[0m [1m[22mSaving checkpoint at step 5[0m[0m
+[2m01:06:27[0m [1m   INFO[0m [1m[22mStarting orchestrator step 5[0m[0m
+[2m01:06:27[0m [1m   INFO[0m [1m[22mOrchestrator paused: waiting for trainer process to complete checkpoint 4 (>1 step(s) ahead). Training is progressing normally.[0m[0m
+[2m01:10:00[0m [1m   INFO[0m [1m[22mOrchestrator resumed: checkpoint 4 ready (after 212.26s)[0m[0m
+Generating rollouts (train):   0%|          | 0/96 [00:00<?, ?it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:00<00:00, 18172.73it/s]
+[2m01:10:00[0m [1m   INFO[0m [1m[22mDetected 41/96 rollouts (gibberish=1, zero_advantage=40), enforced 41[0m[0m
+[2m01:10:00[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 57 training examples[0m[0m
+[2m01:10:12[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 5 | Time: 224.34s | Reward: 2.7578 | Seq. Length: 3291.4 tokens/sample | Max. Off-Policy Level: 1[0m[0m
+[2m01:10:12[0m [1m   INFO[0m [1m[22mStarting orchestrator step 6[0m[0m
+[2m01:10:12[0m [1m   INFO[0m [1m[22mOrchestrator paused: waiting for trainer process to complete checkpoint 5 (>1 step(s) ahead). Training is progressing normally.[0m[0m
+[2m01:11:04[0m [1m   INFO[0m [1m[22mOrchestrator resumed: checkpoint 5 ready (after 52.06s)[0m[0m
+Generating rollouts (train):   0%|          | 0/96 [00:00<?, ?it/s]Generating rollouts (train):  92%|█████████▏| 88/96 [00:05<00:00, 15.61it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:09<00:00,  8.52it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:09<00:00,  9.74it/s]
+[2m01:11:14[0m [1m   INFO[0m [1m[22mDetected 56/96 rollouts (zero_advantage=56), enforced 56[0m[0m
+[2m01:11:14[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 40 training examples[0m[0m
+[2m01:11:18[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 6 | Time: 66.08s | Reward: 8.8906 | Seq. Length: 1377.3 tokens/sample | Max. Off-Policy Level: 1[0m[0m
+[2m01:11:19[0m [1m   INFO[0m [1m[22mStarting orchestrator step 7[0m[0m
+[2m01:11:19[0m [1m   INFO[0m [1m[22mOrchestrator paused: waiting for trainer process to complete checkpoint 6 (>1 step(s) ahead). Training is progressing normally.[0m[0m
+[2m01:13:29[0m [1m   INFO[0m [1m[22mOrchestrator resumed: checkpoint 6 ready (after 130.19s)[0m[0m
+Generating rollouts (train):   0%|          | 0/96 [00:00<?, ?it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:00<00:00, 15978.30it/s]
+[2m01:13:29[0m [1m   INFO[0m [1m[22mDetected 10/96 rollouts (gibberish=2, zero_advantage=8), enforced 10[0m[0m
+[2m01:13:29[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 89 training examples[0m[0m
+[2m01:13:43[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 7 | Time: 144.88s | Reward: 0.6615 | Seq. Length: 3742.7 tokens/sample | Max. Off-Policy Level: 1[0m[0m
+[2m01:13:44[0m [1m   INFO[0m [1m[22mStarting orchestrator step 8[0m[0m
+[2m01:13:44[0m [1m   INFO[0m [1m[22mOrchestrator paused: waiting for trainer process to complete checkpoint 7 (>1 step(s) ahead). Training is progressing normally.[0m[0m
+[2m01:14:19[0m [1m   INFO[0m [1m[22mOrchestrator resumed: checkpoint 7 ready (after 35.05s)[0m[0m
+Generating rollouts (train):   0%|          | 0/96 [00:00<?, ?it/s]Generating rollouts (train):  50%|█████     | 48/96 [00:00<00:00, 49.37it/s]Generating rollouts (train):  58%|█████▊    | 56/96 [00:09<00:08,  4.72it/s]Generating rollouts (train):  67%|██████▋   | 64/96 [00:14<00:09,  3.32it/s]Generating rollouts (train):  75%|███████▌  | 72/96 [00:23<00:11,  2.01it/s]Generating rollouts (train):  83%|████████▎ | 80/96 [00:23<00:06,  2.55it/s]Generating rollouts (train):  92%|█████████▏| 88/96 [00:37<00:06,  1.32it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:38<00:00,  1.73it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:38<00:00,  2.47it/s]
+[2m01:14:58[0m [1m   INFO[0m [1m[22mDetected 72/96 rollouts (zero_advantage=72), enforced 72[0m[0m
+[2m01:14:58[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 25 training examples[0m[0m
+[2m01:15:01[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 8 | Time: 77.22s | Reward: 8.0807 | Seq. Length: 1076.6 tokens/sample | Max. Off-Policy Level: 1[0m[0m
+[2m01:15:02[0m [1m   INFO[0m [1m[22mStarting orchestrator step 9[0m[0m
+[2m01:15:02[0m [1m   INFO[0m [1m[22mOrchestrator paused: waiting for trainer process to complete checkpoint 8 (>1 step(s) ahead). Training is progressing normally.[0m[0m
+[2m01:16:53[0m [1m   INFO[0m [1m[22mOrchestrator resumed: checkpoint 8 ready (after 111.16s)[0m[0m
+Generating rollouts (train):   0%|          | 0/96 [00:00<?, ?it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:00<00:00, 7128.75it/s]
+[2m01:16:53[0m [1m   INFO[0m [1m[22mDetected 24/96 rollouts (zero_advantage=24), enforced 24[0m[0m
+[2m01:16:53[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 76 training examples[0m[0m
+[2m01:17:08[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 9 | Time: 125.94s | Reward: 2.2487 | Seq. Length: 3770.1 tokens/sample | Max. Off-Policy Level: 2[0m[0m
+[2m01:17:08[0m [1m   INFO[0m [1m[22mSaving checkpoint at step 10[0m[0m
+[2m01:17:08[0m [1m   INFO[0m [1m[22mStarting orchestrator step 10[0m[0m
+[2m01:17:08[0m [1m   INFO[0m [1m[22mOrchestrator paused: waiting for trainer process to complete checkpoint 9 (>1 step(s) ahead). Training is progressing normally.[0m[0m
+[2m01:17:31[0m [1m   INFO[0m [1m[22mOrchestrator resumed: checkpoint 9 ready (after 23.03s)[0m[0m
+Generating rollouts (train):   0%|          | 0/96 [00:00<?, ?it/s]Generating rollouts (train):  83%|████████▎ | 80/96 [00:20<00:04,  3.96it/s]Generating rollouts (train):  92%|█████████▏| 88/96 [00:31<00:03,  2.55it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:39<00:00,  2.05it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:39<00:00,  2.44it/s]
+[2m01:18:11[0m [1m   INFO[0m [1m[22mDetected 64/96 rollouts (zero_advantage=64), enforced 64[0m[0m
+[2m01:18:11[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 51 training examples[0m[0m
+[2m01:18:17[0m [1m   INFO[0m [1m[22mLogging 96 samples to W&B table at step 10[0m[0m
+[2m01:18:17[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 10 | Time: 69.14s | Reward: 7.2539 | Seq. Length: 1719.2 tokens/sample | Max. Off-Policy Level: 1[0m[0m
+[2m01:18:18[0m [1m   INFO[0m [1m[22mStarting orchestrator step 11[0m[0m
+[2m01:18:18[0m [1m   INFO[0m [1m[22mOrchestrator paused: waiting for trainer process to complete checkpoint 10 (>1 step(s) ahead). Training is progressing normally.[0m[0m
+[2m01:20:06[0m [1m   INFO[0m [1m[22mOrchestrator resumed: checkpoint 10 ready (after 108.14s)[0m[0m
+Generating rollouts (train):   0%|          | 0/96 [00:00<?, ?it/s]Generating rollouts (train): 100%|██████████| 96/96 [00:00<00:00, 16415.39it/s]
+[2m01:20:06[0m [1m   INFO[0m [1m[22mDetected 9/96 rollouts (gibberish=1, zero_advantage=8), enforced 9[0m[0m
+[2m01:20:07[0m [1m   INFO[0m [1m[22mComputing teacher logprobs for 110 training examples[0m[0m
+[2m01:20:22[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 11 | Time: 124.21s | Reward: -0.4427 | Seq. Length: 3814.6 tokens/sample | Max. Off-Policy Level: 1[0m[0m
+[2m01:20:23[0m [1m   INFO[0m [1m[22mStarting orchestrator step 12[0m[0m
+[2m01:20:23[0m [1m   INFO[0m [1m[22mOrchestrator paused: waiting for trainer process to complete checkpoint 11 (>1 step(s) ahead). Training is progressing normally.[0m[0m

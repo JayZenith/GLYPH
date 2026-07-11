@@ -1,0 +1,16 @@
+CUDA_VISIBLE_DEVICES=0 python -m sft.passk_scan_vllm \
+  --sft-model JayZenith/SFT_HALF_A_V8 \
+  --sft-adapter JayZenith/RLVR_POOL_B_V8_STEP10 \
+  --max-lora-rank 64 \
+  --prompt-file sft/evals/eval_prompts_heldout_150.yaml \
+  --prompt-section post_eval_heldout_150 \
+  --cases-root runs/passk8_heldout150_rlvr_pool_b_v8_step10_run2 \
+  -k 8 \
+  --temperature 0.8 \
+  --max-new-tokens 4000 \
+  --max-tool-rounds 20 \
+  --output results/RLVR_POOL_B_V8_STEP10/passk8_heldout150_run2.json \
+  --gpu-memory-utilization 0.90 \
+  --max-model-len 24576 \
+  --prompt-batch-size 8 \
+  --save-rollouts

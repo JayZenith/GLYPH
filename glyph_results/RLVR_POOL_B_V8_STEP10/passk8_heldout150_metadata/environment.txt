@@ -1,0 +1,24 @@
+timestamp_utc=2026-07-01T23:27:00Z
+git_commit=abed10ccbf7b35eb5a4e764365236389a6fad645
+git_status_short_begin
+git_status_short_end
+python=Python 3.12.13
+torch==2.11.0+cu128
+transformers==4.57.5
+vllm==0.23.0
+peft==0.17.1
+accelerate==1.10.1
+datasets==4.0.0
+huggingface_hub==0.36.2
+verifiers=UNAVAILABLE(PackageNotFoundError)
+hf_model_revision Qwen/Qwen3-4B-Base 906bfd4b4dc7f14ee4320094d8b41684abff8539 2025-07-26 03:45:37+00:00
+hf_model_revision JayZenith/SFT_HALF_A_V8 1b76c5fb8bcafc92574f62ff3c418eb179abc66f 2026-06-27 03:31:37+00:00
+hf_model_revision JayZenith/RLVR_VFINAL_STEP10 4fdce4481e70e09002576804a0bd2099a4c8c650 2026-06-27 19:22:46+00:00
+hf_model_revision JayZenith/RLVR_POOL_B_V8_STEP10 b401ec0b94e81026bf1093e358eee9669f3540f5 2026-06-27 07:02:34+00:00
+sparse_adapter_config_path=/workspace/.hf_home/hub/models--JayZenith--RLVR_POOL_B_V8_STEP10/snapshots/b401ec0b94e81026bf1093e358eee9669f3540f5/adapter_config.json
+sparse_adapter_r=64
+sparse_adapter_lora_alpha=128.0
+sparse_adapter_base=JayZenith/SFT_HALF_A_V8
+prompt_count=150
+prompt_file=sft/evals/eval_prompts_heldout_150.yaml
+prompt_section=post_eval_heldout_150

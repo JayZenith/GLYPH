@@ -1,0 +1,1 @@
+run3	output=results/RLVR_POOL_B_V8_STEP10/passk8_heldout150_run3.json	prompts=150	valid@8=98	cargo@8=99	rollouts=1200

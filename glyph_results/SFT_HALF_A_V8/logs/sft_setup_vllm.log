@@ -1,0 +1,393 @@
+Sat Jun 27 01:41:19 UTC 2026
+Detected Blackwell-class GPU; using fallback stack: python=3.12, torch=2.11.0, cuda=cu128
+Using CPython 3.12.3 interpreter at: /usr/bin/python3.12
+Creating virtual environment at: .venv
+Activate with: source .venv/bin/activate
+Resolved 29 packages in 5.57s
+Downloading torch (782.3MiB)
+Downloading sympy (6.0MiB)
+Downloading networkx (2.0MiB)
+Downloading nvidia-cusparse-cu12 (274.9MiB)
+Downloading cuda-bindings (7.3MiB)
+Downloading nvidia-cudnn-cu12 (627.4MiB)
+Downloading setuptools (1.0MiB)
+Downloading nvidia-cublas-cu12 (566.8MiB)
+Downloading nvidia-cuda-cupti-cu12 (9.8MiB)
+Downloading nvidia-cufile-cu12 (1.1MiB)
+Downloading nvidia-nccl-cu12 (283.0MiB)
+Downloading nvidia-cusolver-cu12 (255.1MiB)
+Downloading nvidia-nvjitlink-cu12 (37.4MiB)
+Downloading nvidia-cufft-cu12 (184.2MiB)
+Downloading nvidia-cuda-nvrtc-cu12 (84.0MiB)
+Downloading triton (179.5MiB)
+Downloading nvidia-cusparselt-cu12 (273.9MiB)
+Downloading nvidia-curand-cu12 (60.7MiB)
+Downloading nvidia-nvshmem-cu12 (132.7MiB)
+ Downloaded setuptools
+ Downloaded nvidia-cufile-cu12
+ Downloaded networkx
+ Downloaded sympy
+ Downloaded cuda-bindings
+ Downloaded nvidia-cuda-cupti-cu12
+ Downloaded nvidia-nvjitlink-cu12
+ Downloaded nvidia-curand-cu12
+ Downloaded nvidia-cuda-nvrtc-cu12
+ Downloaded nvidia-nvshmem-cu12
+ Downloaded triton
+ Downloaded nvidia-cufft-cu12
+ Downloaded nvidia-cusolver-cu12
+ Downloaded torch
+ Downloaded nvidia-cusparselt-cu12
+ Downloaded nvidia-cusparse-cu12
+ Downloaded nvidia-nccl-cu12
+ Downloaded nvidia-cublas-cu12
+ Downloaded nvidia-cudnn-cu12
+Prepared 29 packages in 1m 00s
+Installed 29 packages in 712ms
+ + cuda-bindings==12.9.7
+ + cuda-pathfinder==1.5.5
+ + cuda-toolkit==12.8.1
+ + filelock==3.29.4
+ + fsspec==2026.6.0
+ + jinja2==3.1.6
+ + markupsafe==3.0.3
+ + mpmath==1.3.0
+ + networkx==3.6.1
+ + nvidia-cublas-cu12==12.8.4.1
+ + nvidia-cuda-cupti-cu12==12.8.90
+ + nvidia-cuda-nvrtc-cu12==12.8.93
+ + nvidia-cuda-runtime-cu12==12.8.90
+ + nvidia-cudnn-cu12==9.19.0.56
+ + nvidia-cufft-cu12==11.3.3.83
+ + nvidia-cufile-cu12==1.13.1.3
+ + nvidia-curand-cu12==10.3.9.90
+ + nvidia-cusolver-cu12==11.7.3.90
+ + nvidia-cusparse-cu12==12.5.8.93
+ + nvidia-cusparselt-cu12==0.7.1
+ + nvidia-nccl-cu12==2.28.9
+ + nvidia-nvjitlink-cu12==12.8.93
+ + nvidia-nvshmem-cu12==3.4.5
+ + nvidia-nvtx-cu12==12.8.90
+ + setuptools==81.0.0
+ + sympy==1.14.0
+ + torch==2.11.0+cu128
+ + triton==3.6.0
+ + typing-extensions==4.15.0
+Resolved 86 packages in 1.72s
+Downloading grpcio (6.5MiB)
+Downloading hf-xet (4.3MiB)
+Downloading pandas (10.4MiB)
+Downloading aiohttp (1.7MiB)
+Downloading numpy (15.9MiB)
+Downloading transformers (11.4MiB)
+Downloading wandb (25.5MiB)
+Downloading pygments (1.2MiB)
+Downloading tokenizers (3.1MiB)
+Downloading pyarrow (46.6MiB)
+Downloading tensorboard-data-server (6.3MiB)
+Downloading pydantic-core (2.0MiB)
+Downloading tensorboard (5.2MiB)
+ Downloaded pygments
+ Downloaded aiohttp
+ Downloaded pydantic-core
+ Downloaded tokenizers
+ Downloaded hf-xet
+ Downloaded tensorboard
+ Downloaded tensorboard-data-server
+ Downloaded grpcio
+ Downloaded pandas
+ Downloaded transformers
+ Downloaded numpy
+ Downloaded wandb
+ Downloaded pyarrow
+Prepared 58 packages in 3.66s
+Uninstalled 1 package in 0.56ms
+Installed 58 packages in 438ms
+ + absl-py==2.4.0
+ + accelerate==1.10.1
+ + aiohappyeyeballs==2.6.2
+ + aiohttp==3.14.1
+ + aiosignal==1.4.0
+ + annotated-types==0.7.0
+ + attrs==26.1.0
+ + certifi==2026.6.17
+ + charset-normalizer==3.4.7
+ + click==8.4.2
+ + datasets==4.0.0
+ + dill==0.3.8
+ + frozenlist==1.8.0
+ - fsspec==2026.6.0
+ + fsspec==2025.3.0
+ + gitdb==4.0.12
+ + gitpython==3.1.50
+ + grpcio==1.81.1
+ + hf-xet==1.5.1
+ + huggingface-hub==0.36.2
+ + idna==3.18
+ + markdown==3.10.2
+ + markdown-it-py==4.2.0
+ + mdurl==0.1.2
+ + multidict==6.7.1
+ + multiprocess==0.70.16
+ + numpy==2.5.0
+ + packaging==26.2
+ + pandas==3.0.3
+ + peft==0.17.1
+ + platformdirs==4.10.0
+ + propcache==0.5.2
+ + protobuf==7.35.1
+ + psutil==7.2.2
+ + pyarrow==24.0.0
+ + pydantic==2.13.4
+ + pydantic-core==2.46.4
+ + pygments==2.20.0
+ + python-dateutil==2.9.0.post0
+ + pyyaml==6.0.1
+ + regex==2026.5.9
+ + requests==2.34.2
+ + rich==15.0.0
+ + safetensors==0.8.0
+ + sentry-sdk==2.63.0
+ + six==1.17.0
+ + smmap==5.0.3
+ + tensorboard==2.19.0
+ + tensorboard-data-server==0.7.2
+ + tokenizers==0.22.2
+ + tomli-w==1.2.0
+ + tqdm==4.68.3
+ + transformers==4.57.5
+ + typing-inspection==0.4.2
+ + urllib3==2.7.0
+ + wandb==0.28.0
+ + werkzeug==3.1.8
+ + xxhash==3.7.1
+ + yarl==1.24.2
+Checked 1 package in 44ms
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0 11  241M   11 28.2M    0     0  14.3M      0  0:00:16  0:00:01  0:00:15 32.4M 36  241M   36 87.9M    0     0  29.6M      0  0:00:08  0:00:02  0:00:06 47.0M 60  241M   60  147M    0     0  37.1M      0  0:00:06  0:00:03  0:00:03 51.3M 85  241M   85  207M    0     0  41.7M      0  0:00:05  0:00:04  0:00:01 53.5M100  241M  100  241M    0     0  43.6M      0  0:00:05  0:00:05 --:--:-- 54.3M
+Resolved 31 packages in 938ms
+Prepared 2 packages in 1.18s
+Installed 2 packages in 167ms
+ + einops==0.8.2
+ + flash-attn==2.8.3+cu12torch2.11cxx11abitrue (from file:///tmp/flash-attn.Gysq2u/flash_attn-2.8.3+cu12torch2.11cxx11abiTRUE-cp312-cp312-linux_x86_64.whl)
+Resolved 191 packages in 26.62s
+Downloading nvidia-cudnn-frontend (3.3MiB)
+Downloading torchvision (7.7MiB)
+Downloading tiktoken (1.1MiB)
+Downloading openai (1.3MiB)
+Downloading nvidia-cuda-cccl (3.3MiB)
+Downloading nvidia-cuda-nvrtc (48.7MiB)
+Downloading pillow (6.8MiB)
+Downloading opencv-python-headless (57.6MiB)
+Downloading uvloop (4.2MiB)
+Downloading cryptography (4.5MiB)
+Downloading nvidia-cuda-runtime (2.2MiB)
+Downloading llguidance (2.9MiB)
+Downloading openai-harmony (2.8MiB)
+Downloading llvmlite (53.7MiB)
+Downloading numba (3.6MiB)
+Downloading tokenspeed-triton (81.9MiB)
+Downloading flashinfer-cubin (426.8MiB)
+Downloading setuptools (1.0MiB)
+Downloading numpy (15.8MiB)
+Downloading z3-solver (27.9MiB)
+Downloading pycountry (7.7MiB)
+Downloading sentencepiece (1.3MiB)
+Downloading outlines-core (2.2MiB)
+Downloading flashinfer-python (13.3MiB)
+Downloading tilelang (43.3MiB)
+Downloading vllm (261.4MiB)
+Downloading ml-dtypes (4.8MiB)
+Downloading mistral-common (6.2MiB)
+Downloading xgrammar (42.5MiB)
+Downloading fastsafetensors (1.8MiB)
+Downloading apache-tvm-ffi (2.2MiB)
+ Downloaded nvidia-cudnn-frontend
+ Downloaded nvidia-cuda-runtime
+Downloading nvidia-cuda-tileiras (35.3MiB)
+Downloading nvidia-nvvm (61.3MiB)
+Downloading nvidia-cutlass-dsl-libs-base (71.1MiB)
+Downloading nvidia-cutlass-dsl-libs-cu13 (75.1MiB)
+Downloading nvidia-cuda-nvcc (42.0MiB)
+ Downloaded nvidia-cuda-cccl
+ Downloaded torchvision
+Downloading torchaudio (1.6MiB)
+ Downloaded torchaudio
+ Downloaded setuptools
+ Downloaded tiktoken
+ Downloaded nvidia-cuda-nvrtc
+ Downloaded openai
+ Downloaded sentencepiece
+ Downloaded fastsafetensors
+ Downloaded apache-tvm-ffi
+ Downloaded outlines-core
+ Downloaded openai-harmony
+ Downloaded llguidance
+ Downloaded numba
+ Downloaded uvloop
+ Downloaded cryptography
+ Downloaded ml-dtypes
+ Downloaded mistral-common
+ Downloaded pillow
+ Downloaded pycountry
+ Downloaded flashinfer-python
+ Downloaded numpy
+ Downloaded nvidia-cuda-tileiras
+ Downloaded z3-solver
+ Downloaded nvidia-cuda-nvcc
+ Downloaded nvidia-nvvm
+ Downloaded xgrammar
+ Downloaded tilelang
+ Downloaded llvmlite
+ Downloaded opencv-python-headless
+ Downloaded nvidia-cutlass-dsl-libs-cu13
+ Downloaded tokenspeed-triton
+ Downloaded nvidia-cutlass-dsl-libs-base
+ Downloaded vllm
+ Downloaded flashinfer-cubin
+Prepared 125 packages in 39.24s
+Uninstalled 2 packages in 27ms
+Installed 125 packages in 2.61s
+ + annotated-doc==0.0.4
+ + anthropic==0.112.0
+ + anyio==4.14.1
+ + apache-tvm-ffi==0.1.9
+ + astor==0.8.1
+ + blake3==1.0.9
+ + cachetools==7.1.4
+ + cbor2==6.1.2
+ + cffi==2.0.0
+ + cloudpickle==3.1.2
+ + compressed-tensors==0.17.0
+ + cryptography==49.0.0
+ + cuda-python==12.9.7
+ + cuda-tile==1.3.0
+ + depyf==0.20.0
+ + detect-installer==0.1.0
+ + diskcache==5.6.3
+ + distro==1.9.0
+ + dnspython==2.8.0
+ + docstring-parser==0.18.0
+ + email-validator==2.3.0
+ + fastapi==0.136.3
+ + fastapi-cli==0.0.27
+ + fastapi-cloud-cli==0.21.0
+ + fastar==0.11.0
+ + fastsafetensors==0.3.2
+ + flashinfer-cubin==0.6.12
+ + flashinfer-python==0.6.12
+ + gguf==0.19.0
+ + googleapis-common-protos==1.75.0
+ + h11==0.16.0
+ + httpcore==1.0.9
+ + httptools==0.8.0
+ + httpx==0.28.1
+ + httpx-sse==0.4.3
+ + humming-kernels==0.1.4
+ + ijson==3.5.0
+ + interegular==0.3.3
+ + jiter==0.15.0
+ + jmespath==1.1.0
+ + jsonschema==4.26.0
+ + jsonschema-specifications==2025.9.1
+ + lark==1.2.2
+ + llguidance==1.7.6
+ + llvmlite==0.47.0
+ + lm-format-enforcer==0.11.3
+ + loguru==0.7.3
+ + mcp==1.28.1
+ + mistral-common==1.11.5
+ + ml-dtypes==0.5.4
+ + model-hosting-container-standards==0.1.16
+ + msgspec==0.21.1
+ + ninja==1.13.0
+ + numba==0.65.0
+ - numpy==2.5.0
+ + numpy==2.3.5
+ + nvidia-cuda-cccl==13.3.3.3.1
+ + nvidia-cuda-crt==13.3.33
+ + nvidia-cuda-nvcc==13.2.78
+ + nvidia-cuda-nvrtc==13.3.33
+ + nvidia-cuda-runtime==13.3.29
+ + nvidia-cuda-tileiras==13.2.78
+ + nvidia-cudnn-frontend==1.25.0
+ + nvidia-cutlass-dsl==4.5.2
+ + nvidia-cutlass-dsl-libs-base==4.5.2
+ + nvidia-cutlass-dsl-libs-cu13==4.5.2
+ + nvidia-ml-py==13.610.43
+ + nvidia-nvvm==13.2.78
+ + openai==2.44.0
+ + openai-harmony==0.0.8
+ + opencv-python-headless==4.13.0.92
+ + opentelemetry-api==1.43.0
+ + opentelemetry-exporter-otlp==1.43.0
+ + opentelemetry-exporter-otlp-proto-common==1.43.0
+ + opentelemetry-exporter-otlp-proto-grpc==1.43.0
+ + opentelemetry-exporter-otlp-proto-http==1.43.0
+ + opentelemetry-proto==1.43.0
+ + opentelemetry-sdk==1.43.0
+ + opentelemetry-semantic-conventions==0.64b0
+ + opentelemetry-semantic-conventions-ai==0.5.1
+ + outlines-core==0.2.14
+ + partial-json-parser==0.2.1.1.post7
+ + pillow==12.2.0
+ + prometheus-client==0.25.0
+ + prometheus-fastapi-instrumentator==8.0.2
+ + py-cpuinfo==9.0.0
+ + pybase64==1.4.3
+ + pycountry==26.2.16
+ + pycparser==3.0
+ + pydantic-extra-types==2.11.1
+ + pydantic-settings==2.14.2
+ + pyelftools==0.33
+ + pyjwt==2.13.0
+ + python-dotenv==1.2.2
+ + python-json-logger==4.1.0
+ + python-multipart==0.0.32
+ + pyzmq==27.1.0
+ + quack-kernels==0.5.0
+ + referencing==0.37.0
+ + rich-toolkit==0.20.1
+ + rignore==0.7.6
+ + rpds-py==2026.5.1
+ + sentencepiece==0.2.1
+ + setproctitle==1.3.7
+ - setuptools==81.0.0
+ + setuptools==80.10.2
+ + shellingham==1.5.4
+ + sniffio==1.3.1
+ + sse-starlette==3.4.5
+ + starlette==1.3.1
+ + supervisor==4.3.0
+ + tabulate==0.10.0
+ + tiktoken==0.13.0
+ + tilelang==0.1.9
+ + tokenspeed-mla==0.1.2
+ + tokenspeed-triton==3.7.10.post20260531
+ + torch-c-dlpack-ext==0.1.5
+ + torchaudio==2.11.0+cu128
+ + torchvision==0.26.0+cu128
+ + typer==0.26.8
+ + uvicorn==0.49.0
+ + uvloop==0.22.1
+ + vllm==0.23.0
+ + watchfiles==1.2.0
+ + websockets==16.0
+ + xgrammar==0.2.2
+ + z3-solver==4.15.4.0
+SFT env ready.
+Activate with:
+  source "/workspace/glyph/.venv/bin/activate"
+
+Installed:
+  python=/usr/bin/python3.12
+  torch==2.11.0+cu128 from https://download.pytorch.org/whl/cu128
+  accelerate==1.10.1
+  flash-attn wheel only
+  vllm (INSTALL_VLLM=1, USER_SET_VLLM_VERSION=0)
+  rust toolchain via apt (cargo/rustc)
+  pinned SFT deps from requirements-train.txt
+SETUP_EXIT:0
+Sat Jun 27 01:43:53 UTC 2026
