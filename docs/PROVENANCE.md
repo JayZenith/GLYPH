@@ -98,8 +98,9 @@ facts above.
 - **Dense:** reproducible — verbatim command + pinned inputs; run date and
   console output unrecoverable.
 - **SFT:** reproducible with one inference (the command); all inputs pinned.
-- All four: *statistical* reproduction (re-running and getting valid@8 within
-  the observed ±2–3 band) is the right expectation, not bitwise equality.
+- All four: *statistical* reproduction is the right expectation, not bitwise
+  equality. Observed count spans were 2 prompts for sparse and 5/3 for the
+  aggregate-only SFT/dense repetitions.
 
 ## Training runs (context)
 

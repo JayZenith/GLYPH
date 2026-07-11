@@ -8,6 +8,10 @@
 > auditable data (retained-run p ≈ 0.14); and headline claims are now based
 > only on trace-retained runs (see `docs/PROVENANCE.md`). Kept as the
 > historical record of the first audit.
+> A third pass on 2026-07-10 also removed the spec-gaming prevalence estimate
+> because the follow-up sample IDs/seed/annotations were never archived, added
+> family-cluster sensitivity p-values, and corrected "every CI" to "every
+> positive CI." Current claims live in README/blog, not this historical table.
 
 Forensic audit, 2026-07-01. Every empirical claim traced to artifacts. Verdicts:
 **V** verified · **U** unsupported (no artifact proves it) · **C** contradicted ·
@@ -24,7 +28,7 @@ Standardized names: `SFT_HALF_A_V8` (SFT base) · `RLVR_POOL_B_V8_STEP10` (spars
 | 2 | "step 0 … filtered the **entire batch — 96 rollouts**" (blog lede+bullet); "0/96 for sparse" (README) | RLVR_POOL_B_V8 step 0 | `…STEP10/logs/orchestrator.log:42` = `Detected 64/96 (zero_advantage=64)`; `trainer.log` Step 0 loss 0.3445 | full-run log coverage (31 lines/30 steps) | T | — | rollouts dropped by zero-advantage filter | rollout/group | **C** — and no 96/96 or 48/48 event exists in ANY of 427 log files + trashed May-17 log; global max 80/96 (`new_results/RLVR_V999*`) | "step 0 filtered 64/96 (32 retained); 25–83% per batch across the run" |
 | 3 | SFT "greedy strict pass@1: **74/150**" | SFT_HALF_A_V8 | provably-greedy `eval_formal_heldout_150.json` (embedded args, commit 3b4d893) = **72**; metadata-less `passk1_heldout150.json` = **74** (temp/args unrecorded; harness defaults T=0.8) | eval_formal: `python -m sft.eval_formal --max-tool-rounds 20 …` (recorded in file); passk1: unrecorded | I | eval_formal greedy=deterministic-ish; passk1 unknown | strict valid_trace, 1 attempt | prompt | **A** | "72 (HF-generate greedy) / 74 (vLLM k=1, sampling params unrecorded)" |
 | 4 | sparse "74 → **72**/150. Flat-to-down" | RLVR_POOL_B_V8 STEP10 vs STEP20 | STEP10 `eval_formal` = **74** (greedy, recorded); STEP20 `passk1` = **72** (unrecorded params, different checkpoint) | as row 3 | I | mixed | strict valid_trace | prompt | **C** as stated — the provably-greedy pair is SFT 72 vs sparse-step10 74 (+2, opposite direction) | "greedy direction not established; sparse ≈ flat within noise across harnesses/checkpoints" |
-| 5 | "**3-seed replication**" / "Welch's t-test (**independent seeds**)" | all three pass@8 arms | `…VFINAL2_STEP10/evals/eval2.log`: `===== SEED a/b/c =====`, identical args ×3, vLLM `seed=0` (default) every time; `sft/passk_scan_vllm.py` has **no seed parameter** | assistant-authored `run_eval_vfinal2.sh` (transcript 2026-06-30T01:28Z): `run_seed a/b/c` tags label filenames only | I (same adapter ×3) | **NO** | — | run | **C** as "seed replication" | "three independent reruns of the same nondeterministic eval (no seed control); variance = vLLM scheduling + tool-timing nondeterminism" |
+| 5 | "**3-seed replication**" / "Welch's t-test (**independent seeds**)" | all three pass@8 arms | `…VFINAL2_STEP10/evals/eval2.log`: `===== SEED a/b/c =====`, identical args ×3, vLLM `seed=0` (default) every time; `sft/passk_scan_vllm.py` has **no seed parameter** | assistant-authored `run_eval_vfinal2.sh` (transcript 2026-06-30T01:28Z): `run_seed a/b/c` tags label filenames only | I (same adapter ×3) | **NO** | — | run | **C** as "seed replication" | "three sequential, argument-identical repetitions under runtime nondeterminism; not independent draws" |
 | 6 | valid@8 table: SFT 95/97/100 (97.3); dense 102/102/99 (101.0); compiler 95/96/94 (95.0) | all three | 9 JSONs under `glyph_results/{SFT_HALF_A_V8,RLVR_VFINAL_STEP10,RLVR_VFINAL2_STEP10}/evals/` | passk8: k=8, T=0.8, max-tool-rounds 20, max-model-len 24576 (from eval2.log) | I | no | # prompts of 150 with ≥1 rollout: valid_trace ∧ any-cargo-success | prompt→run aggregate | **V** (all 9 recomputed exactly) | keep numbers; fix "seed" labels |
 | 7 | "+3.7 valid@8 … p ≈ 0.115" | dense vs SFT | scipy reproduces exactly (t=2.079, df=3.55, p=0.11502) | Welch on [102,102,99] vs [95,97,100] | I | no | Welch t, n=3 aggregates | run (wrong unit: prompts are paired, family-clustered) | **V** as computation, **A** as method | add 95% CI ≈ [−0.9, +8.2]; prompt-level paired test preferable |
 | 8 | "small but **reproducible**" | dense | 3 reruns of ONE adapter | — | I only | no | — | — | **U** | "consistent across three reruns of one trained adapter; training not replicated" |
@@ -48,7 +52,7 @@ Standardized names: `SFT_HALF_A_V8` (SFT base) · `RLVR_POOL_B_V8_STEP10` (spars
 | 26 | "only the reward shape changed" (A/B config parity) | dense vs compiler | archived orchestrator/trainer/inference TOMLs differ only in progress flags + output paths; orchestrator seed=42 both | recorded configs | T | partial (orch only) | — | — | **V** (config parity); training-run variance still unsampled | keep + note n=1/arm |
 | 27 | ladder "monotone … isn't gamed by churning error counts" | reward code | `rl/tests/test_reward_progress.py` exists; per-call monotone by construction; as a training-dynamics claim untested; stage-4 saturation for compiles-at-start crates unmentioned | — | — | — | — | — | **A** | "monotone per call; behavior under optimization untested; saturates when the crate already compiles" |
 | 28 | dense credit "fixed by the task (**unhackable**)" (blog) | env design | tests live in model-editable `src/lib.rs`; verified attempted assertion flip in SFT_HALF_A_V8 passk8 trace (`heldoutfail48_027`, call c11: `assert!(!cfg.use_tls)`→`assert!(cfg.use_tls)`), blocked only by find-uniqueness | passk8 artifacts | — | — | — | — | **C** | "not model-editable-proof: the model can patch test code; one blocked attempt on record" |
-| 29 | "1 confirmed instance out of 29 traces (~3%)" spec-gaming | RLVR trace audit | tls-flip case documented (blog diff, portfolio note); the 28-trace random sample has **no artifact** (no trace-ID list); only 12 of 29 had checkable specs → 1/12 ≈ 8% of checkable | — | — | — | — | trace | **A**/**U** (sample unrecorded; denominator framing) | "1 violation among 12 traces with checkable specs (~8%); audit sample not archived" |
+| 29 | "1 confirmed instance out of 29 traces (~3%)" spec-gaming | RLVR trace audit | tls-flip case documented; the 28-trace follow-up has **no artifact** (no IDs, seed, or annotations) | — | — | — | — | trace | **U** as prevalence | "one auditable existence proof; no prevalence estimate" |
 | 30 | Hardware/disk (~20 GB per pass@8 run; 200 GB filled) | — | no recorded measurements | — | — | — | — | — | **U** (benign) | keep as anecdote or measure |
 | 31 | GRPO story: "A_i=(r−mean)/std; all-fail ⇒ identical ⇒ filtered ⇒ no gradient" | trainer | zero_advantage group filter behavior **V** (logs); exact normalization formula **U** locally (PRIME-RL pinned `97872d3e0`, not vendored); published story omits the OPD loss: `training_mode="opd"`, `teacher_tau=0.2`, `kl_tau=0.001`, `dppo_mask=0.2` (trainer.toml) — "no gradient" is true only of dropped groups; retained rollouts also carry teacher/KL terms | archived trainer.toml | T | — | — | — | **A** (incomplete) | "identical-reward groups are dropped (no signal at all); retained rollouts train on advantage + teacher-anchor + KL terms" |
 
@@ -164,8 +168,8 @@ NOT always tie. Corrections/doc-push: commit `1715d28`.
 
 ## Addendum (2026-07-04): tls case quantified; denominator fixed; tamper scan extended
 
-- Blog "~3%" denominator corrected to **1/12 checkable (~8%)** in commit pushed today —
-  closes the last open wording item from §5b.
+- The intermediate **1/12 (~8%)** correction is also retired: without archived
+  sample IDs/seed/annotations, no prevalence denominator is defensible.
 - tls-flip provenance confirmed and STRENGTHENED: the trace is from
   `RLVR_VFINAL_STEP10/rollouts_step_10/train_rollouts.jsonl`, case `scalec500_022…` —
   **3 of 8 rollouts in that training group flipped tls; two scored the full 10.0**

@@ -94,7 +94,7 @@ def main() -> int:
     rng = random.Random(0)
     for arm in ["SPARSE", "DENSE", "COMPILER"]:
         print(f"\n=== EXPLORATORY: {arm} by band (bands from SFT run A; deltas vs SFT runs B+C) ===")
-        for lo, hi, label in [(0, 0, "impossible 0/8"), (1, 3, "frontier-low 1-3"),
+        for lo, hi, label in [(0, 0, "never-solved 0/8"), (1, 3, "frontier-low 1-3"),
                               (4, 6, "frontier-mid 4-6"), (7, 8, "high 7-8")]:
             ks = [k for k in names if lo <= band_ref[k] <= hi]
             deltas = [pooled[arm][k] / 24 - sft_bc[k] / 16 for k in ks]

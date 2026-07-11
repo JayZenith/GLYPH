@@ -1,0 +1,24 @@
+name: Validate code and claims
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Enable Bubblewrap
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+      - run: pip install pytest jinja2 pyyaml
+      - run: pytest -q
+        env:
+          GLYPH_REQUIRE_BWRAP_TEST: "1"
+      - run: python -m py_compile agent_runtime/rust/*.py rl/environment.py rl/task_trace.py analysis/*.py

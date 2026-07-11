@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="data:,">
-  <title>GLYPH: RLVR didn't beat SFT. Finding out why taught me more than a win</title>
-  <meta name="description" content="Building a verifiable-reward RL environment + eval for a Rust tool-use coding agent: diagnosing a flat RLVR result and fixing it with a dense partial-credit reward.">
+  <title>GLYPH: RLVR didn't beat SFT. Auditing the null taught me more than a win</title>
+  <meta name="description" content="Building and auditing a verifiable-reward Rust coding-agent environment: sparse RLVR was flat, dense shaping showed a non-significant +7, and the verifier exposed real failure modes.">
   <style>
 :root {
   color-scheme: dark;
@@ -136,11 +136,11 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
 <body>
 <main class="wrap">
   <p class="kicker">GLYPH</p>
-  <h1>RLVR didn't beat SFT. Finding out why taught me more than a win would have.</h1>
+  <h1>RLVR didn't beat SFT. Auditing the null taught me more than a win would have.</h1>
   <p class="meta">A verifiable RL environment for a Rust tool-use agent</p>
   <p class="lede">
     At step 0 of my sparse-reward RLVR run, the orchestrator threw away 64 of 96 rollouts:
-    whole groups failed identically, scored identically, produced zero gradient. That run
+    whole groups received identical reward and produced zero group-relative signal. That run
     came out flat. A <strong>dense partial-credit reward</strong> measured a small lift
     (not significant); a "smarter" compiler-aware reward <strong>failed to beat
     either</strong>. And reading traces instead of trusting scores, I caught the model
@@ -152,6 +152,9 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
     <a href="https://app.primeintellect.ai/dashboard/environments/jayzenith/glyph" target="_blank" rel="noreferrer">environments hub</a>
     <a href="https://huggingface.co/JayZenith/SFT_HALF_A_V8" target="_blank" rel="noreferrer">SFT model</a>
     <a href="https://huggingface.co/JayZenith/RLVR_VFINAL_STEP10" target="_blank" rel="noreferrer">RLVR adapter</a>
+    <a href="https://huggingface.co/datasets/JayZenith/Glyph-RLVR-Eval-Results" target="_blank" rel="noreferrer">raw evals</a>
+    <a href="https://github.com/JayZenith/GLYPH/blob/main/docs/PROVENANCE.md" target="_blank" rel="noreferrer">provenance</a>
+    <a href="https://github.com/JayZenith/GLYPH/blob/main/docs/AUDIT_2026-07.md" target="_blank" rel="noreferrer">audit</a>
   </p>
 
   <h2>1 · The environment</h2>
@@ -161,11 +164,11 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
     <code>cargo_run</code> prints exact stdout, or run an already-correct crate. The model
     emits <code>CALL tool {…}</code>, tools execute against real cargo, and it must end with a
     clean <code>FINAL</code>. The reward is verifiable — cargo actually compiles and runs.
-    Published as a standalone environment on the
+    Packaged as a standalone environment for the
     <a href="https://app.primeintellect.ai/dashboard/environments/jayzenith/glyph">Prime Intellect
-    Environments Hub</a> — <code>prime env install jayzenith/glyph</code> gets the same
-    <code>load_environment() -&gt; vf.Environment</code> this write-up is about, runnable
-    outside this repo.
+    Environments Hub</a>. The current repository package is v0.2.0 with the safety fixes
+    described below; that version must be republished before the Hub install can be assumed
+    identical to this source.
   </p>
   <div class="panel trace"><pre><span class="call">CALL read_file {"id":"c1","file_path":"src/lib.rs"}</span>
 <span class="result">RESULT &lt;source&gt;</span>
@@ -200,7 +203,7 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
   <p class="src">code: rl/environment.py (RustToolEnv) · rl/task_trace.py (load_environment, reward knobs) · agent_runtime/ (executor, renderer, sandbox path rewrite)</p>
 
   <!-- EXAMPLES_START -->
-  <h2>2 · Real rollouts</h2>
+  <h2>Examples: real rollouts</h2>
   <div class="example-tabs"><button class="example-tab active" data-target="example-clean-solve" onclick="showExample(this)">clean-solve</button><button class="example-tab" data-target="example-recovery" onclick="showExample(this)">recovery</button><button class="example-tab" data-target="example-long-recovery" onclick="showExample(this)">long-recovery</button></div>
   <div class="example-panel" id="example-clean-solve">
   <div class="trace-panel">
@@ -1260,18 +1263,18 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
     verifier success, fixed failure penalties otherwise — sparse, but not binary. At the
     headline pass@8 metric it scored <strong>98, 96, 98 across three repeated evaluations
     (traces retained for all three)</strong> vs the SFT base's 95 — paired prompt-level
-    p ≈ 0.55. Flat within noise. (Greedy pass@1 is unstable at this effect size and even
+    p<sub>prompt</sub> ≈ 0.55, family sensitivity p ≈ 0.69. Flat within noise. (Greedy pass@1 is unstable at this effect size and even
     flipped direction across harnesses, so pass@8 is the comparison that counts.)
   </p>
-  <p class="src">evidence: glyph_results/RLVR_POOL_B_V8_STEP10/passk8_heldout150_run{1,2,3}.json (full rollouts; mirrored on HF: JayZenith/Glyph-RLVR-Eval-Results) · run metadata — exact commands, git commit, library versions: glyph_results/RLVR_POOL_B_V8_STEP10/passk8_heldout150_metadata/ · reproduce stats: analysis/retained_run_stats.py</p>
+  <p class="src">evidence: <a href="https://huggingface.co/datasets/JayZenith/Glyph-RLVR-Eval-Results/tree/main/RLVR_POOL_B_V8_STEP10/evals">three full sparse evals</a> · <a href="https://github.com/JayZenith/GLYPH/tree/main/glyph_results/RLVR_POOL_B_V8_STEP10/passk8_heldout150_metadata">commands, commit, libraries</a> · <a href="https://github.com/JayZenith/GLYPH/blob/main/analysis/retained_run_stats.py">reproduce stats</a></p>
 
-  <h2>5 · Diagnosis: why it was flat</h2>
+  <h2>5 · Diagnosis: a mechanism that limited sparse learning</h2>
   <p>I analyzed the failures instead of just the score:</p>
   <ul>
     <li><strong>Structure is 100% SFT-saturated.</strong> On the sparse arm's greedy eval, exact CALL syntax, call IDs, and cargo paths are 150/150 (the SFT base itself is 149/150 on syntax). RLVR has essentially zero headroom on format.</li>
     <li><strong>Failures are capability, not hygiene.</strong> On that same eval, 75 of 76 failures never reach a terminal cargo success — the model formats perfectly and writes the wrong Rust.</li>
     <li><strong>The two models share almost the same hard tail</strong> — 74 of the sparse arm's 76 greedy failures also fail on SFT; RLVR only reshuffled a handful of borderline prompts.</li>
-    <li><strong>The hard tail produces almost no gradient.</strong> RLVR learns from reward <em>variance</em> within each group of 8 rollouts. When all 8 fail with the same failure profile, they score identically → zero group-relative advantage → the group is filtered → no verifier-driven signal. (At step 0 of the sparse run the orchestrator filtered 64 of 96 rollouts; 8–67% per batch across the run, verified from the raw orchestrator log. The advantage is <em>reward minus the group mean</em>, with no std normalization — verified from PRIME-RL's saved rollout files — so reward scale directly sets gradient weight.)</li>
+    <li><strong>The hard tail often produces no verifier-driven signal.</strong> RLVR learns from reward <em>variance</em> within each group of 8 rollouts. When all 8 receive the same reward, they get zero group-relative advantage and the group is filtered. At step 0 the sparse orchestrator filtered 64 of 96 rollouts; the range was 8–67% per batch. Step 0 retains only aggregate filter counts, so it does not prove those groups had identical trajectories or failure profiles. Saved later steps verify that advantage is <em>reward minus the group mean</em>, with no std normalization. This mechanism occurred; the artifacts do not establish that it caused the flat held-out result.</li>
     <li><strong>But ~half the hard tail is partially correct:</strong> of the 75 cargo-failures, 52% compile and 44% pass ≥1 test (median 50%). The sparse reward's penalties don't grade this — a rollout that compiles and passes half the tests can score the same as one that never compiles.</li>
   </ul>
   <p class="src">evidence: glyph_results/RLVR_POOL_B_V8_STEP10/logs/orchestrator.log (per-batch "Detected N/96" filter lines) · glyph_results/*/rollouts_step_*/train_rollouts.jsonl (per-rollout reward + advantage, grouped) · greedy diagnostics: glyph_results/*/evals/eval_formal_heldout_150.json</p>
@@ -1308,18 +1311,24 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
     </tbody>
   </table>
   <p>
-    <strong>Dense vs SFT: +7 valid@8, p ≈ 0.12. Not significant.</strong> Sparse: +3,
-    p ≈ 0.55. Re-evaluating one model moves valid@8 ±2–3 on its own (98/96/98) — the
-    size of every gap. And each arm is one training run, so no gap could be causally
+    <strong>Dense vs SFT: +7 valid@8, p<sub>prompt</sub> ≈ 0.12; family-cluster
+    sensitivity p ≈ 0.15. Not significant.</strong> Sparse: +3,
+    p<sub>prompt</sub> ≈ 0.55, family sensitivity p ≈ 0.69. Compiler vs dense:
+    −7, p<sub>prompt</sub> ≈ 0.14, family sensitivity p ≈ 0.37. The sparse repetitions
+    span 2 prompts (98/96/98); aggregate-only SFT/dense repetitions span 5/3.
+    This observed evaluation variability is comparable to the point estimates.
+    Each arm is one training run, so no gap could be causally
     pinned on the reward shape anyway; that takes multiple training seeds.
   </p>
-  <p class="src">evidence: glyph_results/SFT_HALF_A_V8/evals/passk8_heldout150.json · glyph_results/RLVR_VFINAL_STEP10/evals/passk8_heldout150.json · sparse run{1,2,3} · compiler evals/ + evals/seeds/ (all with full per-rollout traces; mirrored on HF: JayZenith/Glyph-RLVR-Eval-Results) · reproduce: analysis/retained_run_stats.py · aggregate-only repetitions: HF seeds/ files for SFT and dense</p>
+  <p class="src">evidence: <a href="https://huggingface.co/datasets/JayZenith/Glyph-RLVR-Eval-Results">raw eval dataset + trace-retention manifest</a> · <a href="https://github.com/JayZenith/GLYPH/blob/main/analysis/retained_run_stats.py">headline reproduction + family sensitivity</a> · <a href="https://github.com/JayZenith/GLYPH/blob/main/docs/PROVENANCE.md">per-run provenance</a></p>
   <h3>Where the effect might live (exploratory)</h3>
   <p>
     Don't conflate two objects. <em>Training</em> (direct evidence, saved rollouts):
-    shaped rewards broke reward ties in 7/8 (dense) and 15/15 (compiler) all-fail
-    groups — but all-fail groups were ~10–20% of batches, and 25–47% of all groups were
-    dropped whole. <em>Eval</em> (below): held-out prompts grouped by SFT difficulty.
+    among complete saved groups with no Cargo success — the exact branch where progress
+    shaping applies — the shaping component itself varied within 1/7 dense groups and 5/8
+    compiler groups. Whole-group filtering affected 33–47% of saved complete groups. This
+    supersedes an earlier count that conflated total reward variance with shaping variance.
+    <em>Eval</em> (below): held-out prompts grouped by SFT difficulty.
     Linking the two is a hypothesis, not a measurement.
   </p>
   <p>
@@ -1339,14 +1348,13 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
     </tbody>
   </table>
   <p>
-    The pattern matches the theory: the only positive movement anywhere is the
-    <em>shaped</em> rewards on sometimes-solved prompts, and sparse — which can't grade
-    partial progress — shows none. But every positive band's bootstrap 95% CI includes
+    The non-trivial positive point estimates are from the <em>shaped</em> rewards on
+    sometimes-solved prompts (sparse is +0.003 in one band). But every positive band's bootstrap 95% CI includes
     zero (dense 1–3: [−0.023, +0.086]); the only CIs excluding zero (*) are small
     negatives on never-solved prompts, fragile under 12 comparisons. Consistent with a
     small real frontier effect, and consistent with nothing.
   </p>
-  <p class="src">reproduce: analysis/pooled_band_analysis.py (downloads from HF) · training-group counts: glyph_results/{RLVR_POOL_B_V8_STEP10,RLVR_VFINAL_STEP10}/rollouts_step_*/train_rollouts.jsonl · glyph_results/RLVR_VFINAL2_STEP10/run_default/rollouts/step_*/train_rollouts.jsonl</p>
+  <p class="src">reproduce: <a href="https://github.com/JayZenith/GLYPH/blob/main/analysis/pooled_band_analysis.py">pooled bands</a> · <a href="https://github.com/JayZenith/GLYPH/blob/main/analysis/training_group_stats.py">exact training-group decomposition</a></p>
   <p>
     <code>valid_trace</code> also gates on protocol cleanliness (clean <code>FINAL</code>, no
     trailing tool use), not just whether cargo actually passed — worth separating the two.
@@ -1370,9 +1378,9 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
 
   <h2>8 · Where the method's limit is</h2>
   <p>
-    The hard tail splits in two. The <em>reachable</em> part — problems the model solves
-    sometimes at pass@8 — is where RL has trajectories to reinforce, and the dense reward
-    captured a sliver of it. The rest is the 48 cases (of 150) that never get a clean cargo
+    The hard tail can be described in two observed groups. The sometimes-solved prompts
+    provide successful trajectories that RL could reinforce; the estimates do not show
+    that dense reward improved them. The rest is the 48 cases (of 150) that never get a clean cargo
     success across any of 8 attempts at T=0.8. I classified all 48 by what actually happens in
     their rollouts, instead of asserting a capability ceiling:
   </p>
@@ -1386,31 +1394,30 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
   </table>
   <p>
     Zero of the 48 are a raw Rust-syntax wall — every one compiles or runs at least once across
-    8 tries. The real ceiling is precision, not capability: 58.3% are cases the dense reward
-    already targets directly (compile bonus + test-pass fraction is exactly the signal these
-    need), and they still don't close out at pass@8. The dense reward isn't blind to this
-    bucket — it sees it and still can't solve it in 8 samples. That's a stronger, narrower claim
-    than "capability ceiling": raising it needs either more samples/better search, richer
-    feedback on the specific failing assertion, or a stronger base — not just more reward
-    shaping on the same signal.
+    8 tries. In 28 cases at least one rollout passes some tests; in 20, the program compiles or
+    runs but earns no partial test credit. This is a behavioral taxonomy of one dense evaluation,
+    not evidence that the model possesses the missing capability or that reward shaping cannot
+    help. More samples, better search, richer feedback, another reward, or a stronger base remain
+    untested alternatives.
   </p>
-  <p class="src">evidence: per-rollout traces in glyph_results/RLVR_VFINAL_STEP10/evals/passk8_heldout150.json (48-case classification)</p>
+  <p class="src">reproduce: <a href="https://github.com/JayZenith/GLYPH/blob/main/analysis/never_solved_taxonomy.py">never_solved_taxonomy.py</a> over the public dense eval (emits all 48 per-case labels)</p>
 
   <h2>9 · Controlled A/B: a compiler-aware reward</h2>
   <p>
     The obvious next move is to make the dense reward Rust-specific instead of generic.
     <code>rustc</code> fails in a fixed phase order — parse → type/resolve → borrow/lifetime →
     compiles — and reaching a later phase requires passing every earlier one, so the furthest
-    phase a failed rollout reaches is a principled, monotone distance-to-compiling that the
-    model can't game by deleting code to shrink its error count
+    phase a failed rollout reaches is a monotone compiler-phase signal that is insensitive
+    to raw error counts. It is not a distance to task correctness and can saturate on code
+    that compiles while tests fail
     (<code>--progress-error-ladder-bonus</code>, see <code>rl/tests/test_reward_progress.py</code>).
     Same base model, data, steps, and hyperparameters as the dense run — only the reward shape
     changed.
   </p>
   <div class="panel"><img src="training_curves.svg" alt="Per-step reward and zero-advantage filter rate, dense vs compiler-aware" style="width:100%;height:auto;display:block;"></div>
   <p>
-    At the mechanism level the ladder behaves like the dense reward: it breaks reward ties
-    inside all-fail groups whose rollouts differ in compiler progress. Step-0 zero-advantage
+    At the mechanism level the ladder sometimes distinguishes failed rollouts by compiler
+    progress: its own component varies within 5/8 saved no-Cargo-success groups. Step-0 zero-advantage
     filtering barely separates the arms (sparse <code>RLVR_POOL_B_V8</code> 64/96 filtered,
     dense <code>RLVR_VFINAL</code> 78/96, compiler-aware <code>RLVR_VFINAL2</code> 64/96) —
     the shaping changes <em>which</em> groups tie, not the headline retention.
@@ -1418,7 +1425,7 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
   <div class="panel"><img src="valid8_chart.svg" alt="valid@8 per run: SFT base vs dense reward vs compiler-aware reward" style="width:100%;height:auto;display:block;"></div>
   <p>
     Its three trace-retained runs scored <strong>95 / 96 / 94 — level with SFT, 7 below
-    dense (p ≈ 0.14)</strong>. The "smarter" reward beat nothing; on auditable data
+    dense (p<sub>prompt</sub> ≈ 0.14; family sensitivity p ≈ 0.37)</strong>. The "smarter" reward beat nothing; on auditable data
     that's an observation, not an established regression (cargo@8 agrees, so it isn't a
     formatting artifact). Goodhart is one story — the phase ladder is a proxy further
     from tests-passing than compile/test-fraction. The mundane alternative: most crates
@@ -1427,8 +1434,8 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
   </p>
   <p>
     This is one coefficient (2.5) at one checkpoint (step 10), not an ablation — so the honest
-    claim is narrower than "compiler-aware rewards don't work": this specific shaping, at this
-    strength, underperformed a reward that stays closer to the actual success criterion.
+    claim is narrower than "compiler-aware rewards don't work": this one trained model, using
+    this shaping and coefficient, scored lower than the one generic-dense model.
   </p>
   <p class="src">evidence: glyph_results/RLVR_VFINAL2_STEP10/evals/eval2.log (full console log of all three runs; engine config incl. seed=0) · training log: glyph_results/RLVR_VFINAL2_STEP10/arm_b.log · chart source: blog/gen_training_curves.py over the two orchestrator logs</p>
 
@@ -1469,43 +1476,36 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
     equally. I didn't catch it from a number; I caught it from reading a trace.
   </p>
   <p>
-    How common is this? I went and checked, rather than guess: I read 28 more successful traces,
-    randomly sampled. 11 had a written constraint beyond "make the tests pass" that I could
-    independently check the final patch against (the rest only ever said "fix it so tests pass,"
-    with no separate spec to violate — the tests <em>are</em> the spec for those, so gaming in
-    this sense isn't even defined). All 11 were fully correct. One case hardcoded the literal
-    test-fixture strings ("skip", "ban") as a banned-list instead of a general rule — a softer,
-    related overfitting pattern, though the task never actually defined what "banned" meant, so
-    it isn't a clean spec violation either. The honest denominator is the checkable set:
-    <strong>1 confirmed violation among 12 traces that had an independently checkable spec
-    (~8%)</strong> — and the original case was found opportunistically, not by sampling, so
-    even that rate is soft. I don't have evidence this is systemic — only that it happens,
-    the verifier can't see it, and reading traces is the only way I found it.
+    How common is this? Unknown. I later reviewed 28 more successful traces, but did not preserve
+    the sampled IDs, RNG seed, or annotation sheet. That review therefore carries no quantitative
+    claim here, and the original case was found opportunistically. I do not have evidence this is
+    systemic — only a fully auditable existence proof that it happens, the verifier used for the
+    published runs could not see it, and reading a trace exposed it.
   </p>
   <p>
-    A related gap, audited the same way: the grading tests live in the file the model
-    patches, so nothing stops a rollout from editing them. Scanning every
+    A related historical gap: the grading tests lived in the file the model patched. Scanning every
     <code>apply_patch</code> call in the trace-retained eval runs (52,696 calls,
     <code>analysis/test_tamper_audit.py</code>) found exactly one counting rollout that
     did — an <em>SFT-baseline</em> rollout flipped <code>assert!(!cfg.use_tls)</code> to
     <code>assert!(cfg.use_tls)</code> and passed. Its prompt had two clean solves in the
     same run, so no published count changes, and no counted RLVR rollout tampered.
-    Immutable (or restored-before-verification) tests are the fix; that's future work.
+    Current code now rejects edits to tests and Cargo/build-control files; the historical
+    artifacts and counts above remain explicitly labeled as produced before that fix.
   </p>
-  <p class="src">evidence: the clean-solve trace in section 2 · its training group: glyph_results/RLVR_VFINAL_STEP10/rollouts_step_10/train_rollouts.jsonl · tamper audit: analysis/test_tamper_audit.py (52,696 calls over every trace-retained eval file)</p>
+  <p class="src">evidence: the clean-solve trace in section 2 · <a href="https://github.com/JayZenith/GLYPH/blob/main/glyph_results/RLVR_VFINAL_STEP10/rollouts_step_10/train_rollouts.jsonl">its training group</a> · <a href="https://github.com/JayZenith/GLYPH/blob/main/analysis/test_tamper_audit.py">52,696-call tamper audit</a></p>
 
   <h2>11 · What I claim / don't</h2>
   <ul>
-    <li><strong>Claim:</strong> on the trace-retained runs, dense partial credit (RLVR_VFINAL_STEP10) scored +7 valid@8 over SFT (p ≈ 0.12, not significant); sparse (RLVR_POOL_B_V8_STEP10, 98/96/98) showed no clear improvement (p ≈ 0.55); the compiler-aware run scored level with SFT and 7 below dense (p ≈ 0.14). Nothing reaches significance, repeated evaluation alone moves a model ±2–3 prompts, and each arm is one training run — so no difference can be causally attributed to the reward shape.</li>
-    <li><strong>Claim:</strong> in the saved training batches, the shaped rewards did break reward ties inside all-fail groups (dense 7/8, compiler ladder 15/15) — the intended mechanism operated; it was just rare (all-fail groups were ~10–20% of batches).</li>
-    <li><strong>Don't claim:</strong> an RLVR win at any size, a demonstrated compiler-arm regression, or the frontier-band story as a finding — every band CI includes zero, and the band analysis leans on unauditable aggregate-only repetitions.</li>
-    <li><strong>Don't claim:</strong> <code>valid_trace</code> success means spec-correct — only that the shipped tests pass. The tests are also model-editable: an audit of all 52,696 patch calls in the retained eval runs found one SFT-baseline rollout that flipped a test assertion (its prompt had clean solves, so no count changes; no counted RLVR rollout tampered). And the "sandbox" is per-rollout path rewriting, not a containment boundary — no traversal observed in ~135k saved calls, but nothing prevents it by construction.</li>
-    <li><strong>Don't claim:</strong> systemic specification gaming — one confirmed violation among the 12 checkable traces examined, found by reading, invisible to every metric.</li>
+    <li><strong>Claim:</strong> on trace-retained runs, dense scored +7 valid@8 over SFT (p<sub>prompt</sub> ≈ 0.12; family sensitivity ≈ 0.15); sparse (98/96/98) showed no clear improvement (p<sub>prompt</sub> ≈ 0.55; family sensitivity ≈ 0.69); compiler scored level with SFT and 7 below dense (p<sub>prompt</sub> ≈ 0.14; family sensitivity ≈ 0.37). Nothing reaches significance, evaluation variability is comparable to the point estimates, and each arm is one training run — so no difference can be causally attributed to reward shape.</li>
+    <li><strong>Claim:</strong> in complete saved no-Cargo-success groups, the shaping component varied within 1/7 dense groups and 5/8 compiler groups. Whole-group filtering affected 33–47% of saved groups. These code-aligned counts supersede an earlier total-reward-variance calculation.</li>
+    <li><strong>Don't claim:</strong> an RLVR win, a demonstrated compiler-arm regression, or the frontier-band story as a finding. Every <em>positive</em> band CI includes zero; two small never-solved negative CIs exclude zero but are fragile under 12 exploratory comparisons. The analysis also uses aggregate-only repetitions.</li>
+    <li><strong>Don't claim:</strong> <code>valid_trace</code> success means spec-correct — only that the shipped tests pass. In the published runs, tests were model-editable and isolation was path rewriting: the 52,696-call audit found one SFT-baseline assertion flip (no count change), and ~135k saved calls showed no traversal. Current source fixes both mechanics, but it does not retroactively strengthen those artifacts.</li>
+    <li><strong>Don't claim:</strong> systemic specification gaming or a prevalence rate — one confirmed, fully auditable violation proves existence only.</li>
   </ul>
 
   <h2>12 · Reusable lessons</h2>
   <ul>
-    <li>"Tests pass" is not "spec correct" — it's only as strong as the test suite. Spec gaming is invisible to every metric in this post; the only way I found it was reading traces: 1 confirmed violation among the 12 traces with an independently checkable spec (the original found opportunistically, then a 28-trace random sample that surfaced no second clean violation).</li>
+    <li>"Tests pass" is not "spec correct" — it is only as strong as the test suite. One confirmed trace proves this verifier gap exists; the unrecorded follow-up review is not used to estimate prevalence.</li>
     <li>A sparse verifiable reward silently discards the identically-failing part of the hard tail via zero-advantage filtering. Dense partial credit breaks those ties — but a more "principled" version of that same reward can still fail to beat it, so denser isn't automatically better.</li>
     <li>Greedy pass@1 hides small effects in noise (here it even flipped sign across harnesses); pass@k plus repeated evaluations and a prompt-level paired test is the minimum bar — and save the rollouts, because a repetition without retained traces can't be audited and shouldn't carry claims.</li>
     <li>Set an explicit, distinct, recorded sampling seed per evaluation repetition. Unseeded repetitions are runtime-nondeterminism samples, not independent draws.</li>
@@ -1520,12 +1520,14 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
     The defensible conclusion: one dense run showed a small, non-significant improvement;
     sparse showed none; the compiler-aware reward didn't beat either; training-seed
     variance was never measured; and the frontier story is an exploratory hypothesis
-    whose confidence intervals include zero.
+    whose positive confidence intervals include zero.
   </p>
   <p>
     What a real answer would take: multiple training seeds per arm (for causal
     reward-shape attribution), explicitly seeded eval repetitions with retained traces,
-    far more frontier-band tasks, immutable grading tests, and real path containment.
+    far more frontier-band tasks, and generator-recorded family IDs. Current source now
+    confines tool paths, rejects grading/build-file edits, and fails closed into Bubblewrap
+    for Cargo with sanitized tool/cache mounts; the published results predate those fixes.
     The strongest thing this project produced is the audited infrastructure and the
     documented verifier weaknesses — spec-gaming, editable tests, path rewriting — found
     by reading the model's actual work.

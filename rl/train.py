@@ -75,6 +75,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-samples", type=int)
     parser.add_argument("--max-tool-rounds", type=int)
     parser.add_argument("--tool-timeout", type=int)
+    parser.add_argument("--sandbox-backend", choices=("auto", "bwrap", "host"), default="auto")
+    parser.add_argument(
+        "--allow-unsafe-host-execution",
+        action="store_true",
+        help="Allow host cargo only when the whole run is already inside an external container.",
+    )
     parser.add_argument("--structure-valid-bonus", type=float)
     parser.add_argument("--no-call-penalty", type=float)
     parser.add_argument("--malformed-call-penalty", type=float)
@@ -333,6 +339,8 @@ def configure_environment(env_args: dict[str, Any], args: argparse.Namespace, da
     maybe_set(env_args, "max_samples", args.max_samples)
     maybe_set(env_args, "max_tool_rounds", args.max_tool_rounds)
     maybe_set(env_args, "timeout", args.tool_timeout)
+    env_args["sandbox_backend"] = args.sandbox_backend
+    env_args["allow_unsafe_host_execution"] = args.allow_unsafe_host_execution
     maybe_set(env_args, "structure_valid_bonus", args.structure_valid_bonus)
     maybe_set(env_args, "no_call_penalty", args.no_call_penalty)
     maybe_set(env_args, "malformed_call_penalty", args.malformed_call_penalty)

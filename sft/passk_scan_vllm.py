@@ -95,6 +95,7 @@ def _exec_round(rollout: Rollout, executor, expected_output: str | None) -> bool
             call["tool"],
             params,
             expected_output=expected_output if call["tool"] == "cargo_run" else None,
+            allowed_root=rollout.sandbox_path,
         )
         block = format_result_block(call["id"], result)
         injections.append(render_tool_turn(block))
@@ -237,6 +238,12 @@ def main() -> int:
     p.add_argument("--max-new-tokens", type=int, default=4000)
     p.add_argument("--max-tool-rounds", type=int, default=15)
     p.add_argument("--tool-timeout", type=int, default=30)
+    p.add_argument("--sandbox-backend", choices=("auto", "bwrap", "host"), default="auto")
+    p.add_argument(
+        "--allow-unsafe-host-execution",
+        action="store_true",
+        help="Allow host cargo only when the evaluation already runs inside an external container.",
+    )
     p.add_argument("--output", default="results/passk_failed.json")
     p.add_argument("--no-resume", action="store_true")
     p.add_argument("--gpu-memory-utilization", type=float, default=0.85)
@@ -290,7 +297,11 @@ def main() -> int:
         enable_lora=bool(args.sft_adapter),
         max_lora_rank=args.max_lora_rank,
     )
-    executor = RustExecutor(timeout=args.tool_timeout)
+    executor = RustExecutor(
+        timeout=args.tool_timeout,
+        sandbox_backend=args.sandbox_backend,
+        allow_unsafe_host_execution=args.allow_unsafe_host_execution,
+    )
     sandbox_root = Path(args.cases_root) / "_sandboxes"
 
     for start in range(0, len(prompts), args.prompt_batch_size):

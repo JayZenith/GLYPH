@@ -78,7 +78,7 @@ def main() -> int:
     parser.add_argument("--train-blueprints", type=Path, required=True)
     parser.add_argument("--eval-data", type=Path, required=True)
     parser.add_argument("--eval-blueprints", type=Path, required=True)
-    parser.add_argument("--max-source-similarity", type=float, default=0.92)
+    parser.add_argument("--max-source-similarity", type=float, default=0.95)
     parser.add_argument("--top-k", type=int, default=10)
     args = parser.parse_args()
     _self_test()
@@ -97,6 +97,7 @@ def main() -> int:
 
     exact: list[dict] = []
     near: list[dict] = []
+    nearest_all: list[dict] = []
     for eval_id, eval_src in evals.items():
         eval_hash = digest(eval_src)
         if eval_hash in train_by_hash:
@@ -126,6 +127,8 @@ def main() -> int:
                 best_train = train_id
         if best_score >= args.max_source_similarity:
             near.append({"eval": eval_id, "train": best_train, "score": round(best_score, 4)})
+        if best_train:
+            nearest_all.append({"eval": eval_id, "train": best_train, "score": round(best_score, 4)})
 
     summary = {
         "train_cases": len(train),
@@ -135,6 +138,7 @@ def main() -> int:
         "threshold": args.max_source_similarity,
         "exact_sample": exact[: args.top_k],
         "near_sample": sorted(near, key=lambda row: row["score"], reverse=True)[: args.top_k],
+        "nearest_pair": max(nearest_all, key=lambda row: row["score"], default=None),
     }
     print(json.dumps(summary, indent=2))
     return 1 if exact or near else 0

@@ -188,7 +188,7 @@ def _compiler_phase_stage(out: str, compiled: bool) -> int:
 
     4 compiles · 3 borrow/lifetime (type-checked) · 2 type/resolution (parsed) ·
     1 parse/syntax · 0 nothing. Monotone in real progress because each phase
-    gates the next, so the model cannot climb it without genuinely better Rust.
+    gates the next. This measures compiler progress, not task correctness.
     """
     if compiled:
         return 4
@@ -211,9 +211,9 @@ def _progress_reward(
 
     Scans cargo verifier results for the best partial progress across the
     rollout: whether the crate compiled, the highest test-pass fraction, and
-    (compiler-aware arm) the furthest rustc phase reached. All are objective task
-    facts the model cannot game (tests/expected output are fixed by the case;
-    the phase ladder is monotone in real progress). Returns 0.0 when every
+    (compiler-aware arm) the furthest rustc phase reached. These are mechanically
+    measured proxies; protected tests reduce direct tampering, but none proves
+    specification correctness. Returns 0.0 when every
     shaping bonus is disabled, so the default sparse reward is unchanged.
     """
     compile_bonus = reward_config.get("progress_compile_bonus", 0.0)

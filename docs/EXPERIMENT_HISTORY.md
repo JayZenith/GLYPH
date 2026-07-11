@@ -76,7 +76,7 @@ checkpoint instead of the served broadcast looked like model degradation).
   - `RLVR_POOL_B_V8_STEP{10,20,30}` — sparse arm (default penalty table; NOT binary)
   - `RLVR_VFINAL_STEP{10,20,30}` — dense arm (+0.5 compile, +2.0·test-frac)
   - `RLVR_VFINAL2_STEP{5,10}` — compiler-ladder arm (+2.5·stage/4)
-- Pass@8 evals: 3 independent **unseeded** reruns per arm (harness has no seed
+- Pass@8 evals: 3 sequential, argument-identical repetitions per arm (harness has no seed
   flag; the original docs mislabeled these "3-seed replication").
   Sparse arm's pass@8 was only run 2026-07-01, after the audit flagged it missing.
 - Results (valid@8/150 means): SFT 97.3 · sparse 97.3 · dense 101.0 · compiler 95.0.
@@ -107,9 +107,9 @@ one pass (see `docs/AUDIT_2026-07.md`):
 - Training-curve chart was inverted (plotted filtered count as retained);
   regenerated as (96 − filtered)/96, every point verified against raw logs.
 - Sparse filtering range corrected: 8–67% per batch (was misstated 25–83%).
-- Headline claims rebased on **trace-retained** runs only; SFT/dense/compiler
-  repetitions 2–3 survive only as per-prompt counts (aggregate-only,
-  unauditable) and were removed from claims. Retained-run stats: dense +7 vs
+- Headline claims rebased on **trace-retained** runs only. SFT/dense
+  repetitions 2–3 survive only as per-prompt counts (aggregate-only and
+  excluded); all three compiler repetitions retain traces. Retained-run stats: dense +7 vs
   SFT p ≈ 0.12; sparse +3 p ≈ 0.55; compiler ±0 vs SFT, −7 vs dense p ≈ 0.14.
   The Era-4 "compiler −6.0, p ≈ 0.014" claim depended on aggregate-only
   repetitions and is demoted to an observation.
@@ -119,17 +119,31 @@ one pass (see `docs/AUDIT_2026-07.md`):
 - Eval repetitions relabeled: no sampling seed was ever set (vLLM default);
   they are repeated evaluations under runtime nondeterminism, not independent
   samples. Provenance manifest: `docs/PROVENANCE.md`.
-- Frontier band analysis demoted to exploratory; bootstrap 95% CIs all include
-  zero. Direct training-artifact evidence added instead: dense broke reward
-  ties in 7/8 saved all-fail groups, compiler ladder 15/15, but all-fail
-  groups were ~10–20% of batches.
-- Test-tamper audit (`analysis/test_tamper_audit.py`): 40,982 saved eval
+- Frontier band analysis demoted to exploratory; every positive bootstrap 95%
+  CI includes zero (two small never-solved negative CIs exclude zero, without
+  multiplicity correction).
+- Test-tamper audit (`analysis/test_tamper_audit.py`): 52,696 saved eval
   patch calls; one SFT-baseline rollout flipped a test assertion (prompt had
   other clean solves — no count change); no counted RLVR rollout tampered.
 - Sandbox documented as path rewriting, not containment; ~135k saved calls
   show no traversal. `pass_at_k` schema field renamed (`solves/k` is empirical
   pass@1). Similarity auditor now actually normalizes literals (self-tested;
   zero exact overlap reproduced; nearest pair 0.92).
+
+## Era 6 — reproducibility and runtime hardening (Jul 10)
+
+- Added a family-cluster sensitivity test alongside the prompt-level sign-flip
+  test; the null conclusion is unchanged (dense vs SFT p_family ≈ 0.15).
+- Made the 48-case dense never-solved taxonomy reproducible with per-case output
+  (`analysis/never_solved_taxonomy.py`). Removed the unauditable prevalence
+  estimate from an unrecorded 28-trace follow-up review.
+- Confined every tool path to its rollout, blocked edits to grading/build files,
+  and made Cargo fail closed into Bubblewrap unless unsafe host execution is
+  explicitly enabled inside an external container. These fixes postdate every
+  published result; historical verifier limitations remain part of the record.
+- Recomputed training groups against the reward code's actual no-Cargo-success
+  shaping branch. Shaping itself varies in 1/7 dense and 5/8 compiler groups;
+  this supersedes the earlier 7/8 and 15/15 total-reward-variance claim.
 
 ## Known gaps this history cannot fill
 

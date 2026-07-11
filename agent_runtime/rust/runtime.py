@@ -15,11 +15,21 @@ def execute_rust_tool(
     tool_name: str,
     params: dict,
     expected_output: str | None = None,
+    allowed_root: str | Path | None = None,
 ) -> ExecutionResult:
+    if allowed_root is None:
+        return ExecutionResult(False, "", "refusing tool execution without an allowed_root", -1)
+    snapshot_error = executor.ensure_protected_snapshot(allowed_root)
+    if snapshot_error:
+        return ExecutionResult(False, "", snapshot_error, -1)
+    if tool_name in {"cargo_test", "cargo_run"}:
+        integrity_error = executor.validate_protected_snapshot(allowed_root)
+        if integrity_error:
+            return ExecutionResult(False, "", integrity_error, -1)
     if tool_name == "cargo_test":
-        return executor.cargo_test(params.get("project_path", "."))
+        return executor.cargo_test(params.get("project_path", "."), allowed_root=allowed_root)
     if tool_name == "cargo_run":
-        result = executor.cargo_run(params.get("project_path", "."))
+        result = executor.cargo_run(params.get("project_path", "."), allowed_root=allowed_root)
         if result.success and expected_output is not None and result.stdout.strip() != expected_output.strip():
             return ExecutionResult(
                 False,
@@ -33,14 +43,14 @@ def execute_rust_tool(
         file_path = params.get("file_path")
         if not file_path:
             return ExecutionResult(False, "", "missing file_path", -1)
-        return executor.read_file(file_path)
+        return executor.read_file(file_path, allowed_root=allowed_root)
     if tool_name == "apply_patch":
         file_path = params.get("file_path")
         find = params.get("find")
         replace = params.get("replace")
         if not file_path or find is None or replace is None:
             return ExecutionResult(False, "", "apply_patch needs file_path, find, replace", -1)
-        return executor.apply_patch(file_path, find, replace)
+        return executor.apply_patch(file_path, find, replace, allowed_root=allowed_root)
     return ExecutionResult(False, "", f"unknown tool: {tool_name}", -1)
 
 

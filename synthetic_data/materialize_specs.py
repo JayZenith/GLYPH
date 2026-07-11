@@ -275,7 +275,15 @@ def _validate_files_and_steps(spec: dict) -> list[str]:
     return errors
 
 
-def materialize_one(custom_id: str, spec: dict, source_root: Path, cases_root: Path, timeout: int) -> tuple[dict | None, list[str]]:
+def materialize_one(
+    custom_id: str,
+    spec: dict,
+    source_root: Path,
+    cases_root: Path,
+    timeout: int,
+    sandbox_backend: str = "auto",
+    allow_unsafe_host_execution: bool = False,
+) -> tuple[dict | None, list[str]]:
     errors = _validate_spec(spec)
     if errors:
         return None, [f"{custom_id}: {e}" for e in errors]
@@ -290,7 +298,7 @@ def materialize_one(custom_id: str, spec: dict, source_root: Path, cases_root: P
     _write_files(source_project, spec["files"])
     shutil.copytree(source_project, run_project)
 
-    executor = RustExecutor(timeout=timeout)
+    executor = RustExecutor(timeout, sandbox_backend, allow_unsafe_host_execution)
     calls: list[tuple[str, dict, str]] = []
     last_result = None
     for idx, step in enumerate(spec["steps"], 1):
@@ -302,6 +310,7 @@ def materialize_one(custom_id: str, spec: dict, source_root: Path, cases_root: P
             tool,
             exec_params,
             expected_output=spec["expected_output"] if tool == "cargo_run" else None,
+            allowed_root=run_project,
         )
         expected_status = step.get("expect_status")
         actual_status = "success" if result.success else "failed"
@@ -343,6 +352,8 @@ def main() -> int:
     parser.add_argument("--families-dir", type=Path, default=Path("synthetic_data/families"))
     parser.add_argument("--rejects", type=Path, default=Path("synthetic_data/batch_pilot_100/rejects.jsonl"))
     parser.add_argument("--tool-timeout", type=int, default=30)
+    parser.add_argument("--sandbox-backend", choices=("auto", "bwrap", "host"), default="auto")
+    parser.add_argument("--allow-unsafe-host-execution", action="store_true")
     args = parser.parse_args()
 
     args.families_dir.mkdir(parents=True, exist_ok=True)
@@ -353,7 +364,15 @@ def main() -> int:
     specs, rejects = _load_specs(args.specs)
     accepted: dict[str, list[dict]] = defaultdict(list)
     for custom_id, spec in specs:
-        row, errors = materialize_one(custom_id, spec, args.source_root, args.cases_root, args.tool_timeout)
+        row, errors = materialize_one(
+            custom_id,
+            spec,
+            args.source_root,
+            args.cases_root,
+            args.tool_timeout,
+            args.sandbox_backend,
+            args.allow_unsafe_host_execution,
+        )
         if row:
             accepted[row["family"]].append(row)
         else:

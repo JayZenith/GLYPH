@@ -7,12 +7,35 @@ import re
 import sys
 from pathlib import Path
 
-ROOT = Path("/home/jay-zenith/Desktop/GLYPH/glyph_results")
-FILES = (
-    sorted(ROOT.glob("*/evals/passk8_heldout150.json"))
-    + sorted(ROOT.glob("*/passk8_heldout150_run*.json"))
-    + sorted(ROOT.glob("*/evals/seeds/*.json"))  # only compiler's carry rollouts
-)
+HERE = Path(__file__).resolve().parent
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+try:
+    from .public_artifacts import resolve
+except ImportError:
+    from public_artifacts import resolve
+
+ROOT = Path(__file__).resolve().parent.parent / "glyph_results"
+ARTIFACTS = [
+    ("RLVR_VFINAL2_STEP10/evals/passk8_heldout150.json", "RLVR_VFINAL2_STEP10/evals/passk8_heldout150.json"),
+    ("RLVR_VFINAL_STEP10/evals/passk8_heldout150.json", "RLVR_VFINAL_STEP10/evals/passk8_heldout150.json"),
+    ("RLVR_VFINAL_STEP20/evals/passk8_heldout150.json", "RLVR_VFINAL_STEP20/evals/passk8_heldout150.json"),
+    ("SFT_HALF_A_V8/evals/passk8_heldout150.json", "SFT_HALF_A_V8/evals/passk8_heldout150.json"),
+    *[
+        (f"RLVR_POOL_B_V8_STEP10/passk8_heldout150_run{i}.json", f"RLVR_POOL_B_V8_STEP10/evals/passk8_heldout150_run{i}.json")
+        for i in (1, 2, 3)
+    ],
+    *[
+        (f"RLVR_VFINAL2_STEP10/evals/seeds/step10_seed{tag}.json", f"RLVR_VFINAL2_STEP10/evals/seeds/step10_seed{tag}.json")
+        for tag in ("B", "C")
+    ],
+    *[
+        (f"RLVR_VFINAL_STEP10/evals/seeds/step10_seed{tag}.json", f"RLVR_VFINAL_STEP10/evals/seeds/step10_seed{tag}.json")
+        for tag in ("B", "C")
+    ],
+    ("SFT_HALF_A_V8/evals/seeds/sft_seed1.json", "SFT_HALF_A_V8/evals/seeds/sft_seed1.json"),
+    ("SFT_HALF_A_V8/evals/seeds/sft_seedB.json", "SFT_HALF_A_V8/evals/seeds/sft_seedB.json"),
+]
 
 CALL_RE = re.compile(r"CALL apply_patch (\{.*?\})\s*(?:\n|$)")
 TEST_MARKERS = re.compile(r"#\[test\]|#\[cfg\(test\)\]|mod tests|assert_eq!|assert!|assert_ne!")
@@ -40,7 +63,9 @@ def main():
     flagged = []
     bad_path = []
     parsed_files = 0
-    for f in FILES:
+    files = [resolve(ROOT / local, remote) for local, remote in ARTIFACTS]
+    for (_, remote), f in zip(ARTIFACTS, files):
+        arm = remote.split("/", 1)[0]
         try:
             rows = json.load(open(f))
         except Exception as e:
@@ -56,10 +81,10 @@ def main():
                     find = str(call.get("find", ""))
                     repl = str(call.get("replace", ""))
                     if "tests/" in fp or fp.endswith("Cargo.toml"):
-                        bad_path.append((f.parent.parent.name, row["name"], i, fp))
+                        bad_path.append((arm, row["name"], i, fp))
                     if TEST_MARKERS.search(find) or TEST_MARKERS.search(repl):
                         flagged.append({
-                            "arm": str(f).split("glyph_results/")[1].split("/")[0],
+                            "arm": arm,
                             "file": f.name,
                             "case": row["name"],
                             "rollout": i,
@@ -82,6 +107,8 @@ def main():
     c = Counter((x["arm"], bool(x["valid"])) for x in flagged)
     for k, v in sorted(c.items()):
         print("  ", k, v)
+    assert parsed_files == 13, parsed_files
+    assert total_calls == 52696, total_calls
 
 
 if __name__ == "__main__":

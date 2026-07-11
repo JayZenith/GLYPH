@@ -527,7 +527,7 @@ class RustToolEnvTests(unittest.TestCase):
     def test_env_response_records_tool_execution_state(self) -> None:
         calls = []
 
-        def fake_execute(executor, tool_name, params, expected_output=None):
+        def fake_execute(executor, tool_name, params, expected_output=None, allowed_root=None):
             calls.append((tool_name, params, expected_output))
             detail = params.get("file_path") or params.get("project_path") or "."
             return ExecutionResult(True, f"{tool_name}:{detail}", "", 0)

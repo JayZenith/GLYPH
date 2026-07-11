@@ -89,6 +89,8 @@ def load_environment(
     max_tool_rounds: int = 15,
     max_turns: int | None = None,
     sandbox_root: str | None = None,
+    sandbox_backend: str = "auto",
+    allow_unsafe_host_execution: bool = False,
     structure_valid_bonus: float | None = None,
     no_call_penalty: float | None = None,
     malformed_call_penalty: float | None = None,
@@ -149,7 +151,11 @@ def load_environment(
     )
     rubric = build_rubric(reward_config)
 
-    executor = RustExecutor(timeout=timeout)
+    executor = RustExecutor(
+        timeout=timeout,
+        sandbox_backend=sandbox_backend,
+        allow_unsafe_host_execution=allow_unsafe_host_execution,
+    )
     resolved_sandbox_root = Path(sandbox_root) if sandbox_root else Path(tempfile.gettempdir()) / "glyph_sandboxes"
 
     return RustToolEnv(

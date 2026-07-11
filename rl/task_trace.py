@@ -62,6 +62,8 @@ def load_environment(
     env_id: str = "task-trace",
     timeout: int = 30,
     max_tool_rounds: int = 5,
+    sandbox_backend: str = "auto",
+    allow_unsafe_host_execution: bool = False,
     structure_valid_bonus: float | None = None,
     no_call_penalty: float | None = None,
     malformed_call_penalty: float | None = None,
@@ -112,7 +114,11 @@ def load_environment(
     rubric = build_rubric(reward_config)
 
     # Executor ownership: runs real Rust tools inside the rollout environment.
-    executor = RustExecutor(timeout=timeout)
+    executor = RustExecutor(
+        timeout=timeout,
+        sandbox_backend=sandbox_backend,
+        allow_unsafe_host_execution=allow_unsafe_host_execution,
+    )
 
     # RustToolEnv ownership: runs one multi-turn tool-use episode.
     return RustToolEnv(

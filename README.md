@@ -15,11 +15,12 @@ Honest experiment history (every era, including invalidated runs):
 [`review/CLAIMS_AUDIT.md`](review/CLAIMS_AUDIT.md).
 
 
-Published as a standalone [`verifiers`](https://github.com/PrimeIntellect-ai/verifiers)
-environment on the [Prime Intellect Environments Hub](https://app.primeintellect.ai/dashboard/environments/jayzenith/glyph)
-(`environments/glyph/`, crate data on the companion
+Distributed as a standalone [`verifiers`](https://github.com/PrimeIntellect-ai/verifiers)
+environment through the [Prime Intellect Environments Hub](https://app.primeintellect.ai/dashboard/environments/jayzenith/glyph).
+The security-hardened source is `environments/glyph/` v0.2.0; republish that
+version before relying on `prime env install jayzenith/glyph`. Crate data is on the companion
 [`JayZenith/glyph-crates`](https://huggingface.co/datasets/JayZenith/glyph-crates)
-dataset) — install with `prime env install jayzenith/glyph`.
+dataset.
 
 ## Results (held-out 150 unseen crates)
 
@@ -38,14 +39,19 @@ under that label.
 | + dense RLVR (RLVR_VFINAL_STEP10) | **102** |
 | + compiler-aware RLVR (RLVR_VFINAL2_STEP10) | **95 / 96 / 94** |
 
-Paired prompt-level sign-flip permutation (`analysis/retained_run_stats.py`):
+Paired sign-flip permutation (`analysis/retained_run_stats.py`). The first p-value
+treats prompts as exchangeable; the second is a conservative sensitivity check
+that clusters recognizable template families from case IDs:
 
-- dense vs SFT: **+7** (11 prompts up / 4 down), p ≈ 0.12
-- sparse vs SFT: +3, p ≈ 0.55
-- compiler vs SFT: ±0 (p = 1.0) · compiler vs dense: −7, p ≈ 0.14
+- dense vs SFT: **+7** (11 prompts up / 4 down), p_prompt ≈ 0.12,
+  p_family ≈ 0.15
+- sparse vs SFT: +3, p_prompt ≈ 0.55, p_family ≈ 0.69
+- compiler vs SFT: ±0 (both p = 1.0) · compiler vs dense: −7,
+  p_prompt ≈ 0.14, p_family ≈ 0.37
 
-**Nothing is significant.** Re-evaluating one model moves valid@8 by ±2–3 on
-its own (sparse: 98/96/98) — the size of every gap above. Two hard caveats:
+**Nothing is significant.** The sparse repetitions span 2 prompts
+(98/96/98); the aggregate-only SFT/dense repetitions span 5/3. This observed
+evaluation variability is comparable to the point estimates. Two hard caveats:
 
 - Repetitions share vLLM's default seed (no seed flag in the harness); they
   differ only through runtime nondeterminism. T=0.8, top-p 1.0, k=8, 4000 max
@@ -53,20 +59,24 @@ its own (sparse: 98/96/98) — the size of every gap above. Two hard caveats:
 - One training run per arm — training-seed variance unmeasured, so no
   difference is causally attributable to the reward shape.
 
-**Why sparse was flat:** 8 rollouts that fail identically score identically →
-zero group-relative advantage → group dropped. Step 0: 64/96 dropped; 8–67%
-per batch (`glyph_results/RLVR_POOL_B_V8_STEP10/logs/orchestrator.log`).
-Dense partial credit (compile bonus + test-pass fraction) was built to break
-those ties.
+**A mechanism that limited sparse learning:** 8 rollouts with identical reward
+score identically → zero group-relative advantage → group dropped. Step 0:
+64/96 dropped; 8–67% per batch
+(`glyph_results/RLVR_POOL_B_V8_STEP10/logs/orchestrator.log`). Dense partial
+credit (compile bonus + test-pass fraction) was built to break those ties. The
+artifacts show that mechanism occurred; they do not prove it caused the flat
+held-out result.
 
 **The compiler-aware A/B lost anyway.** Identical command except reward flags;
 grades failed rollouts by furthest rustc phase reached. Result: level with
 SFT, −7 vs dense. Goodhart is a plausible story, not an established one.
 
-**Training rollouts (direct evidence):** shaped rewards broke reward ties in
-7/8 (dense) and 15/15 (compiler) all-fail groups — the mechanism worked — but
-all-fail groups were only 3–22% of batches, and 25–47% of all groups were
-dropped whole (`glyph_results/*/rollouts_step_*/train_rollouts.jsonl`).
+**Training rollouts (direct evidence, recomputed):** among complete saved groups
+with no Cargo success — the exact branch where progress shaping applies — the
+shaping component itself varied within 1/7 dense groups and 5/8 compiler groups.
+Whole-group filtering affected 33–47% of saved complete groups. This narrower
+result supersedes an earlier 7/8 and 15/15 count that conflated total reward
+variance with shaping variance (`analysis/training_group_stats.py`).
 
 **Exploratory — where movement sits** (pools the unauditable reps;
 `analysis/pooled_band_analysis.py`). Δpass@1 vs SFT:
@@ -78,18 +88,20 @@ dropped whole (`glyph_results/*/rollouts_step_*/train_rollouts.jsonl`).
 | sometimes (4–6) | 28 | −0.039 | +0.011 | −0.004 |
 | usually (7–8) | 40 | −0.008 | −0.007 | −0.013 |
 
-Only the shaped arms move positive, only on sometimes-solved prompts — the
-pattern the gradient mechanism predicts — but every positive CI includes zero.
-Hypothesis, not finding.
+Non-trivial positive point estimates appear only for the shaped arms and only
+on sometimes-solved prompts (sparse is +0.003 in one band). The pattern matches
+the proposed mechanism, but every positive CI includes zero. Hypothesis, not
+finding.
 
 Artifacts: `JayZenith/SFT_HALF_A_V8` · dense adapters
 `JayZenith/RLVR_VFINAL_STEP{10,20,30}` · compiler-aware adapters
 `JayZenith/RLVR_VFINAL2_STEP{5,10}` · sparse baseline
 `JayZenith/RLVR_POOL_B_V8_STEP{10,20,30}`.
 
-Raw per-rollout eval data (every trace behind every number above, not just
-aggregates): [`JayZenith/Glyph-RLVR-Eval-Results`](https://huggingface.co/datasets/JayZenith/Glyph-RLVR-Eval-Results)
-on the Hub.
+Raw eval data: every rollout behind the retained-run headline plus the clearly
+labeled aggregate-only repetitions is on the
+[`JayZenith/Glyph-RLVR-Eval-Results`](https://huggingface.co/datasets/JayZenith/Glyph-RLVR-Eval-Results)
+dataset card.
 
 ### Known limitations of the eval
 
@@ -97,11 +109,13 @@ on the Hub.
 - Leakage: zero exact matches after normalizing comments/whitespace/literals
   (703×150, `synthetic_data/audit_blueprint_similarity.py`; nearest pair 0.92);
   soft template overlap not ruled out.
-- The "sandbox" is path rewriting, not containment. No traversal in ~135k
-  saved calls; real containment is future work.
-- Grading tests are model-editable. 52,696 patch calls audited
-  (`analysis/test_tamper_audit.py`): one SFT-baseline assertion flip (no count
-  changed), zero counted RLVR tampering. Immutable tests are future work.
+- The published results were produced before runtime confinement was added.
+  Their executor used path rewriting, and their grading tests were editable.
+  No traversal appeared in ~135k saved calls. The 52,696-call tamper audit
+  found one SFT-baseline assertion flip (no count changed) and zero counted
+  RLVR tampering (`analysis/test_tamper_audit.py`). Current code confines every
+  path to its rollout, rejects grading/build-file edits, and runs Cargo through
+  Bubblewrap by default; see "Execution safety" below.
 - Provenance per run (recovered / inferred / unknown):
   [`docs/PROVENANCE.md`](docs/PROVENANCE.md).
 
@@ -126,10 +140,29 @@ on the Hub.
 
 Data → SFT → RLVR → pass@8 eval → trace-level verification, run end to end and
 then adversarially audited twice ([`docs/AUDIT_2026-07.md`](docs/AUDIT_2026-07.md)).
-Defensible conclusion: dense +7 (not significant), sparse flat, compiler-aware
+Defensible conclusion: dense +7 (not significant), sparse showed no clear
+improvement, compiler-aware
 beat neither; training-seed variance unmeasured; frontier story exploratory.
 The contribution is the audited infrastructure, the negative-result diagnosis,
 and the documented verifier weaknesses.
+
+## Execution safety
+
+Current code fails closed around model-controlled tools:
+
+- `read_file`, `apply_patch`, and Cargo project paths must resolve inside the
+  rollout's copied crate; absolute paths, `..`, and escaping symlinks fail.
+- `Cargo.toml`, `build.rs`, `.cargo/`, `tests/`, `benches/`, and
+  the `#[cfg(test)]` section embedded in Rust source are immutable to the model.
+- Cargo defaults to Bubblewrap with filesystem, PID, user, IPC, UTS, cgroup,
+  and network namespaces; only the rollout crate is writable and Cargo runs
+  offline. Cargo receives sanitized tool/cache mounts, never host credentials.
+  If Bubblewrap is absent or blocked, execution fails.
+
+If the entire job already runs in a disposable external container, the explicit
+escape hatch is `sandbox_backend="host", allow_unsafe_host_execution=True`
+(CLI: `--sandbox-backend host --allow-unsafe-host-execution`). Do not use that
+pair on a workstation: model-edited Rust is arbitrary code.
 
 ## Hardware
 
@@ -199,8 +232,9 @@ generic dense one:
 - **Arm B — compiler-aware:** `--progress-error-ladder-bonus 2.5` (and dense
   flags off). Scores failed rollouts by the furthest rustc phase reached —
   `parse → type → borrow → compiles`, scaled `stage/4`. A borrow error proves
-  the code type-checked, so the ladder is monotone in real progress and isn't
-  gamed by churning error counts (see `rl/tests/test_reward_progress.py`).
+  the code type-checked, so the ladder is monotone in compiler phase and isn't
+  improved merely by churning error counts. It is still a proxy for task
+  correctness (see `rl/tests/test_reward_progress.py`).
 
 Both arms run the **identical** command below — same base model
 (`SFT_HALF_A_V8`), same `--data`, same `--max-steps`, same hyperparameters and
@@ -330,3 +364,24 @@ CUDA_VISIBLE_DEVICES=0 python -m sft.passk_scan_vllm \
 For replication, rerun the same command 3× with a different `--cases-root` /
 `--output` per run and keep `--save-rollouts` — repetitions without retained
 traces cannot be audited and shouldn't carry claims (see the note above).
+
+## Reproduce the published analyses
+
+These are CPU-only and run from the repository root:
+
+```bash
+python3 analysis/retained_run_stats.py
+python3 analysis/pooled_band_analysis.py
+python3 analysis/never_solved_taxonomy.py
+python3 analysis/training_group_stats.py
+python3 analysis/test_tamper_audit.py
+python3 synthetic_data/audit_blueprint_similarity.py \
+  --train-data synthetic_data/rl_prompts_signal_v3_pool_b_mixed_oversampled.jsonl \
+  --train-blueprints synthetic_data/blueprints \
+  --eval-data synthetic_data/eval_heldout_150.jsonl \
+  --eval-blueprints synthetic_data/eval_blueprints
+```
+
+The family-clustered p-values are a sensitivity analysis based on a documented,
+deterministic case-name classifier. Future datasets should persist semantic
+family IDs at generation time.

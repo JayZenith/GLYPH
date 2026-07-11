@@ -80,6 +80,7 @@ class RustToolEnv(vf.MultiTurnEnv):
         params: dict,
         info: dict,
         is_rust_prompt: bool,
+        sandbox_path: str | None,
     ) -> ExecutionResult:
         if not is_rust_prompt:
             return ExecutionResult(False, "", "missing rust task metadata", -1)
@@ -90,6 +91,7 @@ class RustToolEnv(vf.MultiTurnEnv):
             call.tool,
             params,
             expected_output=info.get("expected_output") if call.tool == "cargo_run" else None,
+            allowed_root=sandbox_path,
         )
 
     def _record_result(
@@ -172,7 +174,7 @@ class RustToolEnv(vf.MultiTurnEnv):
             params = call.params
             if trace_prefix and sandbox_path:
                 params = rewrite_params_for_sandbox(params, trace_prefix, sandbox_path)
-            er = self._execute_call(call, params, info, is_rust_prompt)
+            er = self._execute_call(call, params, info, is_rust_prompt, sandbox_path)
             executed.add(call.id)
             response = self._record_result(state, call, er)
             tool_turn = render_tool_turn(response["content"])

@@ -198,7 +198,15 @@ def _stdout_from_body(body: str) -> str:
     return match.group(1).strip() if match else ""
 
 
-def replay_row(obj: dict, line_no: int, source_root: Path, cases_root: Path, timeout: int) -> list[str]:
+def replay_row(
+    obj: dict,
+    line_no: int,
+    source_root: Path,
+    cases_root: Path,
+    timeout: int,
+    sandbox_backend: str = "auto",
+    allow_unsafe_host_execution: bool = False,
+) -> list[str]:
     errors: list[str] = []
     trace = obj.get("trace")
     if not isinstance(trace, str):
@@ -208,7 +216,7 @@ def replay_row(obj: dict, line_no: int, source_root: Path, cases_root: Path, tim
         return [f"line {line_no}: blueprint case not found: {blueprint}"]
 
     expected_results = _result_bodies(trace)
-    executor = RustExecutor(timeout=timeout)
+    executor = RustExecutor(timeout, sandbox_backend, allow_unsafe_host_execution)
     actual_statuses: list[tuple[str, str]] = []
     for call in parse_call_blocks(assistant_text(trace)):
         params = call["params"]
@@ -219,6 +227,7 @@ def replay_row(obj: dict, line_no: int, source_root: Path, cases_root: Path, tim
             call["tool"],
             params,
             expected_output=obj.get("expected_output") if call["tool"] == "cargo_run" else None,
+            allowed_root=sandbox,
         )
         expected_body = expected_results.get(call["id"], "")
         expected_status = _status_from_body(expected_body)
@@ -246,6 +255,8 @@ def main() -> int:
     parser.add_argument("--require-metadata", action="store_true")
     parser.add_argument("--max-chars", type=int, default=None)
     parser.add_argument("--tool-timeout", type=int, default=30)
+    parser.add_argument("--sandbox-backend", choices=("auto", "bwrap", "host"), default="auto")
+    parser.add_argument("--allow-unsafe-host-execution", action="store_true")
     parser.add_argument("--summary", action="store_true")
     args = parser.parse_args()
 
@@ -273,7 +284,17 @@ def main() -> int:
             shutil.rmtree(args.cases_root)
         args.cases_root.mkdir(parents=True, exist_ok=True)
         for line_no, obj in rows:
-            errors.extend(replay_row(obj, line_no, args.source_root, args.cases_root, args.tool_timeout))
+            errors.extend(
+                replay_row(
+                    obj,
+                    line_no,
+                    args.source_root,
+                    args.cases_root,
+                    args.tool_timeout,
+                    args.sandbox_backend,
+                    args.allow_unsafe_host_execution,
+                )
+            )
 
     if args.summary:
         print(json.dumps({"rows": len(rows), "families": dict(sorted(families.items()))}, indent=2))

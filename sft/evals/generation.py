@@ -177,7 +177,11 @@ def generate(
     remaining = max_new_tokens
     cur_prompt = prompt
     execution = execution or {}
-    executor = RustExecutor(timeout=execution.get("timeout", 30))
+    executor = RustExecutor(
+        timeout=execution.get("timeout", 30),
+        sandbox_backend=execution.get("sandbox_backend", "auto"),
+        allow_unsafe_host_execution=execution.get("allow_unsafe_host_execution", False),
+    )
     blueprint_root = execution.get("blueprint_root")
     trace_prefix = execution.get("trace_prefix") or blueprint_root
     sandbox_root = execution.get("sandbox_root")
@@ -221,6 +225,7 @@ def generate(
                 call["tool"],
                 params,
                 expected_output=execution.get("expected_output") if call["tool"] == "cargo_run" else None,
+                allowed_root=sandbox_path,
             )
             result_block = format_result_block(call["id"], result)
             injections.append(render_tool_turn(result_block))
@@ -248,7 +253,11 @@ def generate_batch(
         raise ValueError("executions must have the same length as prompts")
     states: list[_BatchState] = []
     for prompt, execution in zip(prompts, executions):
-        executor = RustExecutor(timeout=execution.get("timeout", 30))
+        executor = RustExecutor(
+            timeout=execution.get("timeout", 30),
+            sandbox_backend=execution.get("sandbox_backend", "auto"),
+            allow_unsafe_host_execution=execution.get("allow_unsafe_host_execution", False),
+        )
         blueprint_root = execution.get("blueprint_root")
         sandbox_root = execution.get("sandbox_root")
         sandbox_path = None
@@ -321,6 +330,7 @@ def generate_batch(
                     call["tool"],
                     params,
                     expected_output=state.execution.get("expected_output") if call["tool"] == "cargo_run" else None,
+                    allowed_root=state.sandbox_path,
                 )
                 result_blocks.append(format_result_block(call["id"], result))
             return state, result_blocks
