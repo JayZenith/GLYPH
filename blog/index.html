@@ -1291,15 +1291,12 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
 
   <h2>7 · Measurement</h2>
   <p>
-    Greedy pass@1 is too noisy to detect a small effect, so every arm gets pass@8 (T=0.8)
-    with repeated evaluations. Two rules bound everything below. <strong>First:</strong>
-    the repetitions are <em>not</em> independent seeded samples — the harness exposes no
-    sampling seed (vLLM default applies), so they differ only through runtime
-    nondeterminism (batching, scheduling, tool timing). <strong>Second:</strong> headline
-    claims use only trace-retained runs — repetitions whose full per-rollout traces are
-    saved and auditable. SFT and dense each have two further repetitions that survive
-    only as per-prompt counts (SFT 97, 100; dense 102, 99): direction consistent, but
-    unauditable for trace validity or reward gaming, so they carry no weight here.
+    Every arm gets pass@8 (T=0.8) with repeated evaluations. Two rules:
+    <strong>repetitions are not independent seeded samples</strong> (no seed flag; vLLM
+    default — they differ only through runtime nondeterminism), and <strong>headline
+    claims use trace-retained runs only</strong>. SFT and dense have two extra
+    repetitions that survive only as counts (SFT 97, 100; dense 102, 99) — direction
+    consistent, unauditable, no weight here.
   </p>
   <table>
     <thead><tr><th>model</th><th>valid@8, trace-retained run(s)</th></tr></thead>
@@ -1311,24 +1308,18 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
     </tbody>
   </table>
   <p>
-    <strong>Dense vs SFT: +7 valid@8, 11 prompts up / 4 down, paired sign-flip permutation
-    p ≈ 0.12. Not significant.</strong> Sparse vs SFT: +3, p ≈ 0.55. And repeated
-    evaluation of one model moves valid@8 by ±2–3 prompts on its own (sparse: 98/96/98) —
-    the size of every observed difference. Each arm is also a single training run:
-    training-seed variance was never measured, so even a significant gap couldn't be
-    causally pinned on the reward shape. Multiple training seeds per arm would be
-    required for that.
+    <strong>Dense vs SFT: +7 valid@8, p ≈ 0.12. Not significant.</strong> Sparse: +3,
+    p ≈ 0.55. Re-evaluating one model moves valid@8 ±2–3 on its own (98/96/98) — the
+    size of every gap. And each arm is one training run, so no gap could be causally
+    pinned on the reward shape anyway; that takes multiple training seeds.
   </p>
   <p class="src">evidence: glyph_results/SFT_HALF_A_V8/evals/passk8_heldout150.json · glyph_results/RLVR_VFINAL_STEP10/evals/passk8_heldout150.json · sparse run{1,2,3} · compiler evals/ + evals/seeds/ (all with full per-rollout traces; mirrored on HF: JayZenith/Glyph-RLVR-Eval-Results) · reproduce: analysis/retained_run_stats.py · aggregate-only repetitions: HF seeds/ files for SFT and dense</p>
   <h3>Where the effect might live (exploratory)</h3>
   <p>
-    Two different things must not be conflated here. In <em>training</em>, the saved
-    rollout files show the shaped rewards did what they were built for: across the
-    retained batches, dense broke reward ties in 7 of its 8 all-fail groups and the
-    compiler ladder in 15 of 15 — but all-fail groups were only ~10–20% of batches, and
-    25–47% of all groups were still dropped whole by the zero-advantage filter. That is
-    direct evidence about gradient, from training groups. The <em>eval</em> bands below
-    are a different object: held-out prompts grouped by how often SFT solves them.
+    Don't conflate two objects. <em>Training</em> (direct evidence, saved rollouts):
+    shaped rewards broke reward ties in 7/8 (dense) and 15/15 (compiler) all-fail
+    groups — but all-fail groups were ~10–20% of batches, and 25–47% of all groups were
+    dropped whole. <em>Eval</em> (below): held-out prompts grouped by SFT difficulty.
     Linking the two is a hypothesis, not a measurement.
   </p>
   <p>
@@ -1426,17 +1417,13 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
   </p>
   <div class="panel"><img src="valid8_chart.svg" alt="valid@8 per run: SFT base vs dense reward vs compiler-aware reward" style="width:100%;height:auto;display:block;"></div>
   <p>
-    The compiler-aware arm's three trace-retained runs scored <strong>95 / 96 / 94 —
-    7 below the retained dense run on the paired run-1 comparison (p ≈ 0.14) and level
-    with the SFT baseline</strong>. So the "smarter" reward did
-    not beat the generic one, and may have hurt — but on the auditable data that is an
-    observation, not an established regression. cargo@8 (ignoring trace hygiene) tells
-    the same story, so it isn't a formatting artifact. A plausible cause is Goodhart:
-    "reached a later compiler phase" is a proxy further from the true objective (tests
-    passing) than the dense reward's own compile/test-fraction signal. But I haven't
-    measured the mechanism, and there's a mundane alternative: most crates already
-    compile at the start, so the ladder sits saturated at its top rung and mainly
-    punishes edits that break the build — a conservatism signal, not a progress signal.
+    Its three trace-retained runs scored <strong>95 / 96 / 94 — level with SFT, 7 below
+    dense (p ≈ 0.14)</strong>. The "smarter" reward beat nothing; on auditable data
+    that's an observation, not an established regression (cargo@8 agrees, so it isn't a
+    formatting artifact). Goodhart is one story — the phase ladder is a proxy further
+    from tests-passing than compile/test-fraction. The mundane alternative: most crates
+    already compile, so the ladder sits saturated and mainly punishes edits that break
+    the build. Neither is measured.
   </p>
   <p>
     This is one coefficient (2.5) at one checkpoint (step 10), not an ablation — so the honest

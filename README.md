@@ -23,96 +23,64 @@ dataset) — install with `prime env install jayzenith/glyph`.
 
 ## Results (held-out 150 unseen crates)
 
-Strict `valid_trace` = terminal cargo success + one clean `FINAL` after it +
-exact `CALL` syntax + no tool use after success.
+`valid_trace` = terminal cargo success + one clean `FINAL` + exact `CALL`
+syntax + no tool use after success.
 
-**Headline numbers use only trace-retained runs** — runs whose full
-per-rollout traces are saved and inspectable. Two additional repetitions exist
-for SFT (97, 100) and dense (102, 99), but only as per-prompt aggregate counts
-(raw traces not retained): they cannot be audited for trace validity or reward
-gaming, so they carry no evidentiary weight here. They remain in the public
-eval dataset under that label; their direction is consistent with the retained
-runs.
+Headline numbers use **trace-retained runs only** (full per-rollout traces
+saved and auditable). SFT and dense have 2 extra repetitions that survive only
+as counts (SFT 97, 100 · dense 102, 99) — unauditable, excluded, kept on HF
+under that label.
 
 | valid@8 / 150 | trace-retained run(s) |
 | --- | --- |
 | SFT_HALF_A_V8 | **95** |
 | + sparse RLVR (RLVR_POOL_B_V8_STEP10) | **98 / 96 / 98** |
-| + dense-reward RLVR (RLVR_VFINAL_STEP10) | **102** |
+| + dense RLVR (RLVR_VFINAL_STEP10) | **102** |
 | + compiler-aware RLVR (RLVR_VFINAL2_STEP10) | **95 / 96 / 94** |
 
-Paired prompt-level sign-flip permutation on the retained runs: dense vs SFT
-**+7** (11 prompts up, 4 down, p ≈ 0.12); sparse vs SFT +3 (p ≈ 0.55);
-compiler-aware vs SFT ±0 (p = 1.0); compiler-aware vs dense −7 (p ≈ 0.14).
-**Nothing is significant.** Repeated evaluation of a single model moves
-valid@8 by ±2–3 prompts on its own (sparse: 98/96/98) — the size of every
-observed difference.
+Paired prompt-level sign-flip permutation (`analysis/retained_run_stats.py`):
 
-Two caveats bound every number above:
+- dense vs SFT: **+7** (11 prompts up / 4 down), p ≈ 0.12
+- sparse vs SFT: +3, p ≈ 0.55
+- compiler vs SFT: ±0 (p = 1.0) · compiler vs dense: −7, p ≈ 0.14
 
-- **Eval repetitions are not independent seeded samples.** The harness exposes
-  no sampling seed (vLLM default seed applies); repetitions differ only
-  through runtime nondeterminism — batching, scheduling, tool timing.
-  Sampling config: temperature 0.8, top-p 1.0 (default), max 4000 new tokens,
-  k = 8, max 20 tool rounds.
-- **Each reward arm is one training run.** Training-seed variance was never
-  measured, and evaluation variability alone is comparable to the observed
-  effect. Causal attribution of any difference to the reward shape would
-  require multiple training seeds per arm.
+**Nothing is significant.** Re-evaluating one model moves valid@8 by ±2–3 on
+its own (sparse: 98/96/98) — the size of every gap above. Two hard caveats:
 
-**Why the sparse arm couldn't move: zero-advantage filtering.** The sparse
-baseline rewards +10 only for a clean pass, with fixed failure penalties —
-sparse, but not binary. All-fail rollout groups whose 8 rollouts share the
-same failure profile get identical rewards → zero group-relative advantage →
-the zero-advantage filter drops them, so those prompts contribute no
-verifier-driven signal (at step 0 the filter dropped 64/96 rollouts; 8–67% per
-batch across the 30-batch run, verified from the raw orchestrator log). A
-dense partial-credit reward (compile + test-pass fraction) was built to break
+- Repetitions share vLLM's default seed (no seed flag in the harness); they
+  differ only through runtime nondeterminism. T=0.8, top-p 1.0, k=8, 4000 max
+  new tokens, 20 tool rounds.
+- One training run per arm — training-seed variance unmeasured, so no
+  difference is causally attributable to the reward shape.
+
+**Why sparse was flat:** 8 rollouts that fail identically score identically →
+zero group-relative advantage → group dropped. Step 0: 64/96 dropped; 8–67%
+per batch (`glyph_results/RLVR_POOL_B_V8_STEP10/logs/orchestrator.log`).
+Dense partial credit (compile bonus + test-pass fraction) was built to break
 those ties.
 
-**The compiler-aware A/B did not beat the generic dense reward.** Same
-base/data/steps/hyperparameters, only the reward shape changed: the
-compiler-aware arm (`RLVR_VFINAL2_STEP10`) scores progress by the furthest
-`rustc` phase reached (parse → type → borrow → compiles). Like the dense
-reward it breaks ties inside all-fail groups — step-0 zero-advantage filtering
-barely separates the arms (sparse 64/96 filtered, dense 78/96, compiler-aware
-64/96, from the raw logs) — but its retained runs scored **95 / 96 / 94:
-7 below the retained dense run on the paired run-1 comparison (p ≈ 0.14) and
-level with SFT**. A Goodhart story fits ("later
-compiler phase" is a proxy further from tests-passing than the dense reward's
-own compile/test-fraction signal), but with one training run per arm and
-p ≈ 0.14 on the auditable data, this is an observation, not an established
-regression. See the [write-up](https://jayzenith.github.io/GLYPH/).
+**The compiler-aware A/B lost anyway.** Identical command except reward flags;
+grades failed rollouts by furthest rustc phase reached. Result: level with
+SFT, −7 vs dense. Goodhart is a plausible story, not an established one.
 
-**What the saved training rollouts show (direct evidence).** From the retained
-training batches (36 groups each for sparse/dense, steps 10/20/29; 142 groups
-for compiler-aware, steps 0–11): all-fail groups were 3% of sparse batches,
-22% of dense, 11% of compiler-aware — and the shaped rewards did break reward
-ties inside them (dense 7/8 all-fail groups had >1 distinct reward,
-compiler-aware 15/15). So the shaping created within-group variance where it
-applied, but all-fail groups were a small share of batches, and 25–47% of all
-groups were still dropped whole by the zero-advantage filter. Saved steps are
-a small non-random sample of training.
+**Training rollouts (direct evidence):** shaped rewards broke reward ties in
+7/8 (dense) and 15/15 (compiler) all-fail groups — the mechanism worked — but
+all-fail groups were only 3–22% of batches, and 25–47% of all groups were
+dropped whole (`glyph_results/*/rollouts_step_*/train_rollouts.jsonl`).
 
-**Where the effect might live (exploratory).** Pooling all repetitions —
-*including the aggregate-only ones* — and banding prompts by SFT difficulty,
-Δpass@1 vs SFT for every arm (`analysis/pooled_band_analysis.py`):
+**Exploratory — where movement sits** (pools the unauditable reps;
+`analysis/pooled_band_analysis.py`). Δpass@1 vs SFT:
 
 | band (SFT solves/8) | n | sparse | dense | compiler |
 | --- | ---: | ---: | ---: | ---: |
-| never solved (0) | 55 | −0.015* | −0.004 | −0.023* |
+| never solved (0) | 55 | −0.015 | −0.004 | −0.023 |
 | sometimes (1–3) | 27 | +0.003 | **+0.031** | +0.022 |
 | sometimes (4–6) | 28 | −0.039 | +0.011 | −0.004 |
 | usually (7–8) | 40 | −0.008 | −0.007 | −0.013 |
 
-The only positive movement anywhere is the *shaped* rewards on
-sometimes-solved prompts — where the gradient mechanism would put it — and
-sparse shows none, which is the pattern the theory predicts. But every
-positive band's bootstrap 95% CI includes zero (dense 1–3: [−0.023, +0.086]),
-and the only CIs excluding zero (*) are small negatives on never-solved
-prompts, fragile under 12 comparisons. These bands group held-out eval
-prompts; the GRPO mechanism operates on training groups. The connection stays
-a plausible hypothesis, not a finding.
+Only the shaped arms move positive, only on sometimes-solved prompts — the
+pattern the gradient mechanism predicts — but every positive CI includes zero.
+Hypothesis, not finding.
 
 Artifacts: `JayZenith/SFT_HALF_A_V8` · dense adapters
 `JayZenith/RLVR_VFINAL_STEP{10,20,30}` · compiler-aware adapters
@@ -125,77 +93,43 @@ on the Hub.
 
 ### Known limitations of the eval
 
-- **The 150 held-out cases are not 150 independent tasks.** Keyword-clustering
-  the case names shows real concentration: ~18% are config-merge/precedence
-  variants, ~17% enum-dispatch variants, ~11% leaderboard/ranking variants —
-  roughly half the set falls into 3 recognizable template families, re-skinned
-  with different field names and sample data. The effective sample size behind
-  the pass@8 numbers (and the p-values) is smaller than n=150 implies.
-- **Leakage is checked, not fully ruled out.** RL training data and the eval
-  set share zero exact `case_id`/`blueprint_root` overlap, and zero crate
-  source files match after normalizing comments, whitespace, and string/numeric
-  literals (703 training crates vs. 150 eval crates,
-  `synthetic_data/audit_blueprint_similarity.py`; nearest pair: a league-table
-  tiebreak variant at 0.92 token similarity). What isn't ruled out:
-  the same *logical* bug pattern (e.g. a precedence bug) appearing under
-  different field/function names in both sets — a soft template overlap a
-  hash can't catch, and plausible given the family concentration above.
-- **The "sandbox" is per-rollout isolation, not containment.** Each rollout
-  patches its own crate clone via path rewriting
-  (`agent_runtime/rust/runtime.py`); absolute paths, `..` traversal, and
-  symlink escapes are not blocked. A scan of all ~135k saved headline-eval
-  tool calls found no traversal, so the published numbers are unaffected —
-  but real path containment is future work, and this is not a security
-  boundary.
-- **Grading tests are model-editable.** `apply_patch` can modify the tests the
-  reward checks. Auditing all 52,696 `apply_patch` calls in the trace-retained
-  eval runs (`analysis/test_tamper_audit.py`) found exactly one counting
-  rollout that altered a test: an *SFT-baseline* rollout flipped a test
-  assertion and passed. The same prompt had two clean solves in that run, so
-  no valid@8 count changes. No counted RLVR rollout showed tampering; the
-  aggregate-only repetitions cannot be audited for this. Immutable or
-  restored-before-verification tests are future work.
-- **Provenance is partial.** The eval JSONs record no command, commit, model
-  revision, or sampling seed; the run configuration documented above is
-  reconstructed from the repo's committed commands, and anything not
-  recoverable is marked unknown in
+- ~Half the 150 cases fall into 3 template families → effective n < 150.
+- Leakage: zero exact matches after normalizing comments/whitespace/literals
+  (703×150, `synthetic_data/audit_blueprint_similarity.py`; nearest pair 0.92);
+  soft template overlap not ruled out.
+- The "sandbox" is path rewriting, not containment. No traversal in ~135k
+  saved calls; real containment is future work.
+- Grading tests are model-editable. 52,696 patch calls audited
+  (`analysis/test_tamper_audit.py`): one SFT-baseline assertion flip (no count
+  changed), zero counted RLVR tampering. Immutable tests are future work.
+- Provenance per run (recovered / inferred / unknown):
   [`docs/PROVENANCE.md`](docs/PROVENANCE.md).
 
 ## Design decisions that mattered
 
-- **One execution runtime, three stages.** `agent_runtime/` (executor, sandbox
-  path-rewriting, RESULT renderer) serves SFT data generation
-  (`synthetic_data/materialize_specs.py`), the RL environment
-  (`rl/environment.py`), and the eval harness — the model sees byte-identical
-  trace formatting in training, RL, and eval. Format drift between stages made
-  the model hallucinate whole tool RESULTs inside its own turn.
-- **SFT traces were materialized, not written.** The generator produced JSON
-  specs (crate files + tool steps tagged `expect_status: failed|success`);
-  every step was executed through real cargo, and any case whose planned
-  failure didn't fail — or whose fix didn't pass — was rejected. Recover
-  families must fail at least once before succeeding, so error recovery was
-  learned from real rustc output.
-- **Assistant-only loss masking, zero truncation** (`sft/data.py`): loss on
-  assistant tokens only (unmasked RESULT tokens teach a model to invent tool
-  outputs), and tokenization asserts every trace fits in context rather than
-  silently truncating.
-- **RLVR is anchored, not free-running:** on-policy distillation toward the
-  frozen SFT model itself (`--teacher-tau 0.2`), a small KL to the rollout
-  policy, and gibberish/repetition/zero-advantage filters all enforced.
+- **One execution runtime, three stages.** `agent_runtime/` serves SFT data
+  generation, the RL environment, and the eval harness — byte-identical trace
+  formatting everywhere. Format drift had made the model hallucinate whole
+  tool RESULTs.
+- **SFT traces materialized, not written.** The generator produced specs;
+  every step ran through real cargo; planned failures that didn't fail (or
+  fixes that didn't pass) rejected the case (`synthetic_data/materialize_specs.py`).
+  Error recovery was learned from real rustc output.
+- **Assistant-only masking, zero truncation** (`sft/data.py:73,53`) — unmasked
+  RESULT tokens teach a model to invent tool outputs; truncated traces teach
+  truncated protocol.
+- **RLVR anchored:** on-policy distillation toward the frozen SFT model
+  (`--teacher-tau 0.2`), small KL to the rollout policy, gibberish/repetition/
+  zero-advantage filters enforced.
 
 ## What this demonstrates
 
-A working, audited post-training loop — synthetic data → SFT → RLVR → pass@8
-eval → trace-level verification — run end to end and then audited against its
-own artifacts, including adversarially. The defensible conclusion: the
-retained dense run showed a small, non-significant improvement (+7, p ≈ 0.12);
-sparse showed no clear improvement; the retained compiler-aware run scored
-level with SFT and below dense; training-seed variance was never measured
-(one run per arm), so no difference can be causally attributed to reward
-shape; and the frontier-band story is an exploratory hypothesis whose CI
-includes zero. The strongest contribution is the audited infrastructure, the
-negative-result diagnosis, and the documented verifier weaknesses
-(spec-gaming, editable tests, path rewriting).
+Data → SFT → RLVR → pass@8 eval → trace-level verification, run end to end and
+then adversarially audited twice ([`docs/AUDIT_2026-07.md`](docs/AUDIT_2026-07.md)).
+Defensible conclusion: dense +7 (not significant), sparse flat, compiler-aware
+beat neither; training-seed variance unmeasured; frontier story exploratory.
+The contribution is the audited infrastructure, the negative-result diagnosis,
+and the documented verifier weaknesses.
 
 ## Hardware
 
