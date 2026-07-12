@@ -160,7 +160,8 @@ class GlyphDemoApp(App):
             self._assistant_text += event.text
             self._assistant_widget.update(f"<|im_start|>assistant\n{self._assistant_text}")
         elif event.kind == "assistant_end" and self._assistant_widget is not None:
-            self._assistant_widget.update(render_message("assistant", self._assistant_text))
+            self._assistant_text = event.text
+            self._assistant_widget.update(render_message("assistant", event.text))
         elif event.kind == "tool_start":
             status.update(f"tool · {event.text}")
         elif event.kind == "tool_result":

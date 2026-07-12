@@ -38,8 +38,10 @@ async def exercise_app() -> None:
         await app._handle_event(DemoEvent("system", "SYS"))
         await app._handle_event(DemoEvent("user", "USR"))
         await app._handle_event(DemoEvent("assistant_start", round_index=1))
-        await app._handle_event(DemoEvent("assistant_delta", "FINAL: done", round_index=1))
-        await app._handle_event(DemoEvent("assistant_end", round_index=1))
+        await app._handle_event(
+            DemoEvent("assistant_delta", "FINAL: done\n\nassistant\nCALL bad {}", round_index=1)
+        )
+        await app._handle_event(DemoEvent("assistant_end", "FINAL: done", round_index=1))
         await app._handle_event(DemoEvent("tool_result", "RESULT c1:\nstatus: success", round_index=1))
         transcript = "\n".join(str(widget.render()) for widget in app.query("#transcript Static"))
         assert "<|im_start|>system\nSYS\n<|im_end|>" in transcript

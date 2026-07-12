@@ -67,6 +67,38 @@ def test_session_runs_call_result_final_against_disposable_copy(tmp_path: Path) 
     assert "FINAL: inspected the implementation" in saved.read_text()
 
 
+def test_session_trims_overgenerated_assistant_role_continuations(tmp_path: Path) -> None:
+    crate = make_crate(tmp_path)
+    backend = FakeBackend(
+        [
+            (
+                'CALL read_file {"id":"c1","file_path":"runs/demo/crate/src/lib.rs"}'
+                '\n\nassistant\n'
+                'CALL cargo_test {"id":"c2","project_path":"runs/demo/crate"}'
+                '\n\nassistant\n'
+                "FINAL: overgenerated"
+            ),
+            "FINAL: inspected after one tool",
+        ]
+    )
+    session = GlyphDemoSession(
+        backend,
+        DemoConfig(
+            project=crate,
+            trace_prefix="runs/demo/crate",
+            sandbox_root=tmp_path / "sandboxes",
+            transcript_root=tmp_path / "transcripts",
+        ),
+    )
+
+    events = asyncio.run(collect(session, "Inspect runs/demo/crate/src/lib.rs."))
+
+    assert any(event.kind == "tool_result" and "pub fn answer" in event.text for event in events)
+    assert events[-1].kind == "complete"
+    assert "CALL cargo_test" not in session.messages[2]["content"]
+    assert "FINAL: overgenerated" not in session.messages[2]["content"]
+
+
 def test_session_stops_on_malformed_call(tmp_path: Path) -> None:
     crate = make_crate(tmp_path)
     session = GlyphDemoSession(

@@ -38,6 +38,10 @@ RESULT_ID_RE = re.compile(r"^\s*RESULT\s+([A-Za-z0-9_\-]+):", re.MULTILINE)
 FINAL_RE = re.compile(r"^\s*FINAL:\s*", re.MULTILINE)
 
 ASSISTANT_STOP = "<|im_end|>"
+ROLE_BOUNDARY_RE = re.compile(
+    r"(?:<\|im_end\|>|<\|im_start\|>|\n{2,}(?:system|user|assistant|tool)\n)",
+    re.MULTILINE,
+)
 
 # ---------------------------------------------------------------------------
 # Result types
@@ -99,6 +103,21 @@ def strip_generated_assistant_stop(text: str) -> str:
     if stripped.endswith(ASSISTANT_STOP):
         return stripped[: -len(ASSISTANT_STOP)].rstrip()
     return stripped
+
+
+def first_generated_assistant_turn(text: str) -> str:
+    """Return only the first assistant body from a raw generation.
+
+    vLLM stop strings usually cut at ChatML boundaries, but some runs can still
+    include the next bare role label, for example "\n\nassistant\nCALL ...".
+    The tool loop must parse exactly one assistant turn at a time; otherwise an
+    overgenerated continuation can look like CALL and FINAL in one turn.
+    """
+    stripped = text.strip()
+    match = ROLE_BOUNDARY_RE.search(stripped)
+    if match is not None:
+        stripped = stripped[: match.start()]
+    return strip_generated_assistant_stop(stripped)
 
 
 # ---------------------------------------------------------------------------

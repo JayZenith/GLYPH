@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Protocol
 
 from agent_runtime.chatml import DEFAULT_SYSTEM_PROMPT, render_messages
-from agent_runtime.protocol import call_syntax_errors, has_final, parse_calls, strip_generated_assistant_stop
+from agent_runtime.protocol import call_syntax_errors, first_generated_assistant_turn, has_final, parse_calls
 from agent_runtime.rust.executor import RustExecutor
 from agent_runtime.rust.results import format_result_block
 from agent_runtime.rust.runtime import ensure_sandbox_copy, execute_rust_tool, rewrite_params_for_sandbox
@@ -111,12 +111,12 @@ class GlyphDemoSession:
                 yield DemoEvent("error", f"vLLM request failed: {exc}", round_index)
                 return
 
-            assistant = strip_generated_assistant_stop("".join(pieces))
+            assistant = first_generated_assistant_turn("".join(pieces))
             if not assistant:
                 yield DemoEvent("error", "The model returned an empty assistant turn.", round_index)
                 return
             self.messages.append({"role": "assistant", "content": assistant})
-            yield DemoEvent("assistant_end", round_index=round_index)
+            yield DemoEvent("assistant_end", assistant, round_index)
 
             syntax_errors = call_syntax_errors(assistant)
             if syntax_errors:
