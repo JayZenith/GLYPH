@@ -54,11 +54,10 @@ async def exercise_app() -> None:
         await app._handle_event(DemoEvent("assistant_end", "FINAL: done", round_index=1))
         final_widget = app.query(".final").first(Static)
         assert "assistant" not in final_widget.classes
-        await app._handle_event(DemoEvent("tool_result", "RESULT c1:\nstatus: success", round_index=1))
         await app._handle_event(
             DemoEvent(
-                "diff_result",
-                "DIFF c2:\n--- a/src/lib.rs\n+++ b/src/lib.rs\n@@ -1 +1 @@\n-old\n+new",
+                "tool_result",
+                "RESULT c1:\nstatus: success\n\nPATCH DIFF:\n--- a/src/lib.rs\n+++ b/src/lib.rs\n@@ -1 +1 @@\n-old\n+new",
                 round_index=1,
             )
         )
@@ -67,7 +66,7 @@ async def exercise_app() -> None:
         assert "● user\n<|im_start|>user" in transcript
         assert "◆ assistant final\n<|im_start|>assistant" in transcript
         assert "■ tool result\n<|im_start|>tool" in transcript
-        assert "▧ git diff\nDIFF c2:" in transcript
+        assert "PATCH DIFF:" in transcript
         assert "-old" in transcript
         assert "+new" in transcript
         assert "<|im_start|>system\nSYS\n<|im_end|>" in transcript

@@ -108,7 +108,7 @@ def test_session_trims_overgenerated_assistant_role_continuations(tmp_path: Path
     assert "FINAL: overgenerated" not in session.messages[2]["content"]
 
 
-def test_session_emits_display_only_diff_after_successful_patch(tmp_path: Path) -> None:
+def test_session_appends_display_only_diff_to_patch_tool_result(tmp_path: Path) -> None:
     crate = make_crate(tmp_path)
     backend = FakeBackend(
         [
@@ -133,13 +133,15 @@ def test_session_emits_display_only_diff_after_successful_patch(tmp_path: Path) 
     events = asyncio.run(collect(session, "Patch runs/demo/crate/src/lib.rs."))
 
     diff_events = [event for event in events if event.kind == "diff_result"]
-    assert len(diff_events) == 1
-    assert "DIFF c1:" in diff_events[0].text
-    assert "--- a/src/lib.rs" in diff_events[0].text
-    assert "+++ b/src/lib.rs" in diff_events[0].text
-    assert "-pub fn answer() -> u8 { 42 }" in diff_events[0].text
-    assert "+pub fn answer() -> u8 { 7 }" in diff_events[0].text
-    assert all("DIFF c1" not in message["content"] for message in session.messages)
+    assert diff_events == []
+    patch_result = next(event for event in events if event.kind == "tool_result")
+    assert "RESULT c1:" in patch_result.text
+    assert "PATCH DIFF:" in patch_result.text
+    assert "--- a/src/lib.rs" in patch_result.text
+    assert "+++ b/src/lib.rs" in patch_result.text
+    assert "-pub fn answer() -> u8 { 42 }" in patch_result.text
+    assert "+pub fn answer() -> u8 { 7 }" in patch_result.text
+    assert all("PATCH DIFF" not in message["content"] for message in session.messages)
 
 
 def test_session_stops_on_bubblewrap_infrastructure_failure(tmp_path: Path) -> None:

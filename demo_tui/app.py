@@ -27,7 +27,6 @@ ROLE_HEADERS = {
     "assistant_streaming": ("✦", "assistant streaming", "#e6edf3"),
     "assistant_final": ("◆", "assistant final", "#fb7185"),
     "tool": ("■", "tool result", "#39d98a"),
-    "diff": ("▧", "git diff", "#39d98a"),
 }
 
 
@@ -60,7 +59,6 @@ class GlyphDemoApp(App):
     .call { color: #d7dee8; }
     .final { color: #d7dee8; }
     .tool { background: #111820; color: #c7d1cc; padding: 0 1; }
-    .diff { background: #101418; color: #c7d1cc; padding: 0 1; }
     .error { color: #ffb3c1; }
     .status { dock: bottom; color: #7f9c8d; padding: 0 2; height: 1; background: #020704; }
     #composer { dock: bottom; height: 4; padding: 0 2 1 2; background: #020704; }
@@ -123,31 +121,23 @@ class GlyphDemoApp(App):
         if final:
             body_style = "#ffe0e7"
         elif role == "tool":
-            body_style = "#b9c5bf"
+            body_style = "#b9c5bf on #111820"
         else:
             body_style = "#d7dee8"
-        block.append(trace, style=body_style)
-        return block
-
-    @staticmethod
-    def _diff_block(text: str) -> Text:
-        icon, label, color = ROLE_HEADERS["diff"]
-        block = Text()
-        block.append(icon, style=f"bold {color}")
-        block.append(" ")
-        block.append(label, style=f"bold {color}")
-        block.append("\n")
-        for line in text.splitlines():
+        if role != "tool":
+            block.append(trace, style=body_style)
+            return block
+        for line in trace.splitlines():
             if line.startswith("+") and not line.startswith("+++"):
-                style = "#39d98a"
+                style = "#d5ffe4 on #12301f"
             elif line.startswith("-") and not line.startswith("---"):
-                style = "#fb7185"
+                style = "#ffd7dd on #33171c"
             elif line.startswith("@@"):
-                style = "#c084fc"
-            elif line.startswith(("DIFF ", "---", "+++", "diff ")):
-                style = "#8aa0b8"
+                style = "#e2d5ff on #251d35"
+            elif line.startswith(("PATCH DIFF:", "---", "+++", "diff ")):
+                style = "#8aa0b8 on #111820"
             else:
-                style = "#c7d1cc"
+                style = body_style
             block.append(line, style=style)
             block.append("\n")
         return block
@@ -236,8 +226,6 @@ class GlyphDemoApp(App):
             status.update(f"tool · {event.text}")
         elif event.kind == "tool_result":
             await transcript.mount(Static(self._trace_block("tool", event.text), classes="message tool", markup=False))
-        elif event.kind == "diff_result":
-            await transcript.mount(Static(self._diff_block(event.text), classes="message diff", markup=False))
         elif event.kind == "complete":
             status.update("complete · FINAL received")
         elif event.kind == "error":

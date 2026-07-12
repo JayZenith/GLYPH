@@ -201,12 +201,13 @@ class GlyphDemoSession:
                     self.sandbox_path,
                 )
                 result_block = format_result_block(call.id, result)
-                self.messages.append({"role": "tool", "content": result_block})
-                yield DemoEvent("tool_result", result_block, round_index)
+                display_result_block = result_block
                 if call.tool == "apply_patch" and result.success:
                     diff = self._format_patch_diff(params.get("file_path"))
                     if diff:
-                        yield DemoEvent("diff_result", f"DIFF {call.id}:\n{diff}", round_index)
+                        display_result_block = f"{result_block}\n\nPATCH DIFF:\n{diff}"
+                self.messages.append({"role": "tool", "content": result_block})
+                yield DemoEvent("tool_result", display_result_block, round_index)
                 if call.tool in {"cargo_test", "cargo_run"} and self._is_infrastructure_failure(result_block):
                     yield DemoEvent(
                         "error",
