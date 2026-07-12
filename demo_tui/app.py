@@ -12,6 +12,21 @@ from .client import VLLMCompletionClient
 from .session import DemoConfig, DemoEvent, GlyphDemoSession
 
 
+def compact_middle(text: str, limit: int) -> str:
+    if len(text) <= limit:
+        return text
+    keep = max(4, (limit - 1) // 2)
+    return f"{text[:keep]}…{text[-keep:]}"
+
+
+ROLE_LABELS = {
+    "system": "system",
+    "user": "user",
+    "assistant": "assistant",
+    "tool": "tool",
+}
+
+
 class PromptTextArea(TextArea):
     BINDINGS = [
         Binding("enter", "submit_prompt", "Submit", show=False, priority=True),
@@ -30,21 +45,21 @@ class GlyphDemoApp(App):
     TITLE = "GLYPH"
     SUB_TITLE = "remote vLLM · local Rust tools"
     CSS = """
-    Screen { background: #05080d; color: #e6fff0; }
-    #topbar { dock: top; height: 1; padding: 0 1; background: #070b10; color: #7ee6a0; }
+    Screen { background: #0b0f14; color: #d7dee8; }
+    #topbar { dock: top; height: 1; padding: 0 1; background: #11161d; color: #aab6c4; }
     #main { height: 1fr; padding: 0; }
     #transcript { width: 1fr; padding: 0 1 0 1; scrollbar-size: 1 1; }
-    .message { width: 100%; margin: 0; padding: 0 1; border: solid #2a3440; }
-    .system { background: #090c11; color: #c9d1d9; border: solid #667085; }
-    .user { background: #111006; color: #fff1a8; border: solid #d7b928; }
-    .assistant { background: #06101b; color: #d9eeff; border: solid #2f9bff; }
-    .call { border: solid #45a3ff; }
-    .final { background: #19070a; color: #ffd7dc; border: solid #ff4a5e; }
-    .tool { background: #06110a; color: #dcffe9; border: solid #29d978; }
-    .error { background: #19070a; color: #ff8a96; border: solid #ff4a5e; }
-    .status { dock: bottom; color: #759883; padding: 0 1; height: 1; background: #070b10; }
-    #composer { dock: bottom; height: 4; padding: 0 1 1 1; background: #05080d; }
-    #prompt { height: 3; max-height: 6; border: tall #39ff88; background: #090e14; color: #e6fff0; }
+    .message { width: 100%; margin: 0; padding: 0 1; border: solid #26313d; }
+    .system { background: #0f141b; color: #b8c2cc; border: solid #56616f; }
+    .user { background: #13130f; color: #eadca6; border: solid #a8944a; }
+    .assistant { background: #0d1520; color: #d6e4f0; border: solid #4f83b8; }
+    .call { border: solid #5a8fc7; }
+    .final { background: #1b1013; color: #f1d2d7; border: solid #c85a68; }
+    .tool { background: #0d1712; color: #d3eadc; border: solid #57996f; }
+    .error { background: #1b1013; color: #e7a5ad; border: solid #c85a68; }
+    .status { dock: bottom; color: #8290a0; padding: 0 1; height: 1; background: #11161d; }
+    #composer { dock: bottom; height: 4; padding: 0 1 1 1; background: #0b0f14; }
+    #prompt { height: 3; max-height: 6; border: tall #5f748c; background: #101720; color: #d7dee8; }
     """
     BINDINGS = [
         ("enter", "submit_prompt", "Submit"),
@@ -79,12 +94,17 @@ class GlyphDemoApp(App):
         yield Static("enter submit · shift+enter newline · ctrl+l clear · ctrl+r prompt · ctrl+q quit", id="status", classes="status")
 
     def _topbar_text(self) -> str:
-        crate = self.config.project.name or str(self.config.project)
-        endpoint = self.endpoint.removeprefix("http://").removeprefix("https://")
+        crate = compact_middle(self.config.project.name or str(self.config.project), 36)
+        endpoint = compact_middle(self.endpoint.removeprefix("http://").removeprefix("https://"), 32)
         return (
             f"GLYPH · {self.model} · {endpoint} · "
             f"crate={crate} · exec={self.config.sandbox_backend}"
         )
+
+    @staticmethod
+    def _trace_block(role: str, text: str, *, final: bool = False) -> str:
+        label = "assistant · FINAL" if final else ROLE_LABELS[role]
+        return f"{label}\n{render_message(role, text)}"
 
     def on_mount(self) -> None:
         self.query_one("#prompt", TextArea).focus()
@@ -137,16 +157,16 @@ class GlyphDemoApp(App):
             status.update(f"sandbox · {event.text}")
         elif event.kind == "system":
             await transcript.mount(
-                Static(render_message("system", event.text), classes="message system", markup=False)
+                Static(self._trace_block("system", event.text), classes="message system", markup=False)
             )
         elif event.kind == "user":
             await transcript.mount(
-                Static(render_message("user", event.text), classes="message user", markup=False)
+                Static(self._trace_block("user", event.text), classes="message user", markup=False)
             )
         elif event.kind == "assistant_start":
             self._assistant_text = ""
             self._assistant_widget = Static(
-                "<|im_start|>assistant\n",
+                "assistant · streaming\n<|im_start|>assistant\n",
                 classes="message assistant",
                 markup=False,
             )
@@ -154,7 +174,7 @@ class GlyphDemoApp(App):
             status.update(f"model round {event.round_index} · streaming")
         elif event.kind == "assistant_delta" and self._assistant_widget is not None:
             self._assistant_text += event.text
-            self._assistant_widget.update(f"<|im_start|>assistant\n{self._assistant_text}")
+            self._assistant_widget.update(f"assistant · streaming\n<|im_start|>assistant\n{self._assistant_text}")
         elif event.kind == "assistant_end" and self._assistant_widget is not None:
             self._assistant_text = event.text
             if event.text.lstrip().startswith("FINAL:"):
@@ -163,11 +183,13 @@ class GlyphDemoApp(App):
                 self._assistant_widget.add_class("final")
             else:
                 self._assistant_widget.add_class("call")
-            self._assistant_widget.update(render_message("assistant", event.text))
+            self._assistant_widget.update(
+                self._trace_block("assistant", event.text, final=event.text.lstrip().startswith("FINAL:"))
+            )
         elif event.kind == "tool_start":
             status.update(f"tool · {event.text}")
         elif event.kind == "tool_result":
-            await transcript.mount(Static(render_message("tool", event.text), classes="message tool", markup=False))
+            await transcript.mount(Static(self._trace_block("tool", event.text), classes="message tool", markup=False))
         elif event.kind == "complete":
             status.update("complete · FINAL received")
         elif event.kind == "error":

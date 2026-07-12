@@ -5,7 +5,7 @@ from pathlib import Path
 
 from textual.widgets import Static, TextArea
 
-from demo_tui.app import GlyphDemoApp
+from demo_tui.app import GlyphDemoApp, compact_middle
 from demo_tui.session import DemoConfig, DemoEvent
 
 
@@ -56,6 +56,10 @@ async def exercise_app() -> None:
         assert "assistant" not in final_widget.classes
         await app._handle_event(DemoEvent("tool_result", "RESULT c1:\nstatus: success", round_index=1))
         transcript = "\n".join(str(widget.render()) for widget in app.query("#transcript Static"))
+        assert "system\n<|im_start|>system" in transcript
+        assert "user\n<|im_start|>user" in transcript
+        assert "assistant · FINAL\n<|im_start|>assistant" in transcript
+        assert "tool\n<|im_start|>tool" in transcript
         assert "<|im_start|>system\nSYS\n<|im_end|>" in transcript
         assert "<|im_start|>user\nUSR\n<|im_end|>" in transcript
         assert "<|im_start|>assistant\nFINAL: done\n<|im_end|>" in transcript
@@ -66,3 +70,10 @@ async def exercise_app() -> None:
 
 def test_app_mounts_and_keyboard_actions_work() -> None:
     asyncio.run(exercise_app())
+
+
+def test_compact_middle_preserves_short_text_and_truncates_long_text() -> None:
+    assert compact_middle("short", 10) == "short"
+    assert compact_middle("eval100_013_patch_test_pass_014_dispatch_policy_match_order", 20) == (
+        "eval100_0…tch_order"
+    )
