@@ -400,55 +400,9 @@ The family-clustered p-values are a sensitivity analysis based on a documented,
 deterministic case-name classifier. Future datasets should persist semantic
 family IDs at generation time.
 
-## Interactive TUI smoke test
+## Interactive TUI
 
-I also built a local Textual TUI (`demo_tui/`) that connects to a remotely served
-vLLM model while executing the Rust tool loop on the local machine. The TUI shows
-the system/user/assistant/tool ChatML turns, streams assistant output, highlights
-`FINAL`, copies each eval crate into a disposable sandbox, and saves transcripts
-under `runs/demo_tui/transcripts/`.
-
-One run used the held-out eval case
-`eval100_013_patch_test_pass_014_dispatch_policy_match_order` with the original
-eval prompt. I cloned the repo, installed the environment, served the SFT model
-plus dense RLVR adapter on a Vast.ai GPU box, tunneled vLLM back to my laptop,
-then ran the TUI locally:
-
-```bash
-git clone https://github.com/JayZenith/GLYPH.git
-cd GLYPH
-bash sft/setup/install_sft_env.sh
-source .venv/bin/activate
-
-# On the GPU instance:
-vllm serve JayZenith/SFT_HALF_A_V8 \
-  --enable-lora \
-  --lora-modules glyph=JayZenith/RLVR_VFINAL_STEP10 \
-  --max-lora-rank 64 \
-  --max-model-len 24576
-
-# On the laptop, in one terminal pane:
-ssh -p 47282 -N -L 18080:127.0.0.1:8000 root@173.239.95.142
-
-# On the laptop, in another terminal pane:
-CASE=eval100_013_patch_test_pass_014_dispatch_policy_match_order
-python3 -m demo_tui \
-  --base-url http://127.0.0.1:18080/v1 \
-  --model glyph \
-  --project synthetic_data/eval_blueprints/$CASE \
-  --trace-prefix runs/rlvr1/rust_cases/$CASE \
-  --sandbox-backend host \
-  --allow-unsafe-host-execution
-```
-
-Prompt entered in the TUI:
-
-```text
-In the Rust crate at runs/rlvr1/rust_cases/eval100_013_patch_test_pass_014_dispatch_policy_match_order, fix the enum branch logic in src/lib.rs so the tests pass. Keep the implementation compact and only change the bug.
-```
-
-On my laptop Bubblewrap could not create a namespace (`bwrap: Creating new
-namespace failed: Resource temporarily unavailable`), so the live demo opted out
-with `--sandbox-backend host --allow-unsafe-host-execution`. Use that only for a
-disposable demo copy: model-edited Rust is arbitrary code. Without the opt-out,
-the runtime fails closed.
+`demo_tui/` is a small Textual interface for serving GLYPH through remote vLLM
+while running the existing Rust tool loop locally against disposable eval-crate
+copies. See [`demo_tui/README.md`](demo_tui/README.md) for the smoke-test
+commands and sandbox caveats.
