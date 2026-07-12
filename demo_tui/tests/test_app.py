@@ -28,6 +28,11 @@ async def exercise_app() -> None:
         assert "gpu:8000" in topbar
         assert "demo-crate" in topbar
         original_height = prompt.styles.height.value
+        await pilot.press("F")
+        await pilot.press("i")
+        await pilot.press("x")
+        assert prompt.text == "Fix"
+        prompt.clear()
         prompt.load_text("Fix the crate. " * 40)
         app._resize_prompt()
         assert prompt.styles.height.value > original_height

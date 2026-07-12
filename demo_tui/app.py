@@ -42,8 +42,8 @@ class GlyphDemoApp(App):
     .tool { background: #07120b; border-left: thick #39ff88; }
     .error { background: #19070a; color: #ff8a96; border-left: thick #ff4a5e; }
     .status { dock: bottom; color: #759883; padding: 0 1; height: 1; background: #070b10; }
-    #composer { dock: bottom; height: auto; margin: 0 0 0 0; }
-    #prompt { height: 2; max-height: 5; border: tall #39ff88; background: #090e14; }
+    #composer { dock: bottom; height: 4; padding: 0 0 1 0; }
+    #prompt { height: 3; max-height: 6; border: tall #39ff88; background: #090e14; }
     """
     BINDINGS = [
         ("enter", "submit_prompt", "Submit"),
@@ -109,7 +109,9 @@ class GlyphDemoApp(App):
         visual_lines = 1
         for line in prompt_input.text.splitlines() or [""]:
             visual_lines += max(0, (len(line) - 1) // width)
-        prompt_input.styles.height = max(2, min(5, visual_lines + 1))
+        prompt_height = max(3, min(6, visual_lines + 2))
+        prompt_input.styles.height = prompt_height
+        self.query_one("#composer", Vertical).styles.height = prompt_height + 1
 
     @work(exclusive=True)
     async def run_agent(self, prompt: str) -> None:
