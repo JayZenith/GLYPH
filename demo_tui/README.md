@@ -18,6 +18,36 @@ vllm serve JayZenith/SFT_HALF_A_V8 \
 
 Expose port 8000 only through an authenticated network or an SSH tunnel.
 
+On Vast.ai, the SSH host and SSH port change per instance. Keep them in shell
+variables instead of hardcoding old instance details:
+
+```bash
+export GLYPH_SSH_HOST=<instance-ip>
+export GLYPH_SSH_PORT=<instance-ssh-port>
+export GLYPH_REMOTE_VLLM_PORT=8000
+export GLYPH_LOCAL_VLLM_PORT=18082
+
+ssh -p "$GLYPH_SSH_PORT" -N \
+  -L "$GLYPH_LOCAL_VLLM_PORT:127.0.0.1:$GLYPH_REMOTE_VLLM_PORT" \
+  "root@$GLYPH_SSH_HOST"
+```
+
+In another local terminal, verify that the tunnel reaches vLLM:
+
+```bash
+curl "http://127.0.0.1:$GLYPH_LOCAL_VLLM_PORT/v1/models"
+```
+
+If this hangs or returns non-JSON, check the remote vLLM port from inside the
+instance:
+
+```bash
+curl http://127.0.0.1:8000/v1/models
+curl http://127.0.0.1:8080/v1/models
+```
+
+Vast.ai often uses port 8080 for Jupyter/portal services, not vLLM.
+
 ## Run the TUI
 
 ```bash
@@ -54,6 +84,47 @@ python -m demo_tui ... \
 
 Do not use those flags directly on a workstation: model-edited Rust is arbitrary
 code.
+
+## OOD smoke test
+
+`demo_tui/ood_cases/score_summary` is a tiny Rust crate kept in this repository
+for an out-of-distribution TUI smoke test. It is not an eval blueprint. The bug
+is simple numeric/vector logic: ignore invalid negative scores, cap scores above
+100, and compute the summary from normalized scores.
+
+With the SSH tunnel above running:
+
+```bash
+source .venv/bin/activate
+
+python3 -m demo_tui \
+  --base-url "http://127.0.0.1:$GLYPH_LOCAL_VLLM_PORT/v1" \
+  --model glyph \
+  --project demo_tui/ood_cases/score_summary \
+  --trace-prefix demo_tui/ood_cases/score_summary \
+  --sandbox-backend host \
+  --allow-unsafe-host-execution \
+  --max-tool-rounds 8 \
+  --max-tokens 2200
+```
+
+Prompt:
+
+```text
+In the Rust crate at demo_tui/ood_cases/score_summary, fix the failing tests. Read demo_tui/ood_cases/score_summary/src/lib.rs first. Identify the score summary bugs, make a minimal implementation change, run cargo test, and stop with FINAL when tests pass. Do not modify tests or Cargo.toml.
+```
+
+One successful local run produced this trace shape:
+
+1. `read_file` on `src/lib.rs`
+2. first `apply_patch`
+3. `cargo_test` showing remaining failures
+4. second `apply_patch`
+5. `cargo_test` with `4 passed; 0 failed`
+6. `FINAL`
+
+This demonstrates the interactive tool loop on a small unseen Rust crate. It is
+not a broad Rust-generalization benchmark.
 
 ## Offline scripted mode
 
@@ -106,12 +177,17 @@ vllm serve JayZenith/SFT_HALF_A_V8 \
   --max-model-len 24576
 
 # On the laptop, in one terminal pane:
-ssh -p 47282 -N -L 18080:127.0.0.1:8000 root@173.239.95.142
+export GLYPH_SSH_HOST=<instance-ip>
+export GLYPH_SSH_PORT=<instance-ssh-port>
+export GLYPH_LOCAL_VLLM_PORT=18080
+ssh -p "$GLYPH_SSH_PORT" -N \
+  -L "$GLYPH_LOCAL_VLLM_PORT:127.0.0.1:8000" \
+  "root@$GLYPH_SSH_HOST"
 
 # On the laptop, in another terminal pane:
 CASE=eval100_013_patch_test_pass_014_dispatch_policy_match_order
 python3 -m demo_tui \
-  --base-url http://127.0.0.1:18080/v1 \
+  --base-url "http://127.0.0.1:$GLYPH_LOCAL_VLLM_PORT/v1" \
   --model glyph \
   --project synthetic_data/eval_blueprints/$CASE \
   --trace-prefix runs/rlvr1/rust_cases/$CASE \
