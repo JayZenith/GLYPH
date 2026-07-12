@@ -76,6 +76,32 @@ def test_session_runs_call_result_final_against_disposable_copy(tmp_path: Path) 
     assert "FINAL: inspected the implementation" in saved.read_text()
 
 
+def test_session_rewrites_absolute_paths_when_model_drops_leading_slash(tmp_path: Path) -> None:
+    crate = make_crate(tmp_path)
+    absolute_crate = str(crate.resolve())
+    slashless_crate = absolute_crate.lstrip("/")
+    backend = FakeBackend(
+        [
+            f'CALL read_file {{"id":"c1","file_path":"{slashless_crate}/src/lib.rs"}}',
+            "FINAL: inspected slashless path",
+        ]
+    )
+    session = GlyphDemoSession(
+        backend,
+        DemoConfig(
+            project=crate,
+            trace_prefix=absolute_crate,
+            sandbox_root=tmp_path / "sandboxes",
+            transcript_root=tmp_path / "transcripts",
+        ),
+    )
+
+    events = asyncio.run(collect(session, f"Inspect {absolute_crate}/src/lib.rs."))
+
+    assert any(event.kind == "tool_result" and "pub fn answer" in event.text for event in events)
+    assert events[-1].kind == "complete"
+
+
 def test_session_trims_overgenerated_assistant_role_continuations(tmp_path: Path) -> None:
     crate = make_crate(tmp_path)
     backend = FakeBackend(

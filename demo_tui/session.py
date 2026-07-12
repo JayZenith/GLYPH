@@ -15,6 +15,24 @@ from agent_runtime.rust.results import format_result_block
 from agent_runtime.rust.runtime import ensure_sandbox_copy, execute_rust_tool, rewrite_params_for_sandbox
 
 
+def _trace_prefix_variants(prefixes: list[str], sandbox_path: Path) -> list[tuple[str, str]]:
+    variants: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    sandbox = str(sandbox_path)
+    for prefix in prefixes:
+        cleaned = prefix.rstrip("/")
+        if not cleaned:
+            continue
+        for source, target in (
+            (cleaned, sandbox),
+            (cleaned.lstrip("/"), sandbox),
+        ):
+            if source and (source, target) not in seen:
+                seen.add((source, target))
+                variants.append((source, target))
+    return variants
+
+
 class CompletionBackend(Protocol):
     async def stream(self, prompt: str) -> AsyncIterator[str]: ...
 
@@ -145,6 +163,7 @@ class GlyphDemoSession:
             for prefix in (self.config.trace_prefix, str(self.config.project), project_prefix)
             if prefix
         ]
+        trace_rewrites = _trace_prefix_variants(trace_prefixes, self.sandbox_path)
 
         for round_index in range(1, self.config.max_tool_rounds + 1):
             yield DemoEvent("assistant_start", round_index=round_index)
@@ -187,9 +206,9 @@ class GlyphDemoSession:
                     return
                 self._executed_call_ids.add(call.id)
                 params = call.params
-                for trace_prefix in trace_prefixes:
+                for trace_prefix, rewrite_target in trace_rewrites:
                     params = rewrite_params_for_sandbox(
-                        params, trace_prefix, str(self.sandbox_path)
+                        params, trace_prefix, rewrite_target
                     )
                 yield DemoEvent("tool_start", f"{call.tool} · {call.id}", round_index)
                 result = await asyncio.to_thread(
