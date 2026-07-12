@@ -55,6 +55,28 @@ python -m demo_tui ... \
 Do not use those flags directly on a workstation: model-edited Rust is arbitrary
 code.
 
+## Offline scripted mode
+
+Use this when you want to inspect the TUI without a vLLM instance or SSH tunnel.
+It emits a deterministic GLYPH-style assistant trace for
+`eval100_013_patch_test_pass_014_dispatch_policy_match_order`:
+
+```bash
+CASE=eval100_013_patch_test_pass_014_dispatch_policy_match_order
+python3 -m demo_tui \
+  --backend scripted \
+  --project synthetic_data/eval_blueprints/$CASE \
+  --trace-prefix runs/rlvr1/rust_cases/$CASE \
+  --sandbox-backend host \
+  --allow-unsafe-host-execution
+```
+
+You can also omit `--project` and `--trace-prefix`; scripted mode defaults to
+that same case. The scripted backend does not call the network, but it still
+runs the real local tool loop against a disposable crate copy: `read_file`,
+`apply_patch`, then `cargo_test`, followed by a red `FINAL` assistant box.
+If Bubblewrap works on your machine, omit the two host-execution flags.
+
 ## Why raw completions
 
 The client calls vLLM's `/v1/completions` endpoint with ChatML rendered locally

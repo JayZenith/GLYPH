@@ -62,6 +62,9 @@ class GlyphDemoSession:
         return path
 
     def _prepare(self, user_prompt: str) -> None:
+        reset = getattr(self.backend, "reset", None)
+        if callable(reset):
+            reset()
         project = self.config.project.expanduser().resolve(strict=True)
         if not project.is_dir():
             raise ValueError(f"project is not a directory: {project}")
