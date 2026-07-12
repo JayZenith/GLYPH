@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from rich.text import Text
-from textual import work
+from textual import events, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Vertical, VerticalScroll
@@ -42,6 +42,10 @@ class PromptTextArea(TextArea):
 
     def action_insert_newline(self) -> None:
         self.insert("\n")
+
+    def on_paste(self, event: events.Paste) -> None:
+        event.stop()
+        self.insert(event.text)
 
 
 class GlyphDemoApp(App):

@@ -3,9 +3,10 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 
+from textual import events
 from textual.widgets import Static, TextArea
 
-from demo_tui.app import GlyphDemoApp, compact_middle
+from demo_tui.app import GlyphDemoApp, PromptTextArea, compact_middle
 from demo_tui.session import DemoConfig, DemoEvent
 
 
@@ -32,6 +33,10 @@ async def exercise_app() -> None:
         await pilot.press("i")
         await pilot.press("x")
         assert prompt.text == "Fix"
+        paste = events.Paste(" pasted\ntext")
+        prompt_widget = app.query_one("#prompt", PromptTextArea)
+        prompt_widget.on_paste(paste)
+        assert prompt.text == "Fix pasted\ntext"
         prompt.clear()
         prompt.load_text("Fix the crate. " * 40)
         app._resize_prompt()
