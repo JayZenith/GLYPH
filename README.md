@@ -403,4 +403,5 @@ family IDs at generation time.
 `demo_tui/` is a small Textual interface for serving GLYPH through remote vLLM
 while running the existing Rust tool loop locally against disposable eval-crate
 copies. See [`demo_tui/README.md`](demo_tui/README.md) for the smoke-test
-commands and sandbox caveats.
+commands and sandbox caveats. The portfolio includes a short screencast of the
+OOD TUI run.
