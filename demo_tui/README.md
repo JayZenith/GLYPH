@@ -72,18 +72,16 @@ python -m demo_tui ... \
   --trace-prefix runs/rlvr1/rust_cases/<case_id>
 ```
 
-By default, Cargo fails closed into Bubblewrap. If the TUI itself is already
-inside a disposable external container, host execution requires both explicit
-flags:
+By default, the TUI runs Cargo on the host inside a disposable copied crate
+under `runs/demo_tui/sandboxes/`. Treat model-edited Rust as arbitrary code:
+run the TUI only in a disposable VM/container or other isolated demo
+environment. If your host supports Bubblewrap and you want the stricter sandbox,
+opt in:
 
 ```bash
 python -m demo_tui ... \
-  --sandbox-backend host \
-  --allow-unsafe-host-execution
+  --sandbox-backend bwrap
 ```
-
-Do not use those flags directly on a workstation: model-edited Rust is arbitrary
-code.
 
 ## OOD smoke test
 
@@ -102,8 +100,6 @@ python3 -m demo_tui \
   --model glyph \
   --project demo_tui/ood_cases/score_summary \
   --trace-prefix demo_tui/ood_cases/score_summary \
-  --sandbox-backend host \
-  --allow-unsafe-host-execution \
   --max-tool-rounds 8 \
   --max-tokens 2200
 ```
@@ -137,16 +133,13 @@ CASE=eval100_013_patch_test_pass_014_dispatch_policy_match_order
 python3 -m demo_tui \
   --backend scripted \
   --project synthetic_data/eval_blueprints/$CASE \
-  --trace-prefix runs/rlvr1/rust_cases/$CASE \
-  --sandbox-backend host \
-  --allow-unsafe-host-execution
+  --trace-prefix runs/rlvr1/rust_cases/$CASE
 ```
 
 You can also omit `--project` and `--trace-prefix`; scripted mode defaults to
 that same case. The scripted backend does not call the network, but it still
 runs the real local tool loop against a disposable crate copy: `read_file`,
 `apply_patch`, then `cargo_test`, followed by a red `FINAL` assistant box.
-If Bubblewrap works on your machine, omit the two host-execution flags.
 
 ## Why raw completions
 

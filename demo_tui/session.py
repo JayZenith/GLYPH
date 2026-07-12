@@ -47,8 +47,8 @@ class DemoConfig:
     expected_output: str | None = None
     max_tool_rounds: int = 20
     tool_timeout: int = 30
-    sandbox_backend: str = "auto"
-    allow_unsafe_host_execution: bool = False
+    sandbox_backend: str = "host"
+    allow_unsafe_host_execution: bool = True
 
 
 @dataclass(frozen=True)
@@ -233,8 +233,8 @@ class GlyphDemoSession:
                         (
                             "Local Rust execution failed before Cargo could run. "
                             "Bubblewrap cannot create a namespace on this host. "
-                            "Restart with --sandbox-backend host --allow-unsafe-host-execution "
-                            "only if you accept running model-edited Rust in the disposable demo copy."
+                            "The TUI defaults to host execution in a disposable crate copy; "
+                            "use --sandbox-backend bwrap only on hosts that support Bubblewrap."
                         ),
                         round_index,
                     )

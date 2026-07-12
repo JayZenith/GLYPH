@@ -17,10 +17,9 @@ pass@8 lift over both SFT and the sparse control:
 
 ## Requirements
 
-A Rust toolchain on `PATH` (`cargo`, `rustc`) and a usable
-[Bubblewrap](https://github.com/containers/bubblewrap) installation. Cargo
-execution fails closed if Bubblewrap is unavailable or blocked. Crate templates (~30MB) download automatically
-from the companion [`JayZenith/glyph-crates`](https://huggingface.co/datasets/JayZenith/glyph-crates)
+A Rust toolchain on `PATH` (`cargo`, `rustc`). Crate templates (~30MB) download
+automatically from the companion
+[`JayZenith/glyph-crates`](https://huggingface.co/datasets/JayZenith/glyph-crates)
 dataset on first use and are cached locally.
 
 ## Usage
@@ -61,29 +60,27 @@ run, so nothing is causally attributed to reward shape. Two known verifier
 limits, both audited: the published runs used path rewriting rather than
 containment, and grading tests were model-editable (one baseline rollout in
 52,696 audited patch calls flipped a test assertion — no published count
-affected). Current source confines tool paths, blocks grading/build-file edits,
-and runs Cargo in Bubblewrap; these fixes postdate the published results. Full
-methodology and raw per-rollout eval data:
+affected). Current source confines tool paths and blocks grading/build-file
+edits; these fixes postdate the published results. Full methodology and raw
+per-rollout eval data:
 [`JayZenith/Glyph-RLVR-Eval-Results`](https://huggingface.co/datasets/JayZenith/Glyph-RLVR-Eval-Results).
 
 ## Execution safety
 
-Only the copied rollout crate is writable in the default Bubblewrap sandbox;
-network and host filesystem access are unavailable. Tool paths cannot escape
-the crate, including through symlinks, and tests/Cargo.toml/build scripts
-are immutable to `apply_patch`. Cargo receives only sanitized tool/cache mounts,
-not host credentials.
+The environment executes model-edited Rust inside a disposable copied rollout
+crate. Tool paths cannot escape that crate, including through symlinks, and
+tests/Cargo.toml/build scripts are immutable to `apply_patch`.
 
-If Glyph itself already runs inside a disposable external container, host
-execution can be enabled explicitly:
+Cargo runs on the host by default because Bubblewrap frequently fails in hosted
+or nested container environments. Treat model-edited Rust as arbitrary code:
+run Glyph only in a disposable VM/container or other isolated job environment.
 
 ```python
-env = vf.load_environment(
-    "glyph",
-    sandbox_backend="host",
-    allow_unsafe_host_execution=True,
-)
+env = vf.load_environment("glyph")
 ```
 
-Never enable this pair directly on a workstation: model-edited Rust is
-arbitrary code.
+If your host supports Bubblewrap and you want the stricter sandbox, opt in:
+
+```python
+env = vf.load_environment("glyph", sandbox_backend="bwrap")
+```

@@ -89,8 +89,8 @@ def load_environment(
     max_tool_rounds: int = 15,
     max_turns: int | None = None,
     sandbox_root: str | None = None,
-    sandbox_backend: str = "auto",
-    allow_unsafe_host_execution: bool = False,
+    sandbox_backend: str = "host",
+    allow_unsafe_host_execution: bool = True,
     structure_valid_bonus: float | None = None,
     no_call_penalty: float | None = None,
     malformed_call_penalty: float | None = None,
@@ -121,7 +121,10 @@ def load_environment(
     point at a custom prompts JSONL instead of the bundled default.
 
     Requires a Rust toolchain (`cargo`/`rustc`) on PATH; install via
-    https://rustup.rs if `rustc --version` fails.
+    https://rustup.rs if `rustc --version` fails. By default, Cargo runs on the
+    host inside a disposable copied crate because Bubblewrap is often blocked in
+    hosted/nested environments. Pass sandbox_backend="bwrap" to opt into
+    Bubblewrap when the host supports it.
     """
     resolved_data_path, cache_root = _resolve_data_path(data_path)
     prompts, _ = load_prompts(data_path=resolved_data_path, max_samples=max_samples)

@@ -201,6 +201,7 @@ def test_session_stops_on_bubblewrap_infrastructure_failure(tmp_path: Path) -> N
 
     assert events[-1].kind == "error"
     assert "Bubblewrap cannot create a namespace" in events[-1].text
+    assert "--sandbox-backend bwrap" in events[-1].text
 
 
 def test_session_stops_on_malformed_call(tmp_path: Path) -> None:

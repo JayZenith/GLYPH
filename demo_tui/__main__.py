@@ -35,15 +35,23 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-tokens", type=int, default=4000)
     parser.add_argument("--max-tool-rounds", type=int, default=20)
     parser.add_argument("--tool-timeout", type=int, default=30)
-    parser.add_argument("--sandbox-backend", choices=("auto", "bwrap", "host"), default="auto")
-    parser.add_argument("--allow-unsafe-host-execution", action="store_true")
+    parser.add_argument(
+        "--sandbox-backend",
+        choices=("host", "bwrap", "auto"),
+        default="host",
+        help="Rust execution backend. The TUI defaults to host execution in a disposable crate copy; use bwrap to opt into Bubblewrap.",
+    )
+    parser.add_argument(
+        "--allow-unsafe-host-execution",
+        action="store_true",
+        default=True,
+        help=argparse.SUPPRESS,
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    if args.sandbox_backend == "host" and not args.allow_unsafe_host_execution:
-        raise SystemExit("--sandbox-backend host requires --allow-unsafe-host-execution")
     if args.project is None:
         if args.backend == "scripted":
             args.project = Path("synthetic_data/eval_blueprints") / DEFAULT_SCRIPTED_CASE

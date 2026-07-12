@@ -19,7 +19,7 @@ class ExecutionResult:
 
 
 class RustExecutor:
-    def __init__(self, timeout: int = 30, sandbox_backend: str = "auto", allow_unsafe_host_execution: bool = False):
+    def __init__(self, timeout: int = 30, sandbox_backend: str = "host", allow_unsafe_host_execution: bool = True):
         self.timeout = timeout
         if sandbox_backend not in {"auto", "bwrap", "host"}:
             raise ValueError("sandbox_backend must be one of: auto, bwrap, host")
@@ -67,7 +67,7 @@ class RustExecutor:
         }
         backend = self._resolved_backend()
         if backend is None:
-            return ExecutionResult(False, "", "bubblewrap is unavailable; refusing unsafe host execution (set allow_unsafe_host_execution=True and sandbox_backend='host' only inside an external container)", -1)
+            return ExecutionResult(False, "", "Bubblewrap is unavailable or blocked. The default backend is host execution in the disposable copied crate; use sandbox_backend='bwrap' only on hosts that support Bubblewrap.", -1)
         run_command = command
         run_cwd = str(cwd)
         if backend == "bwrap":

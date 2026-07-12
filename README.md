@@ -154,15 +154,13 @@ Current code fails closed around model-controlled tools:
   rollout's copied crate; absolute paths, `..`, and escaping symlinks fail.
 - `Cargo.toml`, `build.rs`, `.cargo/`, `tests/`, `benches/`, and
   the `#[cfg(test)]` section embedded in Rust source are immutable to the model.
-- Cargo defaults to Bubblewrap with filesystem, PID, user, IPC, UTS, cgroup,
-  and network namespaces; only the rollout crate is writable and Cargo runs
-  offline. Cargo receives sanitized tool/cache mounts, never host credentials.
-  If Bubblewrap is absent or blocked, execution fails.
+- The interactive TUI and Hub package execute Cargo inside the copied rollout
+  crate by default. Treat model-edited Rust as arbitrary code and run GLYPH only
+  in a disposable VM/container or other isolated job environment.
 
-If the entire job already runs in a disposable external container, the explicit
-escape hatch is `sandbox_backend="host", allow_unsafe_host_execution=True`
-(CLI: `--sandbox-backend host --allow-unsafe-host-execution`). Do not use that
-pair on a workstation: model-edited Rust is arbitrary code.
+Bubblewrap remains available as an opt-in stricter sandbox via
+`sandbox_backend="bwrap"` / `--sandbox-backend bwrap`, but it is not the default
+because nested hosted environments often block namespace creation.
 
 ## Interactive demo
 
