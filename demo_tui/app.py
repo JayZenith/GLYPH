@@ -21,12 +21,12 @@ def compact_middle(text: str, limit: int) -> str:
 
 
 ROLE_HEADERS = {
-    "system": ("● SYSTEM", "#a78bfa"),
-    "user": ("● USER", "#facc15"),
-    "assistant": ("✦ ASSISTANT / CALL", "#22d3ee"),
-    "assistant_streaming": ("✦ ASSISTANT / STREAMING", "#38bdf8"),
-    "assistant_final": ("◆ ASSISTANT / FINAL", "#fb7185"),
-    "tool": ("■ TOOL RESULT", "#34d399"),
+    "system": ("◇", "system", "#a78bfa"),
+    "user": ("●", "user", "#facc15"),
+    "assistant": ("✦", "assistant", "#22d3ee"),
+    "assistant_streaming": ("✦", "assistant streaming", "#38bdf8"),
+    "assistant_final": ("◆", "assistant final", "#fb7185"),
+    "tool": ("■", "tool result", "#34d399"),
 }
 
 
@@ -49,20 +49,20 @@ class GlyphDemoApp(App):
     SUB_TITLE = "remote vLLM · local Rust tools"
     CSS = """
     Screen { background: #03050a; color: #d7dee8; }
-    #topbar { dock: top; height: 1; padding: 0 1; background: #050913; color: #7dffbf; }
+    #topbar { dock: top; height: 1; padding: 0 2; background: #03050a; color: #7dffbf; text-style: bold; }
     #main { height: 1fr; padding: 0; }
-    #transcript { width: 1fr; padding: 0 1 0 1; scrollbar-size: 1 1; background: #03050a; }
-    .message { width: 100%; margin: 0; padding: 0 1; border: round #26313d; }
-    .system { background: #080b13; color: #cbd5e1; border: round #665f9f; }
-    .user { background: #0f0d08; color: #fff4bf; border: round #b8962e; }
-    .assistant { background: #06111c; color: #d8f3ff; border: round #00c8ff; }
-    .call { border: round #00d4ff; }
-    .final { background: #17070d; color: #ffe0e7; border: round #ff3f6e; }
-    .tool { background: #06130e; color: #d8ffe9; border: round #00f59b; }
-    .error { background: #17070d; color: #ffb3c1; border: round #ff3f6e; }
-    .status { dock: bottom; color: #8aa0b8; padding: 0 1; height: 1; background: #050913; }
-    #composer { dock: bottom; height: 4; padding: 0 1 1 1; background: #03050a; }
-    #prompt { height: 3; max-height: 6; border: round #00f59b; background: #07101a; color: #e6fff4; }
+    #transcript { width: 1fr; padding: 0 2 0 2; scrollbar-size: 1 1; background: #03050a; }
+    .message { width: 100%; margin: 0; padding: 0; background: #03050a; color: #d7dee8; }
+    .system { color: #d7dee8; }
+    .user { color: #d7dee8; }
+    .assistant { color: #d7dee8; }
+    .call { color: #d7dee8; }
+    .final { color: #d7dee8; }
+    .tool { color: #d7dee8; }
+    .error { color: #ffb3c1; }
+    .status { dock: bottom; color: #8aa0b8; padding: 0 2; height: 1; background: #03050a; }
+    #composer { dock: bottom; height: 4; padding: 0 2 1 2; background: #03050a; }
+    #prompt { height: 3; max-height: 6; border: tall #00f59b; background: #050913; color: #e6fff4; }
     """
     BINDINGS = [
         ("enter", "submit_prompt", "Submit"),
@@ -111,14 +111,15 @@ class GlyphDemoApp(App):
             header_key = "assistant_streaming"
         elif role == "assistant" and final:
             header_key = "assistant_final"
-        label, color = ROLE_HEADERS[header_key]
+        icon, label, color = ROLE_HEADERS[header_key]
         block = Text()
+        block.append(icon, style=f"bold {color}")
+        block.append(" ")
         block.append(label, style=f"bold {color}")
-        block.append("  ")
-        block.append("raw ChatML trace", style="#637083")
         block.append("\n")
         trace = f"<|im_start|>{role}\n{text}" if streaming else render_message(role, text)
-        block.append(trace, style="#d7dee8")
+        body_style = "#ffe0e7" if final else "#d7dee8"
+        block.append(trace, style=body_style)
         return block
 
     def on_mount(self) -> None:

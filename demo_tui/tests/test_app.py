@@ -56,10 +56,10 @@ async def exercise_app() -> None:
         assert "assistant" not in final_widget.classes
         await app._handle_event(DemoEvent("tool_result", "RESULT c1:\nstatus: success", round_index=1))
         transcript = "\n".join(str(widget.render()) for widget in app.query("#transcript Static"))
-        assert "● SYSTEM  raw ChatML trace\n<|im_start|>system" in transcript
-        assert "● USER  raw ChatML trace\n<|im_start|>user" in transcript
-        assert "◆ ASSISTANT / FINAL  raw ChatML trace\n<|im_start|>assistant" in transcript
-        assert "■ TOOL RESULT  raw ChatML trace\n<|im_start|>tool" in transcript
+        assert "◇ system\n<|im_start|>system" in transcript
+        assert "● user\n<|im_start|>user" in transcript
+        assert "◆ assistant final\n<|im_start|>assistant" in transcript
+        assert "■ tool result\n<|im_start|>tool" in transcript
         assert "<|im_start|>system\nSYS\n<|im_end|>" in transcript
         assert "<|im_start|>user\nUSR\n<|im_end|>" in transcript
         assert "<|im_start|>assistant\nFINAL: done\n<|im_end|>" in transcript
