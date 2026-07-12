@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from rich.text import Text
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -19,11 +20,13 @@ def compact_middle(text: str, limit: int) -> str:
     return f"{text[:keep]}…{text[-keep:]}"
 
 
-ROLE_LABELS = {
-    "system": "system",
-    "user": "user",
-    "assistant": "assistant",
-    "tool": "tool",
+ROLE_HEADERS = {
+    "system": ("● SYSTEM", "#a78bfa"),
+    "user": ("● USER", "#facc15"),
+    "assistant": ("✦ ASSISTANT / CALL", "#22d3ee"),
+    "assistant_streaming": ("✦ ASSISTANT / STREAMING", "#38bdf8"),
+    "assistant_final": ("◆ ASSISTANT / FINAL", "#fb7185"),
+    "tool": ("■ TOOL RESULT", "#34d399"),
 }
 
 
@@ -45,21 +48,21 @@ class GlyphDemoApp(App):
     TITLE = "GLYPH"
     SUB_TITLE = "remote vLLM · local Rust tools"
     CSS = """
-    Screen { background: #0b0f14; color: #d7dee8; }
-    #topbar { dock: top; height: 1; padding: 0 1; background: #11161d; color: #aab6c4; }
+    Screen { background: #03050a; color: #d7dee8; }
+    #topbar { dock: top; height: 1; padding: 0 1; background: #050913; color: #7dffbf; }
     #main { height: 1fr; padding: 0; }
-    #transcript { width: 1fr; padding: 0 1 0 1; scrollbar-size: 1 1; }
-    .message { width: 100%; margin: 0; padding: 0 1; border: solid #26313d; }
-    .system { background: #0f141b; color: #b8c2cc; border: solid #56616f; }
-    .user { background: #13130f; color: #eadca6; border: solid #a8944a; }
-    .assistant { background: #0d1520; color: #d6e4f0; border: solid #4f83b8; }
-    .call { border: solid #5a8fc7; }
-    .final { background: #1b1013; color: #f1d2d7; border: solid #c85a68; }
-    .tool { background: #0d1712; color: #d3eadc; border: solid #57996f; }
-    .error { background: #1b1013; color: #e7a5ad; border: solid #c85a68; }
-    .status { dock: bottom; color: #8290a0; padding: 0 1; height: 1; background: #11161d; }
-    #composer { dock: bottom; height: 4; padding: 0 1 1 1; background: #0b0f14; }
-    #prompt { height: 3; max-height: 6; border: tall #5f748c; background: #101720; color: #d7dee8; }
+    #transcript { width: 1fr; padding: 0 1 0 1; scrollbar-size: 1 1; background: #03050a; }
+    .message { width: 100%; margin: 0; padding: 0 1; border: round #26313d; }
+    .system { background: #080b13; color: #cbd5e1; border: round #665f9f; }
+    .user { background: #0f0d08; color: #fff4bf; border: round #b8962e; }
+    .assistant { background: #06111c; color: #d8f3ff; border: round #00c8ff; }
+    .call { border: round #00d4ff; }
+    .final { background: #17070d; color: #ffe0e7; border: round #ff3f6e; }
+    .tool { background: #06130e; color: #d8ffe9; border: round #00f59b; }
+    .error { background: #17070d; color: #ffb3c1; border: round #ff3f6e; }
+    .status { dock: bottom; color: #8aa0b8; padding: 0 1; height: 1; background: #050913; }
+    #composer { dock: bottom; height: 4; padding: 0 1 1 1; background: #03050a; }
+    #prompt { height: 3; max-height: 6; border: round #00f59b; background: #07101a; color: #e6fff4; }
     """
     BINDINGS = [
         ("enter", "submit_prompt", "Submit"),
@@ -85,26 +88,38 @@ class GlyphDemoApp(App):
         with Vertical(id="composer"):
             yield PromptTextArea(
                 "",
-                placeholder="Describe the Rust task for the agent...",
+                placeholder="Ask GLYPH to fix the Rust eval crate...",
                 id="prompt",
                 show_line_numbers=False,
                 soft_wrap=True,
                 compact=True,
             )
-        yield Static("enter submit · shift+enter newline · ctrl+l clear · ctrl+r prompt · ctrl+q quit", id="status", classes="status")
+        yield Static("⏎ submit · ⇧⏎ newline · ^L clear · ^R prompt · ^Q quit", id="status", classes="status")
 
     def _topbar_text(self) -> str:
         crate = compact_middle(self.config.project.name or str(self.config.project), 36)
         endpoint = compact_middle(self.endpoint.removeprefix("http://").removeprefix("https://"), 32)
         return (
-            f"GLYPH · {self.model} · {endpoint} · "
-            f"crate={crate} · exec={self.config.sandbox_backend}"
+            f"✦ GLYPH │ model {self.model} │ vLLM {endpoint} │ "
+            f"crate {crate} │ exec {self.config.sandbox_backend}"
         )
 
     @staticmethod
-    def _trace_block(role: str, text: str, *, final: bool = False) -> str:
-        label = "assistant · FINAL" if final else ROLE_LABELS[role]
-        return f"{label}\n{render_message(role, text)}"
+    def _trace_block(role: str, text: str, *, final: bool = False, streaming: bool = False) -> Text:
+        header_key = role
+        if role == "assistant" and streaming:
+            header_key = "assistant_streaming"
+        elif role == "assistant" and final:
+            header_key = "assistant_final"
+        label, color = ROLE_HEADERS[header_key]
+        block = Text()
+        block.append(label, style=f"bold {color}")
+        block.append("  ")
+        block.append("raw ChatML trace", style="#637083")
+        block.append("\n")
+        trace = f"<|im_start|>{role}\n{text}" if streaming else render_message(role, text)
+        block.append(trace, style="#d7dee8")
+        return block
 
     def on_mount(self) -> None:
         self.query_one("#prompt", TextArea).focus()
@@ -166,7 +181,7 @@ class GlyphDemoApp(App):
         elif event.kind == "assistant_start":
             self._assistant_text = ""
             self._assistant_widget = Static(
-                "assistant · streaming\n<|im_start|>assistant\n",
+                self._trace_block("assistant", "", streaming=True),
                 classes="message assistant",
                 markup=False,
             )
@@ -174,7 +189,7 @@ class GlyphDemoApp(App):
             status.update(f"model round {event.round_index} · streaming")
         elif event.kind == "assistant_delta" and self._assistant_widget is not None:
             self._assistant_text += event.text
-            self._assistant_widget.update(f"assistant · streaming\n<|im_start|>assistant\n{self._assistant_text}")
+            self._assistant_widget.update(self._trace_block("assistant", self._assistant_text, streaming=True))
         elif event.kind == "assistant_end" and self._assistant_widget is not None:
             self._assistant_text = event.text
             if event.text.lstrip().startswith("FINAL:"):
