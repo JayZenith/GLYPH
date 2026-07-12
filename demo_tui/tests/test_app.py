@@ -44,6 +44,10 @@ async def exercise_app() -> None:
         await app._handle_event(DemoEvent("system", "SYS"))
         await app._handle_event(DemoEvent("user", "USR"))
         await app._handle_event(DemoEvent("assistant_start", round_index=1))
+        await app._handle_event(DemoEvent("assistant_end", 'CALL read_file {"id":"c1"}', round_index=1))
+        call_widget = app.query(".call").first(Static)
+        assert "assistant" in call_widget.classes
+        await app._handle_event(DemoEvent("assistant_start", round_index=1))
         await app._handle_event(
             DemoEvent("assistant_delta", "FINAL: done\n\nassistant\nCALL bad {}", round_index=1)
         )

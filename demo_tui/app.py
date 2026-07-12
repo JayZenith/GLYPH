@@ -31,19 +31,20 @@ class GlyphDemoApp(App):
     SUB_TITLE = "remote vLLM · local Rust tools"
     CSS = """
     Screen { background: #05080d; color: #e6fff0; }
-    #topbar { dock: top; height: 1; padding: 0 1; background: #080d13; color: #9ff0b8; }
-    #main { height: 1fr; }
-    #transcript { width: 1fr; padding: 0 0; }
-    .message { width: 100%; margin: 0 0 0 0; padding: 0 1; }
-    .system { background: #0b0e12; border-left: thick #9aa4b2; }
-    .user { background: #131207; border-left: thick #ffe94a; }
-    .assistant { background: #07101a; border-left: thick #45a3ff; }
-    .final { background: #19070a; color: #ffd7dc; border-left: thick #ff4a5e; }
-    .tool { background: #07120b; border-left: thick #39ff88; }
-    .error { background: #19070a; color: #ff8a96; border-left: thick #ff4a5e; }
+    #topbar { dock: top; height: 1; padding: 0 1; background: #070b10; color: #7ee6a0; }
+    #main { height: 1fr; padding: 0; }
+    #transcript { width: 1fr; padding: 0 1 0 1; scrollbar-size: 1 1; }
+    .message { width: 100%; margin: 0; padding: 0 1; border: solid #2a3440; }
+    .system { background: #090c11; color: #c9d1d9; border: solid #667085; }
+    .user { background: #111006; color: #fff1a8; border: solid #d7b928; }
+    .assistant { background: #06101b; color: #d9eeff; border: solid #2f9bff; }
+    .call { border: solid #45a3ff; }
+    .final { background: #19070a; color: #ffd7dc; border: solid #ff4a5e; }
+    .tool { background: #06110a; color: #dcffe9; border: solid #29d978; }
+    .error { background: #19070a; color: #ff8a96; border: solid #ff4a5e; }
     .status { dock: bottom; color: #759883; padding: 0 1; height: 1; background: #070b10; }
-    #composer { dock: bottom; height: 4; padding: 0 0 1 0; }
-    #prompt { height: 3; max-height: 6; border: tall #39ff88; background: #090e14; }
+    #composer { dock: bottom; height: 4; padding: 0 1 1 1; background: #05080d; }
+    #prompt { height: 3; max-height: 6; border: tall #39ff88; background: #090e14; color: #e6fff0; }
     """
     BINDINGS = [
         ("enter", "submit_prompt", "Submit"),
@@ -78,9 +79,11 @@ class GlyphDemoApp(App):
         yield Static("enter submit · shift+enter newline · ctrl+l clear · ctrl+r prompt · ctrl+q quit", id="status", classes="status")
 
     def _topbar_text(self) -> str:
+        crate = self.config.project.name or str(self.config.project)
+        endpoint = self.endpoint.removeprefix("http://").removeprefix("https://")
         return (
-            f"GLYPH  model={self.model}  endpoint={self.endpoint}  "
-            f"crate={self.config.project}  exec={self.config.sandbox_backend}"
+            f"GLYPH · {self.model} · {endpoint} · "
+            f"crate={crate} · exec={self.config.sandbox_backend}"
         )
 
     def on_mount(self) -> None:
@@ -156,7 +159,10 @@ class GlyphDemoApp(App):
             self._assistant_text = event.text
             if event.text.lstrip().startswith("FINAL:"):
                 self._assistant_widget.remove_class("assistant")
+                self._assistant_widget.remove_class("call")
                 self._assistant_widget.add_class("final")
+            else:
+                self._assistant_widget.add_class("call")
             self._assistant_widget.update(render_message("assistant", event.text))
         elif event.kind == "tool_start":
             status.update(f"tool · {event.text}")
