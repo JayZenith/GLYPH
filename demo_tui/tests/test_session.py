@@ -108,6 +108,40 @@ def test_session_trims_overgenerated_assistant_role_continuations(tmp_path: Path
     assert "FINAL: overgenerated" not in session.messages[2]["content"]
 
 
+def test_session_emits_display_only_diff_after_successful_patch(tmp_path: Path) -> None:
+    crate = make_crate(tmp_path)
+    backend = FakeBackend(
+        [
+            (
+                'CALL apply_patch {"id":"c1","file_path":"runs/demo/crate/src/lib.rs",'
+                '"find":"pub fn answer() -> u8 { 42 }\\n",'
+                '"replace":"pub fn answer() -> u8 { 7 }\\n"}'
+            ),
+            "FINAL: patched the implementation",
+        ]
+    )
+    session = GlyphDemoSession(
+        backend,
+        DemoConfig(
+            project=crate,
+            trace_prefix="runs/demo/crate",
+            sandbox_root=tmp_path / "sandboxes",
+            transcript_root=tmp_path / "transcripts",
+        ),
+    )
+
+    events = asyncio.run(collect(session, "Patch runs/demo/crate/src/lib.rs."))
+
+    diff_events = [event for event in events if event.kind == "diff_result"]
+    assert len(diff_events) == 1
+    assert "DIFF c1:" in diff_events[0].text
+    assert "--- a/src/lib.rs" in diff_events[0].text
+    assert "+++ b/src/lib.rs" in diff_events[0].text
+    assert "-pub fn answer() -> u8 { 42 }" in diff_events[0].text
+    assert "+pub fn answer() -> u8 { 7 }" in diff_events[0].text
+    assert all("DIFF c1" not in message["content"] for message in session.messages)
+
+
 def test_session_stops_on_bubblewrap_infrastructure_failure(tmp_path: Path) -> None:
     crate = make_crate(tmp_path)
     session = GlyphDemoSession(

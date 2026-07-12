@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import difflib
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -85,6 +86,40 @@ class GlyphDemoSession:
         )
         return any(marker in result_text for marker in markers)
 
+    def _format_patch_diff(self, file_path: str | None, max_chars: int = 8000) -> str:
+        if self.sandbox_path is None or not file_path:
+            return ""
+        try:
+            sandbox_root = self.sandbox_path.resolve(strict=True)
+            patched = Path(file_path)
+            if not patched.is_absolute():
+                patched = sandbox_root / patched
+            patched = patched.resolve(strict=True)
+            rel = patched.relative_to(sandbox_root)
+            original = self.config.project.expanduser().resolve(strict=True) / rel
+            if not original.exists():
+                return ""
+            before = original.read_text(encoding="utf-8").splitlines(keepends=True)
+            after = patched.read_text(encoding="utf-8").splitlines(keepends=True)
+            if before == after:
+                return ""
+            diff = "".join(
+                difflib.unified_diff(
+                    before,
+                    after,
+                    fromfile=f"a/{rel.as_posix()}",
+                    tofile=f"b/{rel.as_posix()}",
+                    lineterm="\n",
+                )
+            )
+        except (OSError, UnicodeDecodeError, ValueError):
+            return ""
+        if len(diff) > max_chars:
+            head = max_chars // 2 - 20
+            tail = max_chars - head - 20
+            diff = f"{diff[:head]}\n...[diff truncated]...\n{diff[-tail:]}"
+        return diff
+
     async def run(self, user_prompt: str) -> AsyncIterator[DemoEvent]:
         if not user_prompt.strip():
             yield DemoEvent("error", "Enter a task before starting the agent.")
@@ -168,6 +203,10 @@ class GlyphDemoSession:
                 result_block = format_result_block(call.id, result)
                 self.messages.append({"role": "tool", "content": result_block})
                 yield DemoEvent("tool_result", result_block, round_index)
+                if call.tool == "apply_patch" and result.success:
+                    diff = self._format_patch_diff(params.get("file_path"))
+                    if diff:
+                        yield DemoEvent("diff_result", f"DIFF {call.id}:\n{diff}", round_index)
                 if call.tool in {"cargo_test", "cargo_run"} and self._is_infrastructure_failure(result_block):
                     yield DemoEvent(
                         "error",
