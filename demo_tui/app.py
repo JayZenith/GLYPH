@@ -21,12 +21,12 @@ def compact_middle(text: str, limit: int) -> str:
 
 
 ROLE_HEADERS = {
-    "system": ("◇", "system", "#a78bfa"),
+    "system": ("◇", "system", "#7dd3fc"),
     "user": ("●", "user", "#facc15"),
-    "assistant": ("✦", "assistant", "#22d3ee"),
-    "assistant_streaming": ("✦", "assistant streaming", "#38bdf8"),
+    "assistant": ("✦", "assistant", "#00ff9d"),
+    "assistant_streaming": ("✦", "assistant streaming", "#66ffd1"),
     "assistant_final": ("◆", "assistant final", "#fb7185"),
-    "tool": ("■", "tool result", "#34d399"),
+    "tool": ("■", "tool result", "#2ddf89"),
 }
 
 
@@ -48,21 +48,21 @@ class GlyphDemoApp(App):
     TITLE = "GLYPH"
     SUB_TITLE = "remote vLLM · local Rust tools"
     CSS = """
-    Screen { background: #03050a; color: #d7dee8; }
-    #topbar { dock: top; height: 1; padding: 0 2; background: #03050a; color: #7dffbf; text-style: bold; }
+    Screen { background: #010805; color: #d9fbe8; }
+    #topbar { dock: top; height: 1; padding: 0 2; background: #010805; color: #7dffbf; text-style: bold; }
     #main { height: 1fr; padding: 0; }
-    #transcript { width: 1fr; padding: 0 2 0 2; scrollbar-size: 1 1; background: #03050a; }
-    .message { width: 100%; margin: 0; padding: 0; background: #03050a; color: #d7dee8; }
-    .system { color: #d7dee8; }
-    .user { color: #d7dee8; }
-    .assistant { color: #d7dee8; }
-    .call { color: #d7dee8; }
-    .final { color: #d7dee8; }
-    .tool { color: #d7dee8; }
+    #transcript { width: 1fr; padding: 1 2 0 2; scrollbar-size: 1 1; background: #010805; }
+    .message { width: 100%; margin: 0 0 1 0; padding: 0; background: #010805; color: #d9fbe8; }
+    .system { color: #d9fbe8; }
+    .user { color: #d9fbe8; }
+    .assistant { color: #d9fbe8; }
+    .call { color: #d9fbe8; }
+    .final { color: #d9fbe8; }
+    .tool { color: #b9dbc9; }
     .error { color: #ffb3c1; }
-    .status { dock: bottom; color: #8aa0b8; padding: 0 2; height: 1; background: #03050a; }
-    #composer { dock: bottom; height: 4; padding: 0 2 1 2; background: #03050a; }
-    #prompt { height: 3; max-height: 6; border: tall #00f59b; background: #050913; color: #e6fff4; }
+    .status { dock: bottom; color: #7fa08f; padding: 0 2; height: 1; background: #010805; }
+    #composer { dock: bottom; height: 4; padding: 0 2 1 2; background: #010805; }
+    #prompt { height: 3; max-height: 6; border: tall #00ff9d; background: #02120b; color: #e6fff4; }
     """
     BINDINGS = [
         ("enter", "submit_prompt", "Submit"),
@@ -118,7 +118,12 @@ class GlyphDemoApp(App):
         block.append(label, style=f"bold {color}")
         block.append("\n")
         trace = f"<|im_start|>{role}\n{text}" if streaming else render_message(role, text)
-        body_style = "#ffe0e7" if final else "#d7dee8"
+        if final:
+            body_style = "#ffe0e7"
+        elif role == "tool":
+            body_style = "#9fcdb5"
+        else:
+            body_style = "#d9fbe8"
         block.append(trace, style=body_style)
         return block
 
