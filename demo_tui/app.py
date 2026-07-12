@@ -5,6 +5,8 @@ from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widgets import Footer, Header, Input, Static
 
+from agent_runtime.chatml import render_message
+
 from .client import VLLMCompletionClient
 from .session import DemoConfig, DemoEvent, GlyphDemoSession
 
@@ -22,6 +24,7 @@ class GlyphDemoApp(App):
     .sidebar-label { color: #759883; margin-top: 1; }
     .sidebar-value { color: #e6fff0; }
     .message { width: 100%; margin: 0 0 1 0; padding: 1 2; }
+    .system { background: #101217; border-left: thick #9aa4b2; }
     .user { background: #15140b; border-left: thick #ffe94a; }
     .assistant { background: #08131f; border-left: thick #45a3ff; }
     .tool { background: #08150e; border-left: thick #39ff88; }
@@ -75,8 +78,6 @@ class GlyphDemoApp(App):
             return
         event.input.value = ""
         event.input.disabled = True
-        transcript = self.query_one("#transcript", VerticalScroll)
-        await transcript.mount(Static(prompt, classes="message user", markup=False))
         self.run_agent(prompt)
 
     @work(exclusive=True)
@@ -98,18 +99,32 @@ class GlyphDemoApp(App):
         status = self.query_one("#status", Static)
         if event.kind == "workspace":
             status.update(f"sandbox · {event.text}")
+        elif event.kind == "system":
+            await transcript.mount(
+                Static(render_message("system", event.text), classes="message system", markup=False)
+            )
+        elif event.kind == "user":
+            await transcript.mount(
+                Static(render_message("user", event.text), classes="message user", markup=False)
+            )
         elif event.kind == "assistant_start":
             self._assistant_text = ""
-            self._assistant_widget = Static("", classes="message assistant", markup=False)
+            self._assistant_widget = Static(
+                "<|im_start|>assistant\n",
+                classes="message assistant",
+                markup=False,
+            )
             await transcript.mount(self._assistant_widget)
             status.update(f"model round {event.round_index} · streaming")
         elif event.kind == "assistant_delta" and self._assistant_widget is not None:
             self._assistant_text += event.text
-            self._assistant_widget.update(self._assistant_text)
+            self._assistant_widget.update(f"<|im_start|>assistant\n{self._assistant_text}")
+        elif event.kind == "assistant_end" and self._assistant_widget is not None:
+            self._assistant_widget.update(render_message("assistant", self._assistant_text))
         elif event.kind == "tool_start":
             status.update(f"tool · {event.text}")
         elif event.kind == "tool_result":
-            await transcript.mount(Static(event.text, classes="message tool", markup=False))
+            await transcript.mount(Static(render_message("tool", event.text), classes="message tool", markup=False))
         elif event.kind == "complete":
             status.update("complete · FINAL received")
         elif event.kind == "error":

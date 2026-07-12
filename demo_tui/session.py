@@ -85,6 +85,8 @@ class GlyphDemoSession:
 
         assert self.sandbox_path is not None
         yield DemoEvent("workspace", str(self.sandbox_path))
+        yield DemoEvent("system", self.config.system_prompt)
+        yield DemoEvent("user", user_prompt.strip())
         executor = RustExecutor(
             timeout=self.config.tool_timeout,
             sandbox_backend=self.config.sandbox_backend,

@@ -52,7 +52,11 @@ def test_session_runs_call_result_final_against_disposable_copy(tmp_path: Path) 
     )
     events = asyncio.run(collect(session, "Inspect runs/demo/crate/src/lib.rs and report what it returns."))
 
-    assert [event.kind for event in events].count("assistant_start") == 2
+    event_kinds = [event.kind for event in events]
+    assert event_kinds[:3] == ["workspace", "system", "user"]
+    assert event_kinds.count("assistant_start") == 2
+    assert events[1].text == session.config.system_prompt
+    assert events[2].text.startswith("Inspect runs/demo/crate")
     assert any(event.kind == "tool_result" and "pub fn answer" in event.text for event in events)
     assert events[-1].kind == "complete"
     assert session.sandbox_path is not None and session.sandbox_path != crate
