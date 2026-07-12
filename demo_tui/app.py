@@ -23,8 +23,8 @@ def compact_middle(text: str, limit: int) -> str:
 ROLE_HEADERS = {
     "system": ("◇", "system", "#a78bfa"),
     "user": ("●", "user", "#facc15"),
-    "assistant": ("✦", "assistant", "#39d98a"),
-    "assistant_streaming": ("✦", "assistant streaming", "#7dffbf"),
+    "assistant": ("✦", "assistant", "#ffb86c"),
+    "assistant_streaming": ("✦", "assistant streaming", "#ffcb8a"),
     "assistant_final": ("◆", "assistant final", "#fb7185"),
     "tool": ("■", "tool result", "#39d98a"),
 }
