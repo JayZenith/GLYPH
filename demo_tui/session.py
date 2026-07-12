@@ -73,6 +73,15 @@ class GlyphDemoSession:
         ]
         self._executed_call_ids.clear()
 
+    @staticmethod
+    def _is_infrastructure_failure(result_text: str) -> bool:
+        markers = (
+            "bwrap: Creating new namespace failed",
+            "bubblewrap is unavailable",
+            "Resource temporarily unavailable",
+        )
+        return any(marker in result_text for marker in markers)
+
     async def run(self, user_prompt: str) -> AsyncIterator[DemoEvent]:
         if not user_prompt.strip():
             yield DemoEvent("error", "Enter a task before starting the agent.")
@@ -156,5 +165,17 @@ class GlyphDemoSession:
                 result_block = format_result_block(call.id, result)
                 self.messages.append({"role": "tool", "content": result_block})
                 yield DemoEvent("tool_result", result_block, round_index)
+                if call.tool in {"cargo_test", "cargo_run"} and self._is_infrastructure_failure(result_block):
+                    yield DemoEvent(
+                        "error",
+                        (
+                            "Local Rust execution failed before Cargo could run. "
+                            "Bubblewrap cannot create a namespace on this host. "
+                            "Restart with --sandbox-backend host --allow-unsafe-host-execution "
+                            "only if you accept running model-edited Rust in the disposable demo copy."
+                        ),
+                        round_index,
+                    )
+                    return
 
         yield DemoEvent("error", f"Stopped after {self.config.max_tool_rounds} tool rounds.")

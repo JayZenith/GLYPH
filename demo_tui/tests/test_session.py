@@ -19,6 +19,15 @@ class FakeBackend:
         yield text[midpoint:]
 
 
+class FakeBwrapFailureBackend:
+    def __init__(self) -> None:
+        self.prompts: list[str] = []
+
+    async def stream(self, prompt: str):
+        self.prompts.append(prompt)
+        yield 'CALL cargo_test {"id":"c1","project_path":"runs/demo/crate"}'
+
+
 def make_crate(root: Path) -> Path:
     crate = root / "crate"
     (crate / "src").mkdir(parents=True)
@@ -97,6 +106,39 @@ def test_session_trims_overgenerated_assistant_role_continuations(tmp_path: Path
     assert events[-1].kind == "complete"
     assert "CALL cargo_test" not in session.messages[2]["content"]
     assert "FINAL: overgenerated" not in session.messages[2]["content"]
+
+
+def test_session_stops_on_bubblewrap_infrastructure_failure(tmp_path: Path) -> None:
+    crate = make_crate(tmp_path)
+    session = GlyphDemoSession(
+        FakeBwrapFailureBackend(),
+        DemoConfig(
+            project=crate,
+            trace_prefix="runs/demo/crate",
+            sandbox_root=tmp_path / "sandboxes",
+            sandbox_backend="host",
+        ),
+    )
+
+    async def fake_to_thread(func, *args):
+        from agent_runtime.rust.executor import ExecutionResult
+
+        return ExecutionResult(
+            False,
+            "",
+            "bwrap: Creating new namespace failed: Resource temporarily unavailable",
+            1,
+        )
+
+    original_to_thread = asyncio.to_thread
+    asyncio.to_thread = fake_to_thread
+    try:
+        events = asyncio.run(collect(session, "Run tests."))
+    finally:
+        asyncio.to_thread = original_to_thread
+
+    assert events[-1].kind == "error"
+    assert "Bubblewrap cannot create a namespace" in events[-1].text
 
 
 def test_session_stops_on_malformed_call(tmp_path: Path) -> None:
