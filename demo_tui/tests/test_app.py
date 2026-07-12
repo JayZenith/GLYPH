@@ -24,8 +24,9 @@ async def exercise_app() -> None:
     async with app.run_test() as pilot:
         prompt = app.query_one("#prompt", TextArea)
         assert prompt.has_focus
-        sidebar_values = [str(widget.render()) for widget in app.query(".sidebar-value")]
-        assert any("gpu:8000" in value for value in sidebar_values)
+        topbar = str(app.query_one("#topbar", Static).render())
+        assert "gpu:8000" in topbar
+        assert "demo-crate" in topbar
         original_height = prompt.styles.height.value
         prompt.load_text("Fix the crate. " * 40)
         app._resize_prompt()

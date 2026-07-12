@@ -3,8 +3,8 @@ from __future__ import annotations
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.widgets import Footer, Header, Static, TextArea
+from textual.containers import Vertical, VerticalScroll
+from textual.widgets import Static, TextArea
 
 from agent_runtime.chatml import render_message
 
@@ -31,24 +31,19 @@ class GlyphDemoApp(App):
     SUB_TITLE = "remote vLLM · local Rust tools"
     CSS = """
     Screen { background: #05080d; color: #e6fff0; }
-    Header { background: #0a0f16; color: #39ff88; }
+    #topbar { dock: top; height: 1; padding: 0 1; background: #080d13; color: #9ff0b8; }
     #main { height: 1fr; }
-    #transcript { width: 1fr; padding: 0 1; border: solid #20362a; }
-    #sidebar { width: 34; padding: 1 2; background: #090e14; border: solid #20362a; }
-    #sidebar-title { color: #39ff88; text-style: bold; margin-bottom: 1; }
-    .sidebar-label { color: #759883; margin-top: 1; }
-    .sidebar-value { color: #e6fff0; }
+    #transcript { width: 1fr; padding: 0 0; }
     .message { width: 100%; margin: 0 0 0 0; padding: 0 1; }
-    .system { background: #101217; border: solid #9aa4b2; }
-    .user { background: #15140b; border: solid #ffe94a; }
-    .assistant { background: #08131f; border: solid #45a3ff; }
-    .final { background: #21090d; color: #ffd7dc; border: solid #ff4a5e; }
-    .tool { background: #08150e; border: solid #39ff88; }
-    .error { background: #21090d; color: #ff8a96; border: solid #ff4a5e; }
-    .status { color: #759883; padding: 0 1; height: 1; }
-    #composer { dock: bottom; height: auto; margin-bottom: 1; }
-    #prompt { height: 3; max-height: 8; border: tall #39ff88; background: #090e14; }
-    Footer { background: #0a0f16; }
+    .system { background: #0b0e12; border-left: thick #9aa4b2; }
+    .user { background: #131207; border-left: thick #ffe94a; }
+    .assistant { background: #07101a; border-left: thick #45a3ff; }
+    .final { background: #19070a; color: #ffd7dc; border-left: thick #ff4a5e; }
+    .tool { background: #07120b; border-left: thick #39ff88; }
+    .error { background: #19070a; color: #ff8a96; border-left: thick #ff4a5e; }
+    .status { dock: bottom; color: #759883; padding: 0 1; height: 1; background: #070b10; }
+    #composer { dock: bottom; height: auto; margin: 0 0 0 0; }
+    #prompt { height: 2; max-height: 5; border: tall #39ff88; background: #090e14; }
     """
     BINDINGS = [
         ("enter", "submit_prompt", "Submit"),
@@ -68,20 +63,9 @@ class GlyphDemoApp(App):
         self._assistant_text = ""
 
     def compose(self) -> ComposeResult:
-        yield Header()
-        with Horizontal(id="main"):
+        yield Static(self._topbar_text(), id="topbar", markup=False)
+        with Vertical(id="main"):
             yield VerticalScroll(id="transcript")
-            with Vertical(id="sidebar"):
-                yield Static("LIVE SESSION", id="sidebar-title")
-                yield Static("MODEL", classes="sidebar-label")
-                yield Static(self.model, classes="sidebar-value")
-                yield Static("ENDPOINT", classes="sidebar-label")
-                yield Static(self.endpoint, classes="sidebar-value")
-                yield Static("SOURCE CRATE", classes="sidebar-label")
-                yield Static(str(self.config.project), classes="sidebar-value")
-                yield Static("EXECUTION", classes="sidebar-label")
-                yield Static(self.config.sandbox_backend, classes="sidebar-value")
-        yield Static("Enter a task to start a fresh rollout.", id="status", classes="status")
         with Vertical(id="composer"):
             yield PromptTextArea(
                 "",
@@ -91,7 +75,13 @@ class GlyphDemoApp(App):
                 soft_wrap=True,
                 compact=True,
             )
-        yield Footer()
+        yield Static("enter submit · shift+enter newline · ctrl+l clear · ctrl+r prompt · ctrl+q quit", id="status", classes="status")
+
+    def _topbar_text(self) -> str:
+        return (
+            f"GLYPH  model={self.model}  endpoint={self.endpoint}  "
+            f"crate={self.config.project}  exec={self.config.sandbox_backend}"
+        )
 
     def on_mount(self) -> None:
         self.query_one("#prompt", TextArea).focus()
@@ -119,7 +109,7 @@ class GlyphDemoApp(App):
         visual_lines = 1
         for line in prompt_input.text.splitlines() or [""]:
             visual_lines += max(0, (len(line) - 1) // width)
-        prompt_input.styles.height = max(3, min(8, visual_lines + 2))
+        prompt_input.styles.height = max(2, min(5, visual_lines + 1))
 
     @work(exclusive=True)
     async def run_agent(self, prompt: str) -> None:
