@@ -30,6 +30,11 @@ async def exercise_app() -> None:
         prompt.load_text("Fix the crate. " * 40)
         app._resize_prompt()
         assert prompt.styles.height.value > original_height
+        submitted: list[str] = []
+        app.run_agent = submitted.append
+        prompt.load_text("Run the eval case")
+        await pilot.press("enter")
+        assert submitted == ["Run the eval case"]
         await app._handle_event(DemoEvent("system", "SYS"))
         await app._handle_event(DemoEvent("user", "USR"))
         await app._handle_event(DemoEvent("assistant_start", round_index=1))

@@ -2,14 +2,28 @@ from __future__ import annotations
 
 from textual import work
 from textual.app import App, ComposeResult
+from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.events import Key
 from textual.widgets import Footer, Header, Static, TextArea
 
 from agent_runtime.chatml import render_message
 
 from .client import VLLMCompletionClient
 from .session import DemoConfig, DemoEvent, GlyphDemoSession
+
+
+class PromptTextArea(TextArea):
+    BINDINGS = [
+        Binding("enter", "submit_prompt", "Submit", show=False, priority=True),
+        Binding("shift+enter", "insert_newline", "Newline", show=False, priority=True),
+        *TextArea.BINDINGS,
+    ]
+
+    async def action_submit_prompt(self) -> None:
+        await self.app.action_submit_prompt()
+
+    def action_insert_newline(self) -> None:
+        self.insert("\n")
 
 
 class GlyphDemoApp(App):
@@ -36,7 +50,8 @@ class GlyphDemoApp(App):
     Footer { background: #0a0f16; }
     """
     BINDINGS = [
-        ("ctrl+enter", "submit_prompt", "Submit"),
+        ("enter", "submit_prompt", "Submit"),
+        ("shift+enter", "insert_newline", "Newline"),
         ("ctrl+q", "quit", "Quit"),
         ("ctrl+l", "clear", "Clear"),
         ("ctrl+r", "focus_prompt", "Prompt"),
@@ -67,7 +82,7 @@ class GlyphDemoApp(App):
                 yield Static(self.config.sandbox_backend, classes="sidebar-value")
         yield Static("Enter a task to start a fresh rollout.", id="status", classes="status")
         with Vertical(id="composer"):
-            yield TextArea(
+            yield PromptTextArea(
                 "",
                 placeholder="Describe the Rust task for the agent...",
                 id="prompt",
@@ -86,12 +101,6 @@ class GlyphDemoApp(App):
     async def on_text_area_changed(self, event: TextArea.Changed) -> None:
         if event.text_area.id == "prompt":
             self._resize_prompt()
-
-    async def on_key(self, event: Key) -> None:
-        if event.key == "ctrl+enter" and self.focused is self.query_one("#prompt", TextArea):
-            event.prevent_default()
-            event.stop()
-            await self.action_submit_prompt()
 
     async def action_submit_prompt(self) -> None:
         prompt_input = self.query_one("#prompt", TextArea)
