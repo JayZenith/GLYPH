@@ -1534,27 +1534,6 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
   </p>
   <p class="src">audits: docs/AUDIT_2026-07.md · docs/CLAIMS_AUDIT.md (historical, with erratum) · provenance: docs/PROVENANCE.md · experiment history: docs/EXPERIMENT_HISTORY.md</p>
 
-  <h2>14 · Interactive TUI demo</h2>
-  <p>
-    I also built a small terminal UI for inspecting the agent live: the model runs behind
-    remote vLLM, while the local machine executes <code>read_file</code>,
-    <code>apply_patch</code>, and Cargo against a disposable copy of an eval crate. The UI
-    shows the same ChatML roles as the traces — system, user, assistant, tool, and red
-    <code>FINAL</code> turns — and saves the full transcript.
-  </p>
-  <p>
-    A smoke run used the original held-out prompt for
-    <code>eval100_013_patch_test_pass_014_dispatch_policy_match_order</code>: clone the repo,
-    run <code>bash sft/setup/install_sft_env.sh</code>, serve
-    <code>JayZenith/SFT_HALF_A_V8</code> with the
-    <code>JayZenith/RLVR_VFINAL_STEP10</code> LoRA on Vast.ai via vLLM, SSH-forward local
-    <code>18080</code> to remote <code>8000</code>, then launch
-    <code>python3 -m demo_tui</code> with the eval blueprint path and trace prefix. On my
-    laptop Bubblewrap could not create a namespace, so the demo run used the explicit
-    host-execution opt-out against the disposable crate copy; the default still fails closed.
-  </p>
-  <p class="src">commands: <a href="https://github.com/JayZenith/GLYPH#interactive-tui-smoke-test">README interactive TUI smoke test</a></p>
-
   <p class="meta">Repro commands: github.com/JayZenith/GLYPH (README)</p>
 </main>
 </body>
