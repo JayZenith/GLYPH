@@ -3,7 +3,8 @@ from __future__ import annotations
 from textual import work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.widgets import Footer, Header, Input, Static
+from textual.events import Key
+from textual.widgets import Footer, Header, Static, TextArea
 
 from agent_runtime.chatml import render_message
 
@@ -18,22 +19,24 @@ class GlyphDemoApp(App):
     Screen { background: #05080d; color: #e6fff0; }
     Header { background: #0a0f16; color: #39ff88; }
     #main { height: 1fr; }
-    #transcript { width: 1fr; padding: 1 2; border: solid #20362a; }
+    #transcript { width: 1fr; padding: 0 1; border: solid #20362a; }
     #sidebar { width: 34; padding: 1 2; background: #090e14; border: solid #20362a; }
     #sidebar-title { color: #39ff88; text-style: bold; margin-bottom: 1; }
     .sidebar-label { color: #759883; margin-top: 1; }
     .sidebar-value { color: #e6fff0; }
-    .message { width: 100%; margin: 0 0 1 0; padding: 1 2; }
-    .system { background: #101217; border-left: thick #9aa4b2; }
-    .user { background: #15140b; border-left: thick #ffe94a; }
-    .assistant { background: #08131f; border-left: thick #45a3ff; }
-    .tool { background: #08150e; border-left: thick #39ff88; }
-    .error { background: #21090d; color: #ff8a96; border-left: thick #ff4a5e; }
+    .message { width: 100%; margin: 0 0 0 0; padding: 0 1; }
+    .system { background: #101217; border: solid #9aa4b2; }
+    .user { background: #15140b; border: solid #ffe94a; }
+    .assistant { background: #08131f; border: solid #45a3ff; }
+    .tool { background: #08150e; border: solid #39ff88; }
+    .error { background: #21090d; color: #ff8a96; border: solid #ff4a5e; }
     .status { color: #759883; padding: 0 1; height: 1; }
-    #prompt { dock: bottom; border: tall #39ff88; background: #090e14; }
+    #composer { dock: bottom; height: auto; margin-bottom: 1; }
+    #prompt { height: 3; max-height: 8; border: tall #39ff88; background: #090e14; }
     Footer { background: #0a0f16; }
     """
     BINDINGS = [
+        ("ctrl+enter", "submit_prompt", "Submit"),
         ("ctrl+q", "quit", "Quit"),
         ("ctrl+l", "clear", "Clear"),
         ("ctrl+r", "focus_prompt", "Prompt"),
@@ -63,22 +66,50 @@ class GlyphDemoApp(App):
                 yield Static("EXECUTION", classes="sidebar-label")
                 yield Static(self.config.sandbox_backend, classes="sidebar-value")
         yield Static("Enter a task to start a fresh rollout.", id="status", classes="status")
-        yield Input(placeholder="Describe the Rust task for the agent…", id="prompt")
+        with Vertical(id="composer"):
+            yield TextArea(
+                "",
+                placeholder="Describe the Rust task for the agent...",
+                id="prompt",
+                show_line_numbers=False,
+                soft_wrap=True,
+                compact=True,
+            )
         yield Footer()
 
     def on_mount(self) -> None:
-        self.query_one("#prompt", Input).focus()
+        self.query_one("#prompt", TextArea).focus()
 
     async def on_unmount(self) -> None:
         await self.client.close()
 
-    async def on_input_submitted(self, event: Input.Submitted) -> None:
-        prompt = event.value.strip()
+    async def on_text_area_changed(self, event: TextArea.Changed) -> None:
+        if event.text_area.id == "prompt":
+            self._resize_prompt()
+
+    async def on_key(self, event: Key) -> None:
+        if event.key == "ctrl+enter" and self.focused is self.query_one("#prompt", TextArea):
+            event.prevent_default()
+            event.stop()
+            await self.action_submit_prompt()
+
+    async def action_submit_prompt(self) -> None:
+        prompt_input = self.query_one("#prompt", TextArea)
+        prompt = prompt_input.text.strip()
         if not prompt:
             return
-        event.input.value = ""
-        event.input.disabled = True
+        prompt_input.clear()
+        self._resize_prompt()
+        prompt_input.disabled = True
         self.run_agent(prompt)
+
+    def _resize_prompt(self) -> None:
+        prompt_input = self.query_one("#prompt", TextArea)
+        width = max(24, prompt_input.size.width - 4)
+        visual_lines = 1
+        for line in prompt_input.text.splitlines() or [""]:
+            visual_lines += max(0, (len(line) - 1) // width)
+        prompt_input.styles.height = max(3, min(8, visual_lines + 2))
 
     @work(exclusive=True)
     async def run_agent(self, prompt: str) -> None:
@@ -90,7 +121,7 @@ class GlyphDemoApp(App):
             if session.messages:
                 path = session.save_transcript()
                 self.query_one("#status", Static).update(f"saved · {path}")
-            prompt_input = self.query_one("#prompt", Input)
+            prompt_input = self.query_one("#prompt", TextArea)
             prompt_input.disabled = False
             prompt_input.focus()
 
@@ -137,4 +168,4 @@ class GlyphDemoApp(App):
         self.query_one("#status", Static).update("Transcript cleared. Enter a task to start again.")
 
     def action_focus_prompt(self) -> None:
-        self.query_one("#prompt", Input).focus()
+        self.query_one("#prompt", TextArea).focus()

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 
-from textual.widgets import Input, Static
+from textual.widgets import Static, TextArea
 
 from demo_tui.app import GlyphDemoApp
 from demo_tui.session import DemoConfig, DemoEvent
@@ -22,9 +22,14 @@ async def exercise_app() -> None:
         "glyph",
     )
     async with app.run_test() as pilot:
-        assert app.query_one("#prompt", Input).has_focus
+        prompt = app.query_one("#prompt", TextArea)
+        assert prompt.has_focus
         sidebar_values = [str(widget.render()) for widget in app.query(".sidebar-value")]
         assert any("gpu:8000" in value for value in sidebar_values)
+        original_height = prompt.styles.height.value
+        prompt.load_text("Fix the crate. " * 40)
+        app._resize_prompt()
+        assert prompt.styles.height.value > original_height
         await app._handle_event(DemoEvent("system", "SYS"))
         await app._handle_event(DemoEvent("user", "USR"))
         await app._handle_event(DemoEvent("assistant_start", round_index=1))
