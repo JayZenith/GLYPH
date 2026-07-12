@@ -42,6 +42,7 @@ class GlyphDemoApp(App):
     .system { background: #101217; border: solid #9aa4b2; }
     .user { background: #15140b; border: solid #ffe94a; }
     .assistant { background: #08131f; border: solid #45a3ff; }
+    .final { background: #21090d; color: #ffd7dc; border: solid #ff4a5e; }
     .tool { background: #08150e; border: solid #39ff88; }
     .error { background: #21090d; color: #ff8a96; border: solid #ff4a5e; }
     .status { color: #759883; padding: 0 1; height: 1; }
@@ -161,6 +162,9 @@ class GlyphDemoApp(App):
             self._assistant_widget.update(f"<|im_start|>assistant\n{self._assistant_text}")
         elif event.kind == "assistant_end" and self._assistant_widget is not None:
             self._assistant_text = event.text
+            if event.text.lstrip().startswith("FINAL:"):
+                self._assistant_widget.remove_class("assistant")
+                self._assistant_widget.add_class("final")
             self._assistant_widget.update(render_message("assistant", event.text))
         elif event.kind == "tool_start":
             status.update(f"tool · {event.text}")
