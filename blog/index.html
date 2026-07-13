@@ -225,14 +225,14 @@
     <h3>The reward often could not separate failures</h3>
     <p>At sparse step 0, 64 of 96 rollouts belonged to tied, zero-advantage groups and were filtered. Some failed rollouts compiled or passed tests, but the sparse reward barely distinguished that progress.</p>
   </div>
-  <p>
-    My working explanation has two parts. The synthetic curriculum taught the protocol and its
-    recurring task patterns well, but likely offered too little diverse, intermediate-difficulty
-    Rust work to build the missing hard-tail capability. Sparse rewards then collapsed many of
-    those failures into ties. Dense rewards exposed more progress, but could not supply capability
-    the SFT curriculum had not established. This points to better-targeted data, not simply more
-    rows. It remains a hypothesis, not a causal result.
-  </p>
+  <div class="note"><p>
+    <strong>Hypothesis:</strong> the SFT curriculum taught the interface and recurring bug patterns,
+    but not enough Rust capability for the shared hard tail. On that fixed base, reward shaping did
+    not reliably create new solutions.<br>
+    <strong>Testable prediction:</strong> replacing repetitive SFT examples with verified,
+    intermediate-difficulty traces from new Rust task families should reduce shared hard-tail
+    failures and leave fewer all-tied sparse-RL groups. More rows alone would not test this.
+  </p></div>
   <p class="source">
     Local evidence:
     <a href="https://github.com/JayZenith/GLYPH/blob/main/analysis/retained_run_stats.py">reproducible statistics</a> ·
