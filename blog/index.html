@@ -61,8 +61,12 @@
     th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
     th { color: var(--dim); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
     td:not(:first-child) { color: #fff; font-family: ui-monospace, monospace; text-align: right; }
+    .interpretation td { vertical-align: top; }
+    .interpretation td:not(:first-child) { color: var(--soft); font-family: inherit; text-align: left; }
     .chart { margin: 18px 0; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
     .chart img { display: block; width: 100%; height: auto; }
+    .demo-video { margin: 18px 0; padding: 6px; border: 1px solid var(--line); border-radius: 9px; background: #020403; }
+    .demo-video video { display: block; width: 100%; height: auto; border-radius: 5px; background: #000; }
     .trace-disclosure { margin: 16px 0; }
     .trace-disclosure > summary { padding: 11px 14px; color: #fff; cursor: pointer; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); font: 13px/1.4 ui-monospace, monospace; }
     .trace-disclosure[open] > summary { border-color: var(--green); }
@@ -145,7 +149,30 @@
     ChatML renderer and tool runtime are used for data generation, RL, evaluation, and the TUI.
   </p>
 
-  <h2>2. How I made the SFT data</h2>
+  <h2>2. One qualitative OOD check</h2>
+  <p>
+    In the TUI, the trained agent solved <code>score_summary</code>: it read an independently
+    authored crate, patched score filtering and capping, ran four passing tests, and stopped with
+    <code>FINAL</code>. The exact task appears in neither training nor evaluation and was created
+    outside their generator.
+  </p>
+  <div class="demo-video">
+    <video controls muted playsinline preload="metadata" aria-label="GLYPH solving the score_summary Rust crate in the TUI">
+      <source src="OOD.mp4" type="video/mp4">
+      Your browser does not support embedded video. <a href="OOD.mp4">Open the MP4.</a>
+    </video>
+  </div>
+  <p class="source">
+    This is one selected success, not a benchmark. Its aggregation and filtering concepts are
+    adjacent to generator archetypes, so it is source-OOD rather than a clean unseen semantic
+    family. Harder exploratory crates did not reach passing tests within their tool budgets, but
+    those attempts were not a controlled retained evaluation. The demo therefore shows transfer
+    to one new crate, not general Rust capability or a pretraining limit.
+    <a href="https://github.com/JayZenith/GLYPH/tree/main/demo_tui/ood_cases/score_summary">crate and tests</a> ·
+    <a href="https://github.com/JayZenith/GLYPH/blob/main/demo_tui/README.md#ood-smoke-test">reproduction</a>
+  </p>
+
+  <h2>3. How I made the SFT data</h2>
   <p>
     A generator proposed structured JSON task specs: a buggy crate, intended edits, and expected
     tool outcomes. A deterministic materializer built each crate and executed every step through
@@ -164,7 +191,7 @@
     generating training data.
   </p></div>
 
-  <h2>3. The RL experiment</h2>
+  <h2>4. The RL experiment</h2>
   <p>One SFT control. Three RL reward designs. One training run per RL arm.</p>
   <p class="source"><code>valid@8</code> counts a crate when at least one of eight sampled rollouts reaches Cargo success and ends with one clean <code>FINAL</code>.</p>
   <div class="arm-list">
@@ -193,7 +220,7 @@
     visible for context, but are excluded from headline claims because their rollouts were not saved.
   </p>
 
-  <h2>4. Inspect retained traces</h2>
+  <h2>5. Inspect retained traces</h2>
   <p>Three selected RLVR rollouts. Optional evidence, not a representative sample.</p>
   <details class="trace-disclosure" open>
     <summary>Open trace explorer</summary>
@@ -212,7 +239,7 @@
     </div>
   </details>
 
-  <h2>5. Why RL likely stalled</h2>
+  <h2>6. What the evidence says</h2>
   <div class="finding">
     <h3>The protocol was already saturated</h3>
     <p>SFT had almost no formatting headroom. Sparse RLVR produced correct call syntax, IDs, and Cargo paths on all 150 greedy prompts; SFT did so on 149.</p>
@@ -226,12 +253,13 @@
     <p>At sparse step 0, 64 of 96 rollouts belonged to tied, zero-advantage groups and were filtered. Some failed rollouts compiled or passed tests, but the sparse reward barely distinguished that progress.</p>
   </div>
   <div class="note"><p>
-    <strong>Hypothesis:</strong> the SFT curriculum taught the interface and recurring bug patterns,
-    but not enough Rust capability for the shared hard tail. On that fixed base, reward shaping did
-    not reliably create new solutions.<br>
-    <strong>Testable prediction:</strong> replacing repetitive SFT examples with verified,
-    intermediate-difficulty traces from new Rust task families should reduce shared hard-tail
-    failures and leave fewer all-tied sparse-RL groups. More rows alone would not test this.
+    <strong>Supported hypothesis:</strong> the SFT checkpoint entered RL with too little probability
+    of producing successful trajectories on much of the hard tail. Sparse GRPO then received many
+    tied groups, while alternative reward shapes did not reliably turn partial progress into new
+    solutions. Reward shaping alone was insufficient on this fixed policy.<br>
+    <strong>Unresolved cause:</strong> GLYPH did not run a matched base-model evaluation, so this
+    cannot distinguish limited Qwen3-4B pretraining or capacity, narrow synthetic SFT coverage, or
+    regression during full SFT or RL.
   </p></div>
   <p class="source">
     Local evidence:
@@ -242,9 +270,24 @@
     <a href="https://github.com/JayZenith/GLYPH/tree/main/glyph_results/RLVR_POOL_B_V8_STEP10/passk8_heldout150_metadata">pass@8 metadata</a>
   </p>
 
-  <h2>6. What I would change</h2>
+  <h2>7. The next experiment</h2>
+  <p>
+    Compare the base, SFT, and RL policies on both the same-family holdout and an independently
+    authored general-Rust set. Because the raw base model was not trained on GLYPH's tool protocol,
+    score Cargo/task success separately from clean trace formatting.
+  </p>
+  <table class="interpretation">
+    <thead><tr><th>Result</th><th>Evidence for</th></tr></thead>
+    <tbody>
+      <tr><td>Base fails; SFT improves</td><td>SFT learned task capability</td></tr>
+      <tr><td>Base passes; SFT fails</td><td>Regression or forgetting</td></tr>
+      <tr><td>All fail</td><td>Base limitation remains plausible; targeted SFT still untested</td></tr>
+      <tr><td>SFT improves only same-family tasks</td><td>Specialization, not broad Rust transfer</td></tr>
+    </tbody>
+  </table>
   <ul>
-    <li>Generate a broader curriculum around the model's intermediate frontier.</li>
+    <li>Replace same-family examples with diverse, intermediate Rust traces at fixed dataset size.</li>
+    <li>Rerun the same RL recipe to test whether the new SFT frontier reduces tied groups.</li>
     <li>Hold out entire semantic task families, not only case IDs.</li>
     <li>Train multiple seeded runs per reward arm.</li>
     <li>Use explicit, recorded evaluation seeds.</li>
