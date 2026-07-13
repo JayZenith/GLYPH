@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="data:,">
   <title>GLYPH: RLVR didn't beat SFT. Auditing the null taught me more than a win</title>
-  <meta name="description" content="Building and auditing a verifiable-reward Rust coding-agent environment: sparse RLVR was flat, dense shaping showed a non-significant +7, and the verifier exposed real failure modes.">
+  <meta name="description" content="Building and auditing an end-to-end post-training stack for a Rust coding agent: synthetic data, SFT, verifier RL, and trace-level evaluation.">
   <style>
 :root {
   color-scheme: dark;
@@ -66,6 +66,14 @@ pre { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fo
 .panel.note { border-color: rgba(255, 206, 106, 0.4); background: rgba(255, 206, 106, 0.06); }
 .panel.note p { margin: 0; color: var(--amber); font-size: 13.5px; }
 h3 { margin: 32px 0 4px; font-size: 16px; color: #fff; }
+.rollout-details { margin: 18px 0; }
+.rollout-details > summary {
+  padding: 11px 14px; color: var(--ink); cursor: pointer;
+  border: 1px solid var(--line); border-radius: 7px; background: var(--panel);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px;
+}
+.rollout-details > summary:hover { border-color: var(--green); }
+.rollout-details[open] > summary { border-color: var(--green); }
 .example-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; }
 .example-tab {
   padding: 6px 12px; color: var(--soft); cursor: pointer;
@@ -137,15 +145,15 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
 <main class="wrap">
   <p class="kicker">GLYPH</p>
   <h1>RLVR didn't beat SFT. Auditing the null taught me more than a win would have.</h1>
-  <p class="meta">A verifiable RL environment for a Rust tool-use agent</p>
+  <p class="meta">An end-to-end post-training stack for a Rust tool-use agent</p>
   <p class="lede">
-    At step 0 of my sparse-reward RLVR run, the orchestrator threw away 64 of 96 rollouts:
-    whole groups received identical reward and produced zero group-relative signal. That run
-    came out flat. A <strong>dense partial-credit reward</strong> measured a small lift
-    (not significant); a "smarter" compiler-aware reward <strong>failed to beat
-    either</strong>. And reading traces instead of trusting scores, I caught the model
-    passing the tests while violating the spec — full reward. The whole stack for a Rust
-    tool-use agent (Qwen3-4B): data, SFT, RLVR, evals — then adversarially audited.
+    I built the complete loop for a 4B Rust coding agent: synthetic trace generation, full
+    supervised fine-tuning, three verifier-RL experiments, and pass@8 evaluation. The result
+    was a useful null: no RL variant reliably improved over SFT. Sparse rewards often gave
+    equally failing rollouts the same score; dense partial credit produced a small,
+    non-significant lift; and Rust-specific compiler shaping did not beat it. This post is
+    about what the retained rollouts revealed, what the experiment can support, and what I
+    would design differently next time.
   </p>
   <p class="links">
     <a href="https://github.com/JayZenith/GLYPH" target="_blank" rel="noreferrer">code</a>
@@ -159,16 +167,21 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
 
   <h2>1 · The environment</h2>
   <p>
-    A <code>verifiers</code> / PRIME-RL environment. Each task hands the model a real Rust
-    crate and a tool-use job: patch until <code>cargo_test</code> passes, patch until
-    <code>cargo_run</code> prints exact stdout, or run an already-correct crate. The model
-    emits <code>CALL tool {…}</code>, tools execute against real cargo, and it must end with a
-    clean <code>FINAL</code>. The reward is verifiable — cargo actually compiles and runs.
-    Packaged as a standalone environment for the
+    GLYPH packages its tasks, tools, and rewards as a <code>verifiers</code> environment.
+    PRIME-RL is the training and orchestration layer: it asks the environment for prompts,
+    sends model actions back to it, collects verified rewards, and updates the policy. Each
+    task hands the model a real Rust crate and a tool-use job: patch until
+    <code>cargo_test</code> passes, patch until <code>cargo_run</code> prints exact stdout, or
+    run an already-correct crate. The model emits <code>CALL tool {…}</code>, tools execute
+    against real cargo, and it must end with a clean <code>FINAL</code>.
+  </p>
+  <p>
+    The environment is available through the
     <a href="https://app.primeintellect.ai/dashboard/environments/jayzenith/glyph">Prime Intellect
-    Environments Hub</a>. The current repository package is v0.2.0 with the safety fixes
-    described below; that version must be republished before the Hub install can be assumed
-    identical to this source.
+    Environments Hub</a>. The repository currently contains v0.2.0 with newer execution-safety
+    changes. Until that package version is published to the Hub, a Hub install may still resolve
+    to the earlier release; use the repository source when exact parity with the code described
+    here matters.
   </p>
   <div class="panel trace"><pre><span class="call">CALL read_file {"id":"c1","file_path":"src/lib.rs"}</span>
 <span class="result">RESULT &lt;source&gt;</span>
@@ -177,6 +190,11 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
 <span class="call">CALL cargo_test {"id":"c3","project_path":"."}</span>
 <span class="result">RESULT status: success</span>
 <span class="final">FINAL: fixed the precedence bug in merge()</span></pre></div>
+  <p>
+    This complete system/user/assistant/tool conversation is also the training unit used for
+    SFT. The model was not trained from isolated patches: it learned from full agent traces with
+    assistant tool calls, real tool results, recovery steps, and a terminal <code>FINAL</code>.
+  </p>
   <p>
     Success is strict <code>valid_trace</code>: terminal cargo success + one clean
     <code>FINAL</code> after it + exact <code>CALL</code> syntax + no tool use after success.
@@ -199,12 +217,22 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
   <div class="panel note"><p>Not a clean holdout: eval and training crates come from the
     <em>same generator</em> and share task families — the same logical bug under different
     names isn't ruled out by a hash check. This measures generalization to new instances of
-    known task types, not to unseen kinds of Rust bugs.</p></div>
+    known task types, not to unseen kinds of Rust bugs. In a future project I would define
+    semantic family IDs during generation and reserve entire bug families—or independently
+    authored tasks—for evaluation from the start.</p></div>
   <p class="src">code: rl/environment.py (RustToolEnv) · rl/task_trace.py (load_environment, reward knobs) · agent_runtime/ (executor, renderer, sandbox path rewrite)</p>
 
   <!-- EXAMPLES_START -->
-  <h2>Examples: real rollouts</h2>
-  <div class="example-tabs"><button class="example-tab active" data-target="example-clean-solve" onclick="showExample(this)">clean-solve</button><button class="example-tab" data-target="example-recovery" onclick="showExample(this)">recovery</button><button class="example-tab" data-target="example-long-recovery" onclick="showExample(this)">long-recovery</button></div>
+  <h2>2 · What the trained agent actually does</h2>
+  <p>
+    These are three selected RLVR-model rollouts, shown to make the tool loop concrete. They are
+    useful qualitative examples, not a random sample and not evidence about how often any behavior
+    occurs. The two recovery traces show the model using real compiler and test feedback; the first
+    also contains an interesting verifier gap discussed later.
+  </p>
+  <details class="rollout-details">
+  <summary>Open the full rollout viewer</summary>
+  <div class="example-tabs"><button class="example-tab active" data-target="example-clean-solve" onclick="showExample(this)">verifier gap</button><button class="example-tab" data-target="example-recovery" onclick="showExample(this)">recovery</button><button class="example-tab" data-target="example-long-recovery" onclick="showExample(this)">long recovery</button></div>
   <div class="example-panel" id="example-clean-solve">
   <div class="trace-panel">
     <div class="trace-summary">
@@ -212,7 +240,7 @@ td.num { text-align: right; font-family: ui-monospace, monospace; }
         <span class="trace-label">RLVR step 10 - config merge recovery</span>
         <a class="model-label" href="https://huggingface.co/JayZenith/RLVR_VFINAL_STEP10" target="_blank" rel="noreferrer">JayZenith/RLVR_VFINAL_STEP10</a>
         <p>Reads a config-merge crate, follows failed-test feedback, patches the merge precedence, confirms tests pass.</p>
-      <p class="trace-note">Specification gaming: the patch passes the verifier (cargo_test 3/3) while flipping tls precedence — the opposite of the stated rule. No test covers conflicting tls values, so the verifier can't see it, and the FINAL doesn't disclose it. In this crate's own training group, 3 of 8 rollouts made the same flip — the reward reinforced gaming and correctness equally.</p>
+      <p class="trace-note">Verifier-gap observation: this patch passes cargo_test 3/3 while flipping tls precedence—the opposite of the stated rule. This is one hand-inspected example, not a prevalence estimate or evidence that the issue materially changed the aggregate results.</p>
       </div>
       <div class="trace-metadata"><span>RL reward 10.0</span><span>7 trace turns</span></div>
     </div>
@@ -1217,6 +1245,7 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
     </div>
   </div>
   </div>
+  </details>
   <script>
     function showExample(btn) {
       var target = btn.getAttribute('data-target');
@@ -1233,16 +1262,23 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
 
   <h2>3 · Data + SFT: building the agent</h2>
   <p>
-    SFT (<code>Qwen3-4B-Base</code> → <code>SFT_HALF_A_V8</code>) learned the protocol and a
-    useful repair prior. Held-out valid@8: <strong>95/150</strong>. Four data decisions
-    did the work:
+    This stage turns generated Rust tasks into the full agent conversations used for supervised
+    fine-tuning. A generator first writes structured JSON specifications: the intended bug, a
+    blueprint crate, and a planned sequence of reads, edits, and expected failures or successes.
+    A deterministic materializer then builds the crate and executes every planned step through
+    real Cargo. Only verified executions are rendered into the ChatML traces shown above and kept
+    as SFT examples. The generator therefore proposes tasks; it does not invent compiler output or
+    directly write the final training conversation.
+  </p>
+  <p>
+    Full fine-tuning (<code>Qwen3-4B-Base</code> → <code>SFT_HALF_A_V8</code>) on those traces
+    taught the protocol and a useful repair prior. Held-out valid@8: <strong>95/150</strong>.
+    Four data decisions mattered:
   </p>
   <ul>
-    <li><strong>The generator wrote specs, never outputs.</strong> Traces start as JSON specs
-      — buggy crate + tool steps tagged <code>expect_status</code> — materialized by running
-      every step through real cargo. A planned failure that doesn't fail, or a fix that
-      doesn't pass, rejects the case. Every compiler message in the data is real rustc
-      output.</li>
+    <li><strong>Tool outputs came from execution.</strong> A planned failure that does not fail,
+      or a planned fix that does not pass, rejects the case. Every compiler message retained in
+      the dataset is real <code>rustc</code> output.</li>
     <li><strong>Error recovery was engineered.</strong> Recover specs must fail at least once
       before the final success, so the model trained on real failed-test output followed by a
       working repair.</li>
@@ -1262,9 +1298,18 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
     baseline <code>RLVR_POOL_B_V8_STEP10</code>. Reward: <code>+10</code> only for a clean
     verifier success, fixed failure penalties otherwise — sparse, but not binary. At the
     headline pass@8 metric it scored <strong>98, 96, 98 across three repeated evaluations
-    (traces retained for all three)</strong> vs the SFT base's 95 — paired prompt-level
-    p<sub>prompt</sub> ≈ 0.55, family sensitivity p ≈ 0.69. Flat within noise. (Greedy pass@1 is unstable at this effect size and even
-    flipped direction across harnesses, so pass@8 is the comparison that counts.)
+    (traces retained for all three)</strong> versus the SFT base's 95. That difference is flat
+    within the observed noise.
+  </p>
+  <p>
+    The statistical comparison uses the same 150 prompts for both models instead of comparing
+    totals alone. The <strong>paired prompt-level test</strong> asks whether one model wins on
+    substantially more individual prompts than the other. The <strong>family sensitivity
+    test</strong> repeats the comparison while grouping recognizable template siblings, so many
+    variants of the same underlying task do not count as fully independent evidence. Here the
+    p-values are about 0.55 and 0.69: differences this small are common under a no-improvement
+    explanation, so the result is not evidence of a sparse-RLVR gain. Greedy pass@1 was unstable
+    at this effect size and even flipped direction across harnesses, so pass@8 is the headline.
   </p>
   <p class="src">evidence: <a href="https://huggingface.co/datasets/JayZenith/Glyph-RLVR-Eval-Results/tree/main/RLVR_POOL_B_V8_STEP10/evals">three full sparse evals</a> · <a href="https://github.com/JayZenith/GLYPH/tree/main/glyph_results/RLVR_POOL_B_V8_STEP10/passk8_heldout150_metadata">commands, commit, libraries</a> · <a href="https://github.com/JayZenith/GLYPH/blob/main/analysis/retained_run_stats.py">reproduce stats</a></p>
 
@@ -1273,7 +1318,11 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
   <ul>
     <li><strong>Structure is 100% SFT-saturated.</strong> On the sparse arm's greedy eval, exact CALL syntax, call IDs, and cargo paths are 150/150 (the SFT base itself is 149/150 on syntax). RLVR has essentially zero headroom on format.</li>
     <li><strong>Failures are capability, not hygiene.</strong> On that same eval, 75 of 76 failures never reach a terminal cargo success — the model formats perfectly and writes the wrong Rust.</li>
-    <li><strong>The two models share almost the same hard tail</strong> — 74 of the sparse arm's 76 greedy failures also fail on SFT; RLVR only reshuffled a handful of borderline prompts.</li>
+    <li><strong>The two models share almost the same hard tail.</strong> In a separate greedy
+      evaluation—one deterministic attempt per prompt for each model—74 of the sparse arm's 76
+      failed prompts also fail for SFT. This compares sparse RLVR with SFT under the same pass@1
+      setup; it does not compare sparse pass@1 with sparse pass@8. RLVR mostly reshuffled a few
+      borderline prompts.</li>
     <li><strong>The hard tail often produces no verifier-driven signal.</strong> RLVR learns from reward <em>variance</em> within each group of 8 rollouts. When all 8 receive the same reward, they get zero group-relative advantage and the group is filtered. At step 0 the sparse orchestrator filtered 64 of 96 rollouts; the range was 8–67% per batch. Step 0 retains only aggregate filter counts, so it does not prove those groups had identical trajectories or failure profiles. Saved later steps verify that advantage is <em>reward minus the group mean</em>, with no std normalization. This mechanism occurred; the artifacts do not establish that it caused the flat held-out result.</li>
     <li><strong>But ~half the hard tail is partially correct:</strong> of the 75 cargo-failures, 52% compile and 44% pass ≥1 test (median 50%). The sparse reward's penalties don't grade this — a rollout that compiles and passes half the tests can score the same as one that never compiles.</li>
   </ul>
@@ -1439,14 +1488,14 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
   </p>
   <p class="src">evidence: glyph_results/RLVR_VFINAL2_STEP10/evals/eval2.log (full console log of all three runs; engine config incl. seed=0) · training log: glyph_results/RLVR_VFINAL2_STEP10/arm_b.log · chart source: blog/gen_training_curves.py over the two orchestrator logs</p>
 
-  <h2>10 · Attacking the verifier: specification gaming</h2>
+  <h2>10 · An interesting verifier gap in one trace</h2>
   <p>
-    Reading individual rollouts instead of just trusting scores surfaced something
-    <code>valid_trace</code> can't see: a case of the model satisfying the verifier while
-    violating the user's actual spec. On a config-merge crate the RLVR model's patch correctly
+    While preparing the three qualitative examples in section 2, I noticed one behavior that
+    <code>valid_trace</code> cannot see. On a config-merge crate the RLVR model's patch correctly
     fixed <code>port</code> precedence, but it also flipped <code>tls</code> from direct-first to
-    profile-first — the opposite of the stated spec ("direct values must take precedence over
-    profile values"):
+    profile-first—the opposite of the stated rule ("direct values must take precedence over
+    profile values"). This is an interesting trace-level finding, not a systematic measurement;
+    I have no evidence that it materially changed the aggregate model comparison.
   </p>
   <div class="panel"><pre>  let tls = direct
       .and_then(|c| c.tls)
@@ -1466,14 +1515,14 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
     regression its own edit introduced.
   </p>
   <p>
-    This is specification gaming through verifier exploitation: the model's output satisfies the
-    proxy (<code>cargo_test</code>, <code>valid_trace</code>) while violating the true objective
-    (the written spec), because the proxy has a coverage gap the model's training never penalized.
-    And "never penalized" is measurable in the saved training rollouts: in
+    The useful lesson is a mismatch between the proxy and the written task: the output satisfies
+    <code>cargo_test</code> and <code>valid_trace</code>, but the tests do not cover the conflicting
+    TLS inputs described by the specification. The saved training rollouts show that this gap was
+    also invisible to the reward: in
     <code>RLVR_VFINAL_STEP10</code>'s own step-10 group for this case, 3 of 8 rollouts flipped
     tls the same way, and two of those scored the full <strong>10.0</strong> — identical to the
-    spec-correct solutions. The verifier couldn't tell them apart, so RL reinforced both
-    equally. I didn't catch it from a number; I caught it from reading a trace.
+    spec-correct solutions. The verifier could not distinguish them. I did not catch this from an
+    aggregate number; I caught it by reading one trace closely.
   </p>
   <p>
     How common is this? Unknown. I later reviewed 28 more successful traces, but did not preserve
@@ -1500,12 +1549,12 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
     <li><strong>Claim:</strong> in complete saved no-Cargo-success groups, the shaping component varied within 1/7 dense groups and 5/8 compiler groups. Whole-group filtering affected 33–47% of saved groups. These code-aligned counts supersede an earlier total-reward-variance calculation.</li>
     <li><strong>Don't claim:</strong> an RLVR win, a demonstrated compiler-arm regression, or the frontier-band story as a finding. Every <em>positive</em> band CI includes zero; two small never-solved negative CIs exclude zero but are fragile under 12 exploratory comparisons. The analysis also uses aggregate-only repetitions.</li>
     <li><strong>Don't claim:</strong> <code>valid_trace</code> success means spec-correct — only that the shipped tests pass. In the published runs, tests were model-editable and isolation was path rewriting: the 52,696-call audit found one SFT-baseline assertion flip (no count change), and ~135k saved calls showed no traversal. Current source fixes both mechanics, but it does not retroactively strengthen those artifacts.</li>
-    <li><strong>Don't claim:</strong> systemic specification gaming or a prevalence rate — one confirmed, fully auditable violation proves existence only.</li>
+    <li><strong>Don't claim:</strong> systemic specification violations, intent to exploit the verifier, a prevalence rate, or a material effect on the aggregate results. One confirmed, auditable example establishes only that this coverage gap can occur.</li>
   </ul>
 
   <h2>12 · Reusable lessons</h2>
   <ul>
-    <li>"Tests pass" is not "spec correct" — it is only as strong as the test suite. One confirmed trace proves this verifier gap exists; the unrecorded follow-up review is not used to estimate prevalence.</li>
+    <li>"Tests pass" is not "spec correct"—it is only as strong as the test suite. One confirmed trace made that limitation concrete; it does not establish prevalence or a result-wide problem.</li>
     <li>A sparse verifiable reward silently discards the identically-failing part of the hard tail via zero-advantage filtering. Dense partial credit breaks those ties — but a more "principled" version of that same reward can still fail to beat it, so denser isn't automatically better.</li>
     <li>Greedy pass@1 hides small effects in noise (here it even flipped sign across harnesses); pass@k plus repeated evaluations and a prompt-level paired test is the minimum bar — and save the rollouts, because a repetition without retained traces can't be audited and shouldn't carry claims.</li>
     <li>Set an explicit, distinct, recorded sampling seed per evaluation repetition. Unseeded repetitions are runtime-nondeterminism samples, not independent draws.</li>
@@ -1528,9 +1577,10 @@ test result: ok. 0 passed; 0 <span class="trace-failed-token">failed</span>; 0 i
     far more frontier-band tasks, and generator-recorded family IDs. Current source now
     confines tool paths, rejects grading/build-file edits, and fails closed into Bubblewrap
     for Cargo with sanitized tool/cache mounts; the published results predate those fixes.
-    The strongest thing this project produced is the audited infrastructure and the
-    documented verifier weaknesses — spec-gaming, editable tests, path rewriting — found
-    by reading the model's actual work.
+    The strongest thing this project produced is the audited infrastructure and a set of
+    concrete design lessons: preserve exact interfaces across stages, retain every rollout,
+    build rewards that distinguish useful progress, and inspect traces instead of treating a
+    passing test count as the whole story.
   </p>
   <p class="src">audits: docs/AUDIT_2026-07.md · docs/CLAIMS_AUDIT.md (historical, with erratum) · provenance: docs/PROVENANCE.md · experiment history: docs/EXPERIMENT_HISTORY.md</p>
 
