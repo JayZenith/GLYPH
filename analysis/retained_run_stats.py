@@ -3,7 +3,8 @@
 
 Reads the retained eval JSONs from glyph_results/ (full per-rollout traces;
 mirrored on the HF dataset JayZenith/Glyph-RLVR-Eval-Results) and prints
-valid@8 per run plus the paired prompt-level sign-flip permutation tests.
+valid@8 per run, paired tests, and the SFT/sparse shared-failure counts used
+in the writeup.
 
 Run:  python3 analysis/retained_run_stats.py
 """
@@ -36,12 +37,41 @@ RETAINED = {
     ],
 }
 
+GREEDY = {
+    "SFT": (
+        R / "SFT_HALF_A_V8/evals/eval_formal_heldout_150.json",
+        "SFT_HALF_A_V8/evals/eval_formal_heldout_150.json",
+    ),
+    "SPARSE": (
+        R / "RLVR_POOL_B_V8_STEP10/evals/eval_formal_heldout_150.json",
+        "RLVR_POOL_B_V8_STEP10/evals/eval_formal_heldout_150.json",
+    ),
+}
+
 
 def solved(path: Path, remote_path: str) -> dict[str, int]:
     path = resolve(path, remote_path)
     rows = json.load(open(path))
     assert all("rollouts" in r for r in rows), f"{path} is not trace-retained"
     return {r["name"]: (1 if r["valid_trace_solves"] > 0 else 0) for r in rows}
+
+
+def greedy_solved(path: Path, remote_path: str) -> dict[str, int]:
+    path = resolve(path, remote_path)
+    rows = json.load(open(path))["results"]["sft"]
+    return {r["name"]: (1 if r["metrics"]["valid_trace"] else 0) for r in rows}
+
+
+def failure_overlap(a: dict[str, int], b: dict[str, int]) -> tuple[int, int, int, int, int]:
+    a_failed = {name for name, value in a.items() if not value}
+    b_failed = {name for name, value in b.items() if not value}
+    return (
+        len(a_failed),
+        len(b_failed),
+        len(a_failed & b_failed),
+        len(a_failed - b_failed),
+        len(b_failed - a_failed),
+    )
 
 
 def paired_perm(a: dict, b: dict, iters: int = 20000) -> tuple[int, int, int, float]:
@@ -110,6 +140,19 @@ def main() -> int:
             f"  {b} vs {a}: Δvalid@8 = {obs:+d}  ({up} prompts up / {down} down)  "
             f"p_prompt = {p:.3f}  p_family_sensitivity = {cluster_p:.3f} ({n_clusters} clusters)"
         )
+
+    greedy = {arm: greedy_solved(*artifact) for arm, artifact in GREEDY.items()}
+    a_fail, b_fail, shared, fixed, lost = failure_overlap(greedy["SFT"], greedy["SPARSE"])
+    print("\n=== SFT vs sparse shared hard tail ===")
+    print(
+        f"  greedy pass@1: SFT failures={a_fail}, sparse failures={b_fail}, "
+        f"shared={shared}, sparse fixed={fixed}, sparse lost={lost}"
+    )
+    a_fail, b_fail, shared, fixed, lost = failure_overlap(runs["SFT"][0], runs["SPARSE"][0])
+    print(
+        f"  retained run-1 valid@8: SFT failures={a_fail}, sparse failures={b_fail}, "
+        f"shared={shared}, sparse fixed={fixed}, sparse lost={lost}"
+    )
     return 0
 
 

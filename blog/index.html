@@ -218,8 +218,8 @@
     <p>SFT had almost no formatting headroom. Sparse RLVR produced correct call syntax, IDs, and Cargo paths on all 150 greedy prompts; SFT did so on 149.</p>
   </div>
   <div class="finding">
-    <h3>The hard tail needed capability, not formatting</h3>
-    <p>In the same greedy pass@1 setup, 74 of sparse RLVR's 76 failed prompts also failed for SFT. RL mostly reshuffled borderline cases.</p>
+    <h3>The hard tail likely needed Rust capability, not formatting</h3>
+    <p>Greedy pass@1 changed only six outcomes: sparse RLVR fixed four SFT failures and lost two SFT successes, while 74 prompts failed both. The first retained pass@8 runs still shared 48 failures (+3 sparse, p≈0.55); the three-run aggregate means were both 97.3/150. Sparse RL did not measurably expand the solve frontier.</p>
   </div>
   <div class="finding">
     <h3>The reward often could not separate failures</h3>
@@ -230,7 +230,16 @@
     recurring task patterns well, but likely offered too little diverse, intermediate-difficulty
     Rust work to build the missing hard-tail capability. Sparse rewards then collapsed many of
     those failures into ties. Dense rewards exposed more progress, but could not supply capability
-    the SFT curriculum had not established. This is a hypothesis, not a causal result.
+    the SFT curriculum had not established. This points to better-targeted data, not simply more
+    rows. It remains a hypothesis, not a causal result.
+  </p>
+  <p class="source">
+    Local evidence:
+    <a href="https://github.com/JayZenith/GLYPH/blob/main/analysis/retained_run_stats.py">reproducible statistics</a> ·
+    <a href="https://github.com/JayZenith/GLYPH/blob/main/analysis/pooled_band_analysis.py">three-run sensitivity analysis</a> ·
+    <a href="https://github.com/JayZenith/GLYPH/blob/main/glyph_results/SFT_HALF_A_V8/evals/eval_formal_heldout_150.json">SFT greedy eval</a> ·
+    <a href="https://github.com/JayZenith/GLYPH/blob/main/glyph_results/RLVR_POOL_B_V8_STEP10/evals/eval_formal_heldout_150.json">sparse greedy eval</a> ·
+    <a href="https://github.com/JayZenith/GLYPH/tree/main/glyph_results/RLVR_POOL_B_V8_STEP10/passk8_heldout150_metadata">pass@8 metadata</a>
   </p>
 
   <h2>6. What I would change</h2>
