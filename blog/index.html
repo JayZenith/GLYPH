@@ -59,9 +59,6 @@
     .final { color: var(--amber); }
     .note { margin: 18px 0; padding: 12px 14px; border-left: 2px solid var(--amber); background: rgba(255, 207, 102, .06); }
     .note p { margin: 0; color: var(--text); font-size: 14px; }
-    .hypothesis-note { padding: 18px; }
-    .hypothesis-note p { font-size: 16px; line-height: 1.7; }
-    .hypothesis-note p + p { margin-top: 16px; }
     .arm-list { display: grid; gap: 10px; margin: 16px 0; }
     .arm { padding: 12px 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); }
     .arm p { margin: 2px 0 0; font-size: 14px; }
@@ -79,6 +76,9 @@
     .trace-disclosure { margin: 16px 0; }
     .trace-disclosure > summary { padding: 11px 14px; color: #fff; cursor: pointer; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); font: 13px/1.4 ui-monospace, monospace; }
     .trace-disclosure[open] > summary { border-color: var(--green); }
+    .methodology { margin: 10px 0 18px; }
+    .methodology > summary { color: var(--dim); cursor: pointer; font: 14px/1.6 ui-monospace, monospace; }
+    .methodology p { margin: 10px 0 0; color: var(--dim); font-size: 14px; }
     .trace-explorer { margin-top: 10px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
     .trace-controls { display: flex; align-items: end; justify-content: space-between; gap: 14px; padding: 14px; border-bottom: 1px solid var(--line); background: var(--panel-2); }
     .trace-controls label { color: var(--dim); font: 13px/1.4 ui-monospace, monospace; text-transform: uppercase; }
@@ -187,25 +187,19 @@
     <div class="arm"><h3>Compiler-aware</h3><p>Grades failed code by the furthest <code>rustc</code> phase reached.</p></div>
   </div>
   <table>
-    <thead><tr><th>Model</th><th>Trace-retained</th><th>Counts only</th></tr></thead>
+    <thead><tr><th>Model</th><th>valid@8 (retained)</th></tr></thead>
     <tbody>
-      <tr><td>SFT control</td><td>95</td><td>97 / 100</td></tr>
-      <tr><td>Sparse RLVR</td><td>98 / 96 / 98</td><td>—</td></tr>
-      <tr><td>Dense RLVR</td><td>102</td><td>102 / 99</td></tr>
-      <tr><td>Compiler-aware RLVR</td><td>95 / 96 / 94</td><td>—</td></tr>
+      <tr><td>SFT</td><td>95</td></tr>
+      <tr><td>Sparse RLVR</td><td>98 / 96 / 98</td></tr>
+      <tr><td>Dense RLVR</td><td>102</td></tr>
+      <tr><td>Compiler-aware</td><td>95 / 96 / 94</td></tr>
     </tbody>
   </table>
-  <div class="chart"><img src="valid8_chart.svg" alt="Trace-retained valid@8 evaluations for SFT, sparse, dense, and compiler-aware models"></div>
-  <p>
-    <strong>None of the differences is statistically reliable.</strong> Dense versus SFT was
-    +7 prompts, but p≈0.12 when pairing the same prompts and p≈0.15 when related template
-    families were grouped. Sparse was flat. Compiler-aware was level with SFT.
-  </p>
-  <p class="source">
-    “Paired” means comparing both models on each same crate. “Family grouped” prevents many
-    variants of one template from counting as independent evidence. Count-only repetitions remain
-    visible for context, but are excluded from headline claims because their rollouts were not saved.
-  </p>
+  <details class="methodology" id="methodology">
+    <summary>No retained-run comparison reached p&lt;0.05 · methodology →</summary>
+    <p>Prompt-paired and family-grouped tests gave dense versus SFT p≈0.12 and p≈0.15. Aggregate-only SFT 97/100 and dense 102/99 repetitions remain in the chart but not the claims because their rollouts were not saved. Repetitions were not independently seeded.</p>
+  </details>
+  <div class="chart"><img src="valid8_chart.svg" alt="valid@8 evaluations for SFT, sparse, dense, and compiler-aware models; aggregate-only repetitions are faded"></div>
 
   <h2>4. One verifier gap</h2>
   <p>One retained RLVR trace passed every test after reversing the written TLS precedence.</p>
@@ -252,29 +246,16 @@ Tests: 3/3 pass.
 
   <h2>6. What the evidence says</h2>
   <div class="finding">
-    <h3>The protocol was already saturated</h3>
-    <p>SFT had almost no formatting headroom. Sparse RLVR produced correct call syntax, IDs, and Cargo paths on all 150 greedy prompts; SFT did so on 149.</p>
+    <h3>SFT saturated the protocol</h3>
+    <p>Sparse RLVR produced correct syntax on 150/150 greedy prompts versus 149/150 for SFT. The models still shared 74 greedy failures and 48 retained pass@8 failures. The bottleneck was task execution, not formatting.</p>
   </div>
   <div class="finding">
-    <h3>The hard tail likely needed Rust capability, not formatting</h3>
-    <p>Greedy pass@1 changed only six outcomes: sparse RLVR fixed four SFT failures and lost two SFT successes, while 74 prompts failed both. The first retained pass@8 runs still shared 48 failures (+3 sparse, p≈0.55); the three-run aggregate means were both 97.3/150. Sparse RL did not measurably expand the solve frontier.</p>
+    <h3>Sparse reward could not separate the hard tail</h3>
+    <p>At step 0, 64 of 96 rollouts belonged to tied groups and were filtered. Some compiled or passed partial tests, but sparse reward barely distinguished that progress.</p>
   </div>
   <div class="finding">
-    <h3>The reward often could not separate failures</h3>
-    <p>At sparse step 0, 64 of 96 rollouts belonged to tied, zero-advantage groups and were filtered. Some failed rollouts compiled or passed tests, but the sparse reward barely distinguished that progress.</p>
-  </div>
-  <div class="note hypothesis-note">
-    <p>
-      <strong>Supported hypothesis:</strong> the SFT checkpoint entered RL with too little probability
-      of producing successful trajectories on much of the hard tail. Sparse GRPO then received many
-      tied groups, while alternative reward shapes did not reliably turn partial progress into new
-      solutions. Reward shaping alone was insufficient on this fixed policy.
-    </p>
-    <p>
-      <strong>Unresolved cause:</strong> GLYPH did not run a matched base-model evaluation, so this
-      cannot distinguish limited Qwen3-4B pretraining or capacity, narrow synthetic SFT coverage, or
-      regression during full SFT or RL.
-    </p>
+    <h3>I still cannot isolate the cause</h3>
+    <p>No matched base-model evaluation means I cannot separate model capacity, narrow synthetic-data coverage, or post-training regression. That is the next experiment.</p>
   </div>
   <p class="source">
     Local evidence:
@@ -285,30 +266,20 @@ Tests: 3/3 pass.
     <a href="https://github.com/JayZenith/GLYPH/tree/main/glyph_results/RLVR_POOL_B_V8_STEP10/passk8_heldout150_metadata">pass@8 metadata</a>
   </p>
 
-  <h2>7. The next experiment</h2>
+  <h2>7. Next: isolate the bottleneck</h2>
   <p>
-    Compare the base, SFT, and RL policies on both the same-family holdout and an independently
-    authored general-Rust set. Because the raw base model was not trained on GLYPH's tool protocol,
-    score Cargo/task success separately from clean trace formatting.
+    Run base → SFT → RL on independently authored Rust tasks. Score Cargo/task success
+    separately from GLYPH trace formatting.
   </p>
   <table class="interpretation">
     <thead><tr><th>Result</th><th>Evidence for</th></tr></thead>
     <tbody>
-      <tr><td>Base fails; SFT improves</td><td>SFT learned task capability</td></tr>
-      <tr><td>Base passes; SFT fails</td><td>Regression or forgetting</td></tr>
-      <tr><td>All fail</td><td>Base limitation remains plausible; targeted SFT still untested</td></tr>
+      <tr><td>Base fails; SFT improves</td><td>Post-training added capability</td></tr>
+      <tr><td>Base passes; SFT fails</td><td>Post-training caused regression</td></tr>
+      <tr><td>All fail</td><td>Test targeted data or a stronger base</td></tr>
       <tr><td>SFT improves only same-family tasks</td><td>Specialization, not broad Rust transfer</td></tr>
     </tbody>
   </table>
-  <ul>
-    <li>Replace same-family examples with diverse, intermediate Rust traces at fixed dataset size.</li>
-    <li>Rerun the same RL recipe to test whether the new SFT frontier reduces tied groups.</li>
-    <li>Hold out entire semantic task families, not only case IDs.</li>
-    <li>Train multiple seeded runs per reward arm.</li>
-    <li>Use explicit, recorded evaluation seeds.</li>
-    <li>Retain every rollout, command, environment, and model revision.</li>
-    <li>Keep SFT, RL, evaluation, and demos byte-identical at the interface.</li>
-  </ul>
   <p>
     GLYPH did not establish an RL improvement. It established a working, auditable post-training
     stack and showed exactly where this experiment stopped being informative.
@@ -344,12 +315,13 @@ Tests: 3/3 pass.
         turns.appendChild(row);
       });
     }
-    var disclosure = document.getElementById("full-verifier-gap-trace");
-    function openLinkedTrace() {
-      if (location.hash === "#full-verifier-gap-trace" && disclosure) disclosure.open = true;
+    function openLinkedDetails() {
+      if (!location.hash) return;
+      var target = document.querySelector(location.hash);
+      if (target && target.tagName === "DETAILS") target.open = true;
     }
-    addEventListener("hashchange", openLinkedTrace);
-    openLinkedTrace();
+    addEventListener("hashchange", openLinkedDetails);
+    openLinkedDetails();
   }());
 </script>
 </body>
