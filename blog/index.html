@@ -54,6 +54,9 @@
     .final { color: var(--amber); }
     .note { margin: 18px 0; padding: 12px 14px; border-left: 2px solid var(--amber); background: rgba(255, 207, 102, .06); }
     .note p { margin: 0; color: var(--text); font-size: 14px; }
+    .hypothesis-note { padding: 18px; }
+    .hypothesis-note p { font-size: 16px; line-height: 1.7; }
+    .hypothesis-note p + p { margin-top: 16px; }
     .arm-list { display: grid; gap: 10px; margin: 16px 0; }
     .arm { padding: 12px 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); }
     .arm p { margin: 2px 0 0; font-size: 14px; }
@@ -94,6 +97,7 @@
     .finding:last-child { border-bottom: 0; }
     .finding p { margin: 0; }
     .source { color: var(--dim); font: 14.5px/1.6 ui-monospace, monospace; }
+    .demo-note { color: var(--soft); font-size: 15px; }
     footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); }
     footer p { color: var(--dim); font-size: 14px; }
 
@@ -231,7 +235,7 @@
     </video>
   </div>
   <p class="video-link"><a href="OOD.mp4">Open full-size video ↗</a></p>
-  <p class="source">
+  <p class="source demo-note">
     This is one selected success, not a benchmark. Its aggregation and filtering concepts are
     adjacent to generator archetypes, so it is source-OOD rather than a clean unseen semantic
     family. Harder exploratory crates did not reach passing tests within their tool budgets, but
@@ -254,15 +258,19 @@
     <h3>The reward often could not separate failures</h3>
     <p>At sparse step 0, 64 of 96 rollouts belonged to tied, zero-advantage groups and were filtered. Some failed rollouts compiled or passed tests, but the sparse reward barely distinguished that progress.</p>
   </div>
-  <div class="note"><p>
-    <strong>Supported hypothesis:</strong> the SFT checkpoint entered RL with too little probability
-    of producing successful trajectories on much of the hard tail. Sparse GRPO then received many
-    tied groups, while alternative reward shapes did not reliably turn partial progress into new
-    solutions. Reward shaping alone was insufficient on this fixed policy.<br>
-    <strong>Unresolved cause:</strong> GLYPH did not run a matched base-model evaluation, so this
-    cannot distinguish limited Qwen3-4B pretraining or capacity, narrow synthetic SFT coverage, or
-    regression during full SFT or RL.
-  </p></div>
+  <div class="note hypothesis-note">
+    <p>
+      <strong>Supported hypothesis:</strong> the SFT checkpoint entered RL with too little probability
+      of producing successful trajectories on much of the hard tail. Sparse GRPO then received many
+      tied groups, while alternative reward shapes did not reliably turn partial progress into new
+      solutions. Reward shaping alone was insufficient on this fixed policy.
+    </p>
+    <p>
+      <strong>Unresolved cause:</strong> GLYPH did not run a matched base-model evaluation, so this
+      cannot distinguish limited Qwen3-4B pretraining or capacity, narrow synthetic SFT coverage, or
+      regression during full SFT or RL.
+    </p>
+  </div>
   <p class="source">
     Local evidence:
     <a href="https://github.com/JayZenith/GLYPH/blob/main/analysis/retained_run_stats.py">reproducible statistics</a> ·
