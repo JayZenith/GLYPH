@@ -60,7 +60,7 @@
     table { width: 100%; margin: 18px 0; border-collapse: collapse; font-size: 14px; }
     th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
     th { color: var(--dim); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
-    td:last-child { color: #fff; font-family: ui-monospace, monospace; text-align: right; }
+    td:not(:first-child) { color: #fff; font-family: ui-monospace, monospace; text-align: right; }
     .chart { margin: 18px 0; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
     .chart img { display: block; width: 100%; height: auto; }
     .trace-disclosure { margin: 16px 0; }
@@ -110,12 +110,13 @@
   <p class="lede">
     I built synthetic agent traces, fully fine-tuned Qwen3-4B, ran three verifier-RL
     experiments, and audited every result I could support. RL did not reliably beat SFT.
-    The useful result was learning why.
+    The useful result was learning what likely constrained it.
   </p>
   <nav class="links" aria-label="Project links">
     <a href="https://github.com/JayZenith/GLYPH">code</a>
     <a href="https://app.primeintellect.ai/dashboard/environments/jayzenith/glyph">environment</a>
     <a href="https://huggingface.co/JayZenith/SFT_HALF_A_V8">SFT model</a>
+    <a href="https://huggingface.co/JayZenith/RLVR_VFINAL_STEP10">dense RLVR adapter</a>
     <a href="https://huggingface.co/datasets/JayZenith/Glyph-RLVR-Eval-Results">raw evals</a>
     <a href="https://github.com/JayZenith/GLYPH/blob/main/docs/PROVENANCE.md">provenance</a>
   </nav>
@@ -165,18 +166,19 @@
 
   <h2>3. The RL experiment</h2>
   <p>One SFT control. Three RL reward designs. One training run per RL arm.</p>
+  <p class="source"><code>valid@8</code> counts a crate when at least one of eight sampled rollouts reaches Cargo success and ends with one clean <code>FINAL</code>.</p>
   <div class="arm-list">
     <div class="arm"><h3>Sparse</h3><p>Clean verifier success dominates; failed attempts receive coarse penalties.</p></div>
     <div class="arm"><h3>Dense</h3><p>Adds credit for compiling and for the fraction of tests passed.</p></div>
     <div class="arm"><h3>Compiler-aware</h3><p>Grades failed code by the furthest <code>rustc</code> phase reached.</p></div>
   </div>
   <table>
-    <thead><tr><th>Model</th><th>valid@8 / 150</th></tr></thead>
+    <thead><tr><th>Model</th><th>Trace-retained</th><th>Counts only</th></tr></thead>
     <tbody>
-      <tr><td>SFT control</td><td>95</td></tr>
-      <tr><td>Sparse RLVR</td><td>98 / 96 / 98</td></tr>
-      <tr><td>Dense RLVR</td><td>102</td></tr>
-      <tr><td>Compiler-aware RLVR</td><td>95 / 96 / 94</td></tr>
+      <tr><td>SFT control</td><td>95</td><td>97 / 100</td></tr>
+      <tr><td>Sparse RLVR</td><td>98 / 96 / 98</td><td>—</td></tr>
+      <tr><td>Dense RLVR</td><td>102</td><td>102 / 99</td></tr>
+      <tr><td>Compiler-aware RLVR</td><td>95 / 96 / 94</td><td>—</td></tr>
     </tbody>
   </table>
   <div class="chart"><img src="valid8_chart.svg" alt="Trace-retained valid@8 evaluations for SFT, sparse, dense, and compiler-aware models"></div>
@@ -187,8 +189,8 @@
   </p>
   <p class="source">
     “Paired” means comparing both models on each same crate. “Family grouped” prevents many
-    variants of one template from counting as independent evidence. Only evaluations with full
-    per-rollout traces appear here; aggregate-only repetitions are excluded.
+    variants of one template from counting as independent evidence. Count-only repetitions remain
+    visible for context, but are excluded from headline claims because their rollouts were not saved.
   </p>
 
   <h2>4. Inspect retained traces</h2>

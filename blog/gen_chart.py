@@ -1,4 +1,4 @@
-"""Regenerate the trace-retained valid@8 chart used by the blog."""
+"""Regenerate the valid@8 chart used by the blog."""
 from __future__ import annotations
 
 import json
@@ -13,24 +13,27 @@ def valid_at_8(path: Path) -> int:
     return sum(1 for r in rows if r.get("valid_trace_solves", 0) > 0)
 
 
-# Only trace-retained evaluations belong in the headline chart.
-# (label, [paths], color)
+# (label, [(path, trace_retained)], color)
 MODELS = [
     ("SFT base", [
-        R / "SFT_HALF_A_V8/evals/passk8_heldout150.json",
+        (R / "SFT_HALF_A_V8/evals/passk8_heldout150.json", True),
+        (R / "SFT_HALF_A_V8/evals/seeds/sft_seed1.json", False),
+        (R / "SFT_HALF_A_V8/evals/seeds/sft_seedB.json", False),
     ], "#5fd0db"),
     ("Sparse reward", [
-        R / "RLVR_POOL_B_V8_STEP10/passk8_heldout150_run1.json",
-        R / "RLVR_POOL_B_V8_STEP10/passk8_heldout150_run2.json",
-        R / "RLVR_POOL_B_V8_STEP10/passk8_heldout150_run3.json",
+        (R / "RLVR_POOL_B_V8_STEP10/passk8_heldout150_run1.json", True),
+        (R / "RLVR_POOL_B_V8_STEP10/passk8_heldout150_run2.json", True),
+        (R / "RLVR_POOL_B_V8_STEP10/passk8_heldout150_run3.json", True),
     ], "#b48cff"),
     ("Dense reward", [
-        R / "RLVR_VFINAL_STEP10/evals/passk8_heldout150.json",
+        (R / "RLVR_VFINAL_STEP10/evals/passk8_heldout150.json", True),
+        (R / "RLVR_VFINAL_STEP10/evals/seeds/step10_seedB.json", False),
+        (R / "RLVR_VFINAL_STEP10/evals/seeds/step10_seedC.json", False),
     ], "#3ddc84"),
     ("Compiler-aware", [
-        R / "RLVR_VFINAL2_STEP10/evals/passk8_heldout150.json",
-        R / "RLVR_VFINAL2_STEP10/evals/seeds/step10_seedB.json",
-        R / "RLVR_VFINAL2_STEP10/evals/seeds/step10_seedC.json",
+        (R / "RLVR_VFINAL2_STEP10/evals/passk8_heldout150.json", True),
+        (R / "RLVR_VFINAL2_STEP10/evals/seeds/step10_seedB.json", True),
+        (R / "RLVR_VFINAL2_STEP10/evals/seeds/step10_seedC.json", True),
     ], "#ffce6a"),
 ]
 
@@ -43,7 +46,7 @@ BAR_GAP = 8
 
 groups = []
 for name, specs, color in MODELS:
-    vals = [valid_at_8(p) for p in specs]
+    vals = [(valid_at_8(path), retained) for path, retained in specs]
     groups.append((name, vals, color))
 
 n_groups = len(groups)
@@ -77,17 +80,19 @@ for gi, (name, vals, color) in enumerate(groups):
     gx0 = PAD_L + gi * (group_w + GROUP_GAP)
     bars_w = len(vals) * bar_w + (len(vals) - 1) * BAR_GAP
     bars_x = gx0 + (group_w - bars_w) / 2
-    for si, v in enumerate(vals):
+    for si, (v, retained) in enumerate(vals):
         bx = bars_x + si * (bar_w + BAR_GAP)
         by = y_px(v)
         bh = PAD_T + PLOT_H - by
+        opacity = "0.9" if retained else "0.28"
+        dash = "" if retained else ' stroke="#8b9198" stroke-width="1" stroke-dasharray="3,2"'
         svg_parts.append(
             f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" '
-            f'fill="{color}" opacity="0.9" rx="2"/>'
+            f'fill="{color}" opacity="{opacity}" rx="2"{dash}/>'
         )
         svg_parts.append(
             f'<text x="{bx + bar_w / 2:.1f}" y="{by - 6:.1f}" text-anchor="middle" '
-            f'font-size="10.5" fill="#f2f3f5">{v}</text>'
+            f'font-size="10.5" fill="{"#f2f3f5" if retained else "#8b9198"}">{v}</text>'
         )
     svg_parts.append(
         f'<text x="{gx0 + group_w / 2:.1f}" y="{H - PAD_B + 18:.1f}" text-anchor="middle" '
@@ -96,11 +101,11 @@ for gi, (name, vals, color) in enumerate(groups):
 
 svg_parts.append(
     f'<text x="{PAD_L}" y="16" font-size="11" fill="#8b9198">'
-    f'valid@8 / 150 &#183; trace-retained evaluations only</text>'
+    f'valid@8 / 150 (pass@8, T=0.8)</text>'
 )
 svg_parts.append(
     f'<text x="{PAD_L}" y="30" font-size="10" fill="#5a6066">'
-    f'pass@8, T=0.8 &#183; full per-rollout traces retained</text>'
+    f'solid = trace-retained &#183; faded/dashed = counts only, excluded from claims</text>'
 )
 svg_parts.append("</svg>")
 
