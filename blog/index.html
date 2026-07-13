@@ -63,6 +63,28 @@
     td:last-child { color: #fff; font-family: ui-monospace, monospace; text-align: right; }
     .chart { margin: 18px 0; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
     .chart img { display: block; width: 100%; height: auto; }
+    .trace-disclosure { margin: 16px 0; }
+    .trace-disclosure > summary { padding: 11px 14px; color: #fff; cursor: pointer; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); font: 13px/1.4 ui-monospace, monospace; }
+    .trace-disclosure[open] > summary { border-color: var(--green); }
+    .trace-explorer { margin-top: 10px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+    .trace-controls { display: flex; align-items: end; justify-content: space-between; gap: 14px; padding: 14px; border-bottom: 1px solid var(--line); background: var(--panel-2); }
+    .trace-controls label { color: var(--dim); font: 11px/1.4 ui-monospace, monospace; text-transform: uppercase; }
+    .trace-controls select { display: block; min-width: 190px; margin-top: 5px; padding: 7px 9px; color: #fff; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color-scheme: dark; }
+    .trace-stats { color: var(--dim); font: 11px/1.5 ui-monospace, monospace; text-align: right; }
+    .trace-about { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+    .trace-about strong, .trace-about a { display: block; }
+    .trace-about a { margin-top: 3px; font: 11px/1.4 ui-monospace, monospace; }
+    .trace-about p { margin: 6px 0 0; font-size: 13px; }
+    .trace-about .trace-note { color: var(--amber); }
+    .trace-turns { display: grid; gap: 8px; max-height: 520px; padding: 12px; overflow: auto; }
+    .turn { display: grid; grid-template-columns: 68px minmax(0, 1fr); gap: 8px; }
+    .turn-role { padding-top: 8px; color: var(--dim); font: 10px/1.4 ui-monospace, monospace; text-transform: uppercase; }
+    .turn-user .turn-role { color: var(--amber); }
+    .turn-assistant .turn-role { color: var(--blue); }
+    .turn-tool .turn-role { color: var(--green); }
+    .turn pre { padding: 9px 10px; overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: #080b10; }
+    .turn-tool pre { background: rgba(50, 214, 107, .05); }
+    .turn-final pre { color: var(--amber); border-color: rgba(255, 207, 102, .45); }
     .finding { margin: 14px 0; padding: 0 0 14px 16px; border-left: 2px solid var(--green); border-bottom: 1px solid var(--line); }
     .finding:last-child { border-bottom: 0; }
     .finding p { margin: 0; }
@@ -74,6 +96,10 @@
       main { padding-top: 30px; }
       .pipeline { grid-template-columns: 1fr 1fr; }
       th, td { padding: 7px 5px; }
+      .trace-controls { display: block; }
+      .trace-stats { margin-top: 8px; text-align: left; }
+      .turn { grid-template-columns: 1fr; gap: 3px; }
+      .turn-role { padding-top: 0; }
     }
   </style>
 </head>
@@ -165,7 +191,26 @@
     per-rollout traces appear here; aggregate-only repetitions are excluded.
   </p>
 
-  <h2>4. Why RL likely stalled</h2>
+  <h2>4. Inspect retained traces</h2>
+  <p>Three selected RLVR rollouts. Optional evidence, not a representative sample.</p>
+  <details class="trace-disclosure">
+    <summary>Open trace explorer</summary>
+    <div class="trace-explorer">
+      <div class="trace-controls">
+        <label>Choose a trace<select id="trace-select" aria-label="Choose a trace"></select></label>
+        <div class="trace-stats" id="trace-stats"></div>
+      </div>
+      <div class="trace-about">
+        <strong id="trace-label"></strong>
+        <a id="trace-model" rel="noreferrer"></a>
+        <p id="trace-description"></p>
+        <p class="trace-note" id="trace-note"></p>
+      </div>
+      <div class="trace-turns" id="trace-turns"></div>
+    </div>
+  </details>
+
+  <h2>5. Why RL likely stalled</h2>
   <div class="finding">
     <h3>The protocol was already saturated</h3>
     <p>SFT had almost no formatting headroom. Sparse RLVR produced correct call syntax, IDs, and Cargo paths on all 150 greedy prompts; SFT did so on 149.</p>
@@ -184,18 +229,6 @@
     Rust work to build the missing hard-tail capability. Sparse rewards then collapsed many of
     those failures into ties. Dense rewards exposed more progress, but could not supply capability
     the SFT curriculum had not established. This is a hypothesis, not a causal result.
-  </p>
-
-  <h2>5. One trace exposed a verifier gap</h2>
-  <p>
-    In one of three traces I inspected for presentation, the model passed every test while changing
-    TLS precedence against the written spec. The tests did not cover that conflict, so the verifier
-    awarded full reward.
-  </p>
-  <p>
-    This is an interesting example, not evidence of a systemic problem or a material effect on the
-    scores. It shows only that test success and spec correctness are different claims. The current
-    runtime protects grading code; the published runs predate that hardening.
   </p>
 
   <h2>6. What I would change</h2>
@@ -222,5 +255,53 @@
     </p>
   </footer>
 </main>
+<script src="traces.js"></script>
+<script>
+  (function () {
+    var traces = window.GLYPH_TRACES || [];
+    var labels = {"clean-solve": "verifier gap", "recovery": "recovery", "long-recovery": "long recovery"};
+    var select = document.getElementById("trace-select");
+    var turns = document.getElementById("trace-turns");
+
+    traces.forEach(function (trace, index) {
+      var option = document.createElement("option");
+      option.value = String(index);
+      option.textContent = labels[trace.id] || trace.id;
+      select.appendChild(option);
+    });
+
+    function renderTrace() {
+      var trace = traces[Number(select.value) || 0];
+      if (!trace) return;
+      document.getElementById("trace-label").textContent = trace.label;
+      var model = document.getElementById("trace-model");
+      model.textContent = trace.model;
+      model.href = "https://huggingface.co/" + trace.model;
+      document.getElementById("trace-description").textContent = trace.description;
+      var note = document.getElementById("trace-note");
+      note.textContent = trace.note || "";
+      note.hidden = !trace.note;
+      document.getElementById("trace-stats").textContent = "reward " + trace.reward + " · " + trace.turns.length + " turns";
+      turns.replaceChildren();
+
+      trace.turns.forEach(function (turn) {
+        var row = document.createElement("div");
+        var isFinal = turn.content.trim().startsWith("FINAL:");
+        row.className = "turn turn-" + turn.role + (isFinal ? " turn-final" : "");
+        var role = document.createElement("div");
+        role.className = "turn-role";
+        role.textContent = turn.role;
+        var body = document.createElement("pre");
+        body.textContent = turn.content.trim();
+        row.append(role, body);
+        turns.appendChild(row);
+      });
+      turns.scrollTop = 0;
+    }
+
+    select.addEventListener("change", renderTrace);
+    renderTrace();
+  }());
+</script>
 </body>
 </html>
