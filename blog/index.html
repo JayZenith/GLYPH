@@ -48,6 +48,11 @@
     .pipeline strong { display: block; font-size: 14px; }
     .pipeline span { color: var(--dim); font: 13px/1.4 ui-monospace, monospace; }
     .trace { margin: 18px 0; padding: 14px 16px; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+    .verifier-gap { margin: 18px 0 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+    .verifier-gap pre { line-height: 1.85; }
+    .gap-before { color: var(--green); }
+    .gap-after { color: #ff8a96; }
+    .gap-result { color: var(--amber); }
     pre { margin: 0; color: var(--soft); font: 13.5px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
     .call { color: var(--blue); }
     .result { color: var(--green); }
@@ -202,20 +207,20 @@
     visible for context, but are excluded from headline claims because their rollouts were not saved.
   </p>
 
-  <h2>4. Inspect retained traces</h2>
-  <p>Three selected RLVR rollouts. Optional evidence, not a representative sample.</p>
-  <details class="trace-disclosure" open>
-    <summary>Open trace explorer</summary>
+  <h2>4. One verifier gap</h2>
+  <p>One retained RLVR trace passed every test after reversing the written TLS precedence.</p>
+  <div class="verifier-gap"><pre><span class="gap-before">Before (spec-correct): tls = direct.or_else(profile).or(defaults)</span>
+<span class="gap-after">After (model's patch): tls = profile.or_else(direct).or(defaults)</span>
+Tests: 3/3 pass.
+<span class="gap-result">Spec: violated. Verifier: blind.</span></pre></div>
+  <details class="trace-disclosure" id="full-verifier-gap-trace">
+    <summary>Full trace →</summary>
     <div class="trace-explorer">
-      <div class="trace-controls">
-        <label>Choose a trace<select id="trace-select" aria-label="Choose a trace"></select></label>
-        <div class="trace-stats" id="trace-stats"></div>
-      </div>
       <div class="trace-about">
-        <strong id="trace-label"></strong>
-        <a id="trace-model" rel="noreferrer"></a>
-        <p id="trace-description"></p>
-        <p class="trace-note" id="trace-note"></p>
+        <strong>RLVR step 10 · config merge recovery</strong>
+        <a href="https://huggingface.co/JayZenith/RLVR_VFINAL_STEP10" rel="noreferrer">JayZenith/RLVR_VFINAL_STEP10</a>
+        <p>Full system, user, assistant, and tool transcript.</p>
+        <p class="trace-note" id="trace-stats"></p>
       </div>
       <div class="trace-turns" id="trace-turns"></div>
     </div>
@@ -322,32 +327,10 @@
 <script src="traces.js"></script>
 <script>
   (function () {
-    var traces = window.GLYPH_TRACES || [];
-    var labels = {"clean-solve": "verifier gap", "recovery": "recovery", "long-recovery": "long recovery"};
-    var select = document.getElementById("trace-select");
+    var trace = (window.GLYPH_TRACES || [])[0];
     var turns = document.getElementById("trace-turns");
-
-    traces.forEach(function (trace, index) {
-      var option = document.createElement("option");
-      option.value = String(index);
-      option.textContent = labels[trace.id] || trace.id;
-      select.appendChild(option);
-    });
-
-    function renderTrace() {
-      var trace = traces[Number(select.value) || 0];
-      if (!trace) return;
-      document.getElementById("trace-label").textContent = trace.label;
-      var model = document.getElementById("trace-model");
-      model.textContent = trace.model;
-      model.href = "https://huggingface.co/" + trace.model;
-      document.getElementById("trace-description").textContent = trace.description;
-      var note = document.getElementById("trace-note");
-      note.textContent = trace.note || "";
-      note.hidden = !trace.note;
+    if (trace && turns) {
       document.getElementById("trace-stats").textContent = "reward " + trace.reward + " · " + trace.turns.length + " turns";
-      turns.replaceChildren();
-
       trace.turns.forEach(function (turn) {
         var row = document.createElement("div");
         var isFinal = turn.content.trim().startsWith("FINAL:");
@@ -360,11 +343,13 @@
         row.append(role, body);
         turns.appendChild(row);
       });
-      turns.scrollTop = 0;
     }
-
-    select.addEventListener("change", renderTrace);
-    renderTrace();
+    var disclosure = document.getElementById("full-verifier-gap-trace");
+    function openLinkedTrace() {
+      if (location.hash === "#full-verifier-gap-trace" && disclosure) disclosure.open = true;
+    }
+    addEventListener("hashchange", openLinkedTrace);
+    openLinkedTrace();
   }());
 </script>
 </body>
