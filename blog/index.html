@@ -40,15 +40,15 @@
     code { color: var(--blue); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; }
     a { color: var(--green); text-decoration: none; }
     a:hover { text-decoration: underline; }
-    .kicker { margin-bottom: 12px; color: var(--green); font: 700 11px/1 ui-monospace, monospace; letter-spacing: .2em; text-transform: uppercase; }
+    .kicker { margin-bottom: 12px; color: var(--green); font: 700 12px/1 ui-monospace, monospace; letter-spacing: .2em; text-transform: uppercase; }
     .lede { margin-top: 20px; color: var(--text); font-size: 18px; line-height: 1.55; }
     .links { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 18px 0 0; font: 13px/1.5 ui-monospace, monospace; }
     .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 18px 0; }
     .pipeline div { padding: 12px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); text-align: center; }
     .pipeline strong { display: block; font-size: 13px; }
-    .pipeline span { color: var(--dim); font: 11px/1.4 ui-monospace, monospace; }
+    .pipeline span { color: var(--dim); font: 12px/1.4 ui-monospace, monospace; }
     .trace { margin: 18px 0; padding: 14px 16px; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
-    pre { margin: 0; color: var(--soft); font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
+    pre { margin: 0; color: var(--soft); font: 13px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
     .call { color: var(--blue); }
     .result { color: var(--green); }
     .final { color: var(--amber); }
@@ -59,7 +59,7 @@
     .arm p { margin: 2px 0 0; font-size: 14px; }
     table { width: 100%; margin: 18px 0; border-collapse: collapse; font-size: 14px; }
     th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
-    th { color: var(--dim); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+    th { color: var(--dim); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
     td:not(:first-child) { color: #fff; font-family: ui-monospace, monospace; text-align: right; }
     .interpretation td { vertical-align: top; }
     .interpretation td:not(:first-child) { color: var(--soft); font-family: inherit; text-align: left; }
@@ -67,22 +67,23 @@
     .chart img { display: block; width: 100%; height: auto; }
     .demo-video { margin: 18px 0; padding: 6px; border: 1px solid var(--line); border-radius: 9px; background: #020403; }
     .demo-video video { display: block; width: 100%; height: auto; border-radius: 5px; background: #000; }
+    .video-link { margin-top: -8px; text-align: right; font-size: 13px; }
     .trace-disclosure { margin: 16px 0; }
     .trace-disclosure > summary { padding: 11px 14px; color: #fff; cursor: pointer; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); font: 13px/1.4 ui-monospace, monospace; }
     .trace-disclosure[open] > summary { border-color: var(--green); }
     .trace-explorer { margin-top: 10px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
     .trace-controls { display: flex; align-items: end; justify-content: space-between; gap: 14px; padding: 14px; border-bottom: 1px solid var(--line); background: var(--panel-2); }
-    .trace-controls label { color: var(--dim); font: 11px/1.4 ui-monospace, monospace; text-transform: uppercase; }
+    .trace-controls label { color: var(--dim); font: 12px/1.4 ui-monospace, monospace; text-transform: uppercase; }
     .trace-controls select { display: block; min-width: 190px; margin-top: 5px; padding: 7px 9px; color: #fff; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color-scheme: dark; }
-    .trace-stats { color: var(--dim); font: 11px/1.5 ui-monospace, monospace; text-align: right; }
+    .trace-stats { color: var(--dim); font: 12px/1.5 ui-monospace, monospace; text-align: right; }
     .trace-about { padding: 12px 14px; border-bottom: 1px solid var(--line); }
     .trace-about strong, .trace-about a { display: block; }
-    .trace-about a { margin-top: 3px; font: 11px/1.4 ui-monospace, monospace; }
-    .trace-about p { margin: 6px 0 0; font-size: 13px; }
+    .trace-about a { margin-top: 3px; font: 12.5px/1.4 ui-monospace, monospace; }
+    .trace-about p { margin: 6px 0 0; font-size: 14px; }
     .trace-about .trace-note { color: var(--amber); }
     .trace-turns { display: grid; gap: 8px; max-height: 520px; padding: 12px; overflow: auto; }
     .turn { display: grid; grid-template-columns: 68px minmax(0, 1fr); gap: 8px; }
-    .turn-role { padding-top: 8px; color: var(--dim); font: 10px/1.4 ui-monospace, monospace; text-transform: uppercase; }
+    .turn-role { padding-top: 8px; color: var(--dim); font: 11.5px/1.4 ui-monospace, monospace; text-transform: uppercase; }
     .turn-user .turn-role { color: var(--amber); }
     .turn-assistant .turn-role { color: var(--blue); }
     .turn-tool .turn-role { color: var(--green); }
@@ -92,7 +93,7 @@
     .finding { margin: 14px 0; padding: 0 0 14px 16px; border-left: 2px solid var(--green); border-bottom: 1px solid var(--line); }
     .finding:last-child { border-bottom: 0; }
     .finding p { margin: 0; }
-    .source { color: var(--dim); font: 11.5px/1.55 ui-monospace, monospace; }
+    .source { color: var(--dim); font: 13.5px/1.6 ui-monospace, monospace; }
     footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); }
     footer p { color: var(--dim); font-size: 13px; }
 
@@ -149,30 +150,7 @@
     ChatML renderer and tool runtime are used for data generation, RL, evaluation, and the TUI.
   </p>
 
-  <h2>2. One qualitative OOD check</h2>
-  <p>
-    In the TUI, the trained agent solved <code>score_summary</code>: it read an independently
-    authored crate, patched score filtering and capping, ran four passing tests, and stopped with
-    <code>FINAL</code>. The exact task appears in neither training nor evaluation and was created
-    outside their generator.
-  </p>
-  <div class="demo-video">
-    <video controls muted playsinline preload="metadata" aria-label="GLYPH solving the score_summary Rust crate in the TUI">
-      <source src="OOD.mp4" type="video/mp4">
-      Your browser does not support embedded video. <a href="OOD.mp4">Open the MP4.</a>
-    </video>
-  </div>
-  <p class="source">
-    This is one selected success, not a benchmark. Its aggregation and filtering concepts are
-    adjacent to generator archetypes, so it is source-OOD rather than a clean unseen semantic
-    family. Harder exploratory crates did not reach passing tests within their tool budgets, but
-    those attempts were not a controlled retained evaluation. The demo therefore shows transfer
-    to one new crate, not general Rust capability or a pretraining limit.
-    <a href="https://github.com/JayZenith/GLYPH/tree/main/demo_tui/ood_cases/score_summary">crate and tests</a> ·
-    <a href="https://github.com/JayZenith/GLYPH/blob/main/demo_tui/README.md#ood-smoke-test">reproduction</a>
-  </p>
-
-  <h2>3. How I made the SFT data</h2>
+  <h2>2. How I made the SFT data</h2>
   <p>
     A generator proposed structured JSON task specs: a buggy crate, intended edits, and expected
     tool outcomes. A deterministic materializer built each crate and executed every step through
@@ -191,7 +169,7 @@
     generating training data.
   </p></div>
 
-  <h2>4. The RL experiment</h2>
+  <h2>3. The RL experiment</h2>
   <p>One SFT control. Three RL reward designs. One training run per RL arm.</p>
   <p class="source"><code>valid@8</code> counts a crate when at least one of eight sampled rollouts reaches Cargo success and ends with one clean <code>FINAL</code>.</p>
   <div class="arm-list">
@@ -220,7 +198,7 @@
     visible for context, but are excluded from headline claims because their rollouts were not saved.
   </p>
 
-  <h2>5. Inspect retained traces</h2>
+  <h2>4. Inspect retained traces</h2>
   <p>Three selected RLVR rollouts. Optional evidence, not a representative sample.</p>
   <details class="trace-disclosure" open>
     <summary>Open trace explorer</summary>
@@ -238,6 +216,30 @@
       <div class="trace-turns" id="trace-turns"></div>
     </div>
   </details>
+
+  <h2>5. One qualitative OOD check</h2>
+  <p>
+    In the TUI, the trained agent solved <code>score_summary</code>: it read an independently
+    authored crate, patched score filtering and capping, ran four passing tests, and stopped with
+    <code>FINAL</code>. The exact task appears in neither training nor evaluation and was created
+    outside their generator.
+  </p>
+  <div class="demo-video">
+    <video controls muted playsinline preload="metadata" aria-label="GLYPH solving the score_summary Rust crate in the TUI">
+      <source src="OOD.mp4" type="video/mp4">
+      Your browser does not support embedded video. <a href="OOD.mp4">Open the MP4.</a>
+    </video>
+  </div>
+  <p class="video-link"><a href="OOD.mp4">Open full-size video ↗</a></p>
+  <p class="source">
+    This is one selected success, not a benchmark. Its aggregation and filtering concepts are
+    adjacent to generator archetypes, so it is source-OOD rather than a clean unseen semantic
+    family. Harder exploratory crates did not reach passing tests within their tool budgets, but
+    those attempts were not a controlled retained evaluation. The demo therefore shows transfer
+    to one new crate, not general Rust capability or a pretraining limit.
+    <a href="https://github.com/JayZenith/GLYPH/tree/main/demo_tui/ood_cases/score_summary">crate and tests</a> ·
+    <a href="https://github.com/JayZenith/GLYPH/blob/main/demo_tui/README.md#ood-smoke-test">reproduction</a>
+  </p>
 
   <h2>6. What the evidence says</h2>
   <div class="finding">
