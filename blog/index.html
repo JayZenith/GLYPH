@@ -43,7 +43,24 @@
     .kicker { margin-bottom: 12px; color: var(--green); font: 700 12px/1 ui-monospace, monospace; letter-spacing: .2em; text-transform: uppercase; }
     .key-points { margin: 20px 0 0; padding-left: 20px; color: var(--text); font-size: 16px; }
     .key-points li { margin: 6px 0; }
-    .links { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 18px 0 0; font: 14px/1.5 ui-monospace, monospace; }
+    .links { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; font: 13px/1.4 ui-monospace, monospace; }
+    .links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      color: var(--text);
+      border: 1px solid #365344;
+      border-radius: 6px;
+      background: var(--panel);
+    }
+    .links a::after { content: "↗"; color: var(--green); }
+    .links a:hover, .links a:focus-visible {
+      color: #fff;
+      border-color: var(--green);
+      background: rgba(50, 214, 107, .08);
+      text-decoration: none;
+    }
     .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 18px 0; }
     .pipeline div { padding: 12px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); text-align: center; }
     .pipeline strong { display: block; font-size: 14px; }
