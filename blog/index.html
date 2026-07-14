@@ -152,6 +152,10 @@
       }
     }
 
+    @media (min-width: 900px) {
+      .demo-video, .video-link { width: min(1080px, calc(50vw + 348px)); }
+    }
+
     @media (max-width: 620px) {
       main { padding-top: 30px; }
       .pipeline { grid-template-columns: 1fr 1fr; }
@@ -224,7 +228,7 @@
       Your browser does not support embedded video. <a href="OOD.mp4">Open the MP4.</a>
     </video>
   </div>
-  <p class="video-link"><a href="OOD.mp4">Open full-size video ↗</a></p>
+  <p class="video-link"><a href="OOD.mp4">Open full-resolution video ↗</a></p>
   <p class="source demo-note">
     One selected success, not a benchmark. The crate is new, but its filtering and aggregation
     concepts resemble training archetypes. Harder exploratory crates failed within their tool
