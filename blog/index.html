@@ -30,6 +30,7 @@
       -webkit-font-smoothing: antialiased;
     }
     main { width: min(760px, calc(100% - 32px)); margin: 0 auto; padding: 48px 0 72px; }
+    h2[id] { scroll-margin-top: 24px; }
     h1 { max-width: 720px; margin: 0; color: #fff; font-size: clamp(30px, 5vw, 46px); line-height: 1.08; letter-spacing: -.025em; }
     h2 { margin: 44px 0 12px; padding-top: 14px; color: #fff; border-top: 1px solid var(--line); font-size: 21px; line-height: 1.3; }
     h3 { margin: 0 0 4px; color: #fff; font-size: 16px; }
@@ -41,6 +42,7 @@
     a { color: var(--green); text-decoration: none; }
     a:hover { text-decoration: underline; }
     .kicker { margin-bottom: 12px; color: var(--green); font: 700 12px/1 ui-monospace, monospace; letter-spacing: .2em; text-transform: uppercase; }
+    .published { margin: 10px 0 0; color: var(--dim); font: 13px/1.4 ui-monospace, monospace; }
     .key-points { margin: 20px 0 0; padding-left: 20px; color: var(--text); font-size: 16px; }
     .key-points li { margin: 6px 0; }
     .links { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; font: 13px/1.4 ui-monospace, monospace; }
@@ -123,6 +125,32 @@
     .demo-note { color: var(--soft); font-size: 15px; }
     footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); }
     footer p { color: var(--dim); font-size: 14px; }
+    .toc { display: none; }
+
+    @media (min-width: 1200px) {
+      .toc {
+        position: fixed;
+        top: 48px;
+        left: max(24px, calc(50% - 600px));
+        display: block;
+        width: 180px;
+      }
+      .toc p { margin: 0 0 10px; color: var(--dim); font: 700 11px/1.4 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
+      .toc a {
+        display: block;
+        padding: 6px 9px;
+        color: var(--dim);
+        border-left: 1px solid var(--line);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+      .toc a:hover { color: #fff; text-decoration: none; }
+      .toc a[aria-current="true"] {
+        color: #fff;
+        border-left: 2px solid var(--green);
+        background: linear-gradient(90deg, rgba(50, 214, 107, .1), transparent);
+      }
+    }
 
     @media (max-width: 620px) {
       main { padding-top: 30px; }
@@ -136,25 +164,32 @@
   </style>
 </head>
 <body>
+<nav class="toc" aria-label="Table of contents">
+  <p>On this page</p>
+  <a href="#what-i-built">What I built</a>
+  <a href="#ood-check">OOD check</a>
+  <a href="#sft-data">SFT data</a>
+  <a href="#rl-experiment">RL experiment</a>
+  <a href="#verifier-gap">Verifier gap</a>
+  <a href="#evidence">What the evidence says</a>
+  <a href="#next-experiment">Next experiment</a>
+</nav>
 <main>
   <p class="kicker">GLYPH</p>
   <h1>Post-training a 4B Rust coding agent with verifiable rewards</h1>
+  <p class="published"><time datetime="2026-07-13">July 13, 2026</time></p>
   <ul class="key-points">
     <li><strong>Built:</strong> verified traces → full SFT → three RL rewards → pass@8.</li>
     <li><strong>Found:</strong> no RL arm reliably beat SFT; the protocol was already saturated.</li>
     <li><strong>Next:</strong> compare base → SFT → RL on independently authored Rust tasks.</li>
   </ul>
   <nav class="links" aria-label="Project links">
-    <a href="https://jayzenith.me">portfolio</a>
+    <a href="https://jayzenith.me">jayzenith.me</a>
     <a href="https://github.com/JayZenith/GLYPH">code</a>
-    <a href="https://app.primeintellect.ai/dashboard/environments/jayzenith/glyph">environment</a>
-    <a href="https://huggingface.co/JayZenith/SFT_HALF_A_V8">SFT model</a>
-    <a href="https://huggingface.co/JayZenith/RLVR_VFINAL_STEP10">dense RLVR adapter</a>
-    <a href="https://huggingface.co/datasets/JayZenith/Glyph-RLVR-Eval-Results">evaluation files</a>
-    <a href="https://github.com/JayZenith/GLYPH/blob/main/docs/PROVENANCE.md">provenance</a>
+    <a href="https://app.primeintellect.ai/dashboard/environments/jayzenith/glyph">run GLYPH</a>
   </nav>
 
-  <h2>1. What I built</h2>
+  <h2 id="what-i-built">1. What I built</h2>
   <div class="pipeline" aria-label="GLYPH pipeline">
     <div><strong>Synthetic data</strong><span>verified traces</span></div>
     <div><strong>Full SFT</strong><span>Qwen3-4B</span></div>
@@ -178,7 +213,7 @@
     ChatML renderer and tool runtime are used for data generation, RL, evaluation, and the TUI.
   </p>
 
-  <h2>2. One qualitative OOD check</h2>
+  <h2 id="ood-check">2. One qualitative OOD check</h2>
   <p>
     In the TUI, the trained agent solved <code>score_summary</code>: it read an independently
     authored crate, patched score filtering and capping, ran four passing tests, and stopped with
@@ -202,7 +237,7 @@
     <a href="https://github.com/JayZenith/GLYPH/blob/main/demo_tui/README.md#ood-smoke-test">reproduction</a>
   </p>
 
-  <h2>3. How I made the SFT data</h2>
+  <h2 id="sft-data">3. How I made the SFT data</h2>
   <p>
     A generator proposed structured JSON task specs: a buggy crate, intended edits, and expected
     tool outcomes. A deterministic materializer built each crate and executed every step through
@@ -220,7 +255,7 @@
     Next time, I would keep some bug types entirely out of training and test on human-written Rust tasks.
   </p></div>
 
-  <h2>4. The RL experiment</h2>
+  <h2 id="rl-experiment">4. The RL experiment</h2>
   <p>One SFT control. Three RL reward designs. One training run per RL arm.</p>
   <p class="source"><code>valid@8</code> counts a crate when at least one of eight sampled rollouts reaches Cargo success and ends with one clean <code>FINAL</code>.</p>
   <div class="arm-list">
@@ -243,7 +278,7 @@
   </details>
   <div class="chart"><img src="valid8_chart.svg" alt="valid@8 evaluations for SFT, sparse, dense, and compiler-aware models; aggregate-only repetitions are faded"></div>
 
-  <h2>5. One verifier gap</h2>
+  <h2 id="verifier-gap">5. One verifier gap</h2>
   <p>One retained RLVR trace passed every test after reversing the written TLS precedence.</p>
   <div class="verifier-gap"><pre><span class="gap-before">Before (spec-correct): tls = direct.or_else(profile).or(defaults)</span>
 <span class="gap-after">After (model's patch): tls = profile.or_else(direct).or(defaults)</span>
@@ -262,7 +297,7 @@ Tests: 3/3 pass.
     </div>
   </details>
 
-  <h2>6. What the evidence says</h2>
+  <h2 id="evidence">6. What the evidence says</h2>
   <div class="finding">
     <h3>SFT saturated the protocol</h3>
     <p>Sparse RLVR produced correct syntax on 150/150 greedy prompts versus 149/150 for SFT. The models still shared 74 greedy failures and 48 retained pass@8 failures. The bottleneck was task execution, not formatting.</p>
@@ -284,7 +319,7 @@ Tests: 3/3 pass.
     <a href="https://github.com/JayZenith/GLYPH/tree/main/glyph_results/RLVR_POOL_B_V8_STEP10/passk8_heldout150_metadata">pass@8 metadata</a>
   </p>
 
-  <h2>7. Next: isolate the bottleneck</h2>
+  <h2 id="next-experiment">7. Next: isolate the bottleneck</h2>
   <p>
     Run base → SFT → RL on independently authored Rust tasks. Score Cargo/task success
     separately from GLYPH trace formatting.
@@ -340,6 +375,38 @@ Tests: 3/3 pass.
     }
     addEventListener("hashchange", openLinkedDetails);
     openLinkedDetails();
+
+    var tocLinks = Array.from(document.querySelectorAll(".toc a"));
+    var sections = tocLinks.map(function (link) {
+      return document.querySelector(link.getAttribute("href"));
+    });
+    var ticking = false;
+    function updateToc() {
+      var active = sections[0];
+      sections.forEach(function (section) {
+        if (section && section.getBoundingClientRect().top <= 140) active = section;
+      });
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 8) {
+        active = sections[sections.length - 1];
+      }
+      tocLinks.forEach(function (link) {
+        if (active && link.getAttribute("href") === "#" + active.id) {
+          link.setAttribute("aria-current", "true");
+        } else {
+          link.removeAttribute("aria-current");
+        }
+      });
+      ticking = false;
+    }
+    function queueTocUpdate() {
+      if (!ticking) {
+        requestAnimationFrame(updateToc);
+        ticking = true;
+      }
+    }
+    addEventListener("scroll", queueTocUpdate, { passive: true });
+    addEventListener("resize", queueTocUpdate);
+    updateToc();
   }());
 </script>
 </body>
