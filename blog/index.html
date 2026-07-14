@@ -12,7 +12,7 @@
       --panel-2: #121925;
       --text: #f3f7f4;
       --soft: #d7dfda;
-      --dim: #aeb8b2;
+      --dim: #bac4be;
       --line: #24342b;
       --green: #32d66b;
       --amber: #ffcf66;
@@ -33,19 +33,19 @@
     h2[id] { scroll-margin-top: 24px; }
     h1 { max-width: 720px; margin: 0; color: #fff; font-size: clamp(30px, 5vw, 46px); line-height: 1.08; letter-spacing: -.025em; }
     h2 { margin: 44px 0 12px; padding-top: 14px; color: #fff; border-top: 1px solid var(--line); font-size: 21px; line-height: 1.3; }
-    h3 { margin: 0 0 4px; color: #fff; font-size: 16px; }
+    h3 { margin: 0 0 4px; color: #fff; font-size: 17px; }
     p { margin: 0 0 14px; color: var(--soft); }
     ul { margin: 10px 0 16px; padding-left: 20px; color: var(--soft); }
     li { margin: 7px 0; }
     strong { color: #fff; }
-    code { color: var(--blue); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; }
+    code { color: var(--blue); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .95em; }
     a { color: var(--green); text-decoration: none; }
     a:hover { text-decoration: underline; }
-    .kicker { margin-bottom: 12px; color: var(--green); font: 700 12px/1 ui-monospace, monospace; letter-spacing: .2em; text-transform: uppercase; }
-    .published { margin: 10px 0 0; color: var(--dim); font: 13px/1.4 ui-monospace, monospace; }
+    .kicker { margin-bottom: 12px; color: var(--green); font: 700 13px/1 ui-monospace, monospace; letter-spacing: .2em; text-transform: uppercase; }
+    .published { margin: 10px 0 0; color: var(--dim); font: 14px/1.4 ui-monospace, monospace; }
     .key-points { margin: 20px 0 0; padding-left: 20px; color: var(--text); font-size: 16px; }
     .key-points li { margin: 6px 0; }
-    .links { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; font: 13px/1.4 ui-monospace, monospace; }
+    .links { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; font: 14px/1.4 ui-monospace, monospace; }
     .links a {
       display: inline-flex;
       align-items: center;
@@ -65,26 +65,26 @@
     }
     .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 18px 0; }
     .pipeline div { padding: 12px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); text-align: center; }
-    .pipeline strong { display: block; font-size: 14px; }
-    .pipeline span { color: var(--dim); font: 13px/1.4 ui-monospace, monospace; }
+    .pipeline strong { display: block; font-size: 15px; }
+    .pipeline span { color: var(--dim); font: 14px/1.4 ui-monospace, monospace; }
     .trace { margin: 18px 0; padding: 14px 16px; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
     .verifier-gap { margin: 18px 0 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
     .verifier-gap pre { line-height: 1.85; }
     .gap-before { color: var(--green); }
     .gap-after { color: #ff8a96; }
     .gap-result { color: var(--amber); }
-    pre { margin: 0; color: var(--soft); font: 13.5px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
+    pre { margin: 0; color: var(--soft); font: 14px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
     .call { color: var(--blue); }
     .result { color: var(--green); }
     .final { color: var(--amber); }
     .note { margin: 18px 0; padding: 12px 14px; border-left: 2px solid var(--amber); background: rgba(255, 207, 102, .06); }
-    .note p { margin: 0; color: var(--text); font-size: 14px; }
+    .note p { margin: 0; color: var(--text); font-size: 15px; }
     .arm-list { display: grid; gap: 10px; margin: 16px 0; }
     .arm { padding: 12px 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); }
-    .arm p { margin: 2px 0 0; font-size: 14px; }
-    table { width: 100%; margin: 18px 0; border-collapse: collapse; font-size: 14px; }
+    .arm p { margin: 2px 0 0; font-size: 15px; }
+    table { width: 100%; margin: 18px 0; border-collapse: collapse; font-size: 15px; }
     th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
-    th { color: var(--dim); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+    th { color: var(--dim); font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
     td:not(:first-child) { color: #fff; font-family: ui-monospace, monospace; text-align: right; }
     .interpretation td { vertical-align: top; }
     .interpretation td:not(:first-child) { color: var(--soft); font-family: inherit; text-align: left; }
@@ -92,26 +92,26 @@
     .chart img { display: block; width: 100%; height: auto; }
     .demo-video { margin: 18px 0; padding: 6px; border: 1px solid var(--line); border-radius: 9px; background: #020403; }
     .demo-video video { display: block; width: 100%; height: auto; border-radius: 5px; background: #000; }
-    .video-link { margin-top: -8px; text-align: right; font-size: 14px; }
+    .video-link { margin-top: -8px; text-align: right; font-size: 15px; }
     .trace-disclosure { margin: 16px 0; }
-    .trace-disclosure > summary { padding: 11px 14px; color: #fff; cursor: pointer; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); font: 13px/1.4 ui-monospace, monospace; }
+    .trace-disclosure > summary { padding: 11px 14px; color: #fff; cursor: pointer; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); font: 14px/1.4 ui-monospace, monospace; }
     .trace-disclosure[open] > summary { border-color: var(--green); }
     .methodology { margin: 10px 0 18px; }
-    .methodology > summary { color: var(--dim); cursor: pointer; font: 14px/1.6 ui-monospace, monospace; }
-    .methodology p { margin: 10px 0 0; color: var(--dim); font-size: 14px; }
+    .methodology > summary { color: var(--dim); cursor: pointer; font: 15px/1.6 ui-monospace, monospace; }
+    .methodology p { margin: 10px 0 0; color: var(--dim); font-size: 15px; }
     .trace-explorer { margin-top: 10px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
     .trace-controls { display: flex; align-items: end; justify-content: space-between; gap: 14px; padding: 14px; border-bottom: 1px solid var(--line); background: var(--panel-2); }
-    .trace-controls label { color: var(--dim); font: 13px/1.4 ui-monospace, monospace; text-transform: uppercase; }
+    .trace-controls label { color: var(--dim); font: 14px/1.4 ui-monospace, monospace; text-transform: uppercase; }
     .trace-controls select { display: block; min-width: 190px; margin-top: 5px; padding: 7px 9px; color: #fff; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color-scheme: dark; }
-    .trace-stats { color: var(--dim); font: 13px/1.5 ui-monospace, monospace; text-align: right; }
+    .trace-stats { color: var(--dim); font: 14px/1.5 ui-monospace, monospace; text-align: right; }
     .trace-about { padding: 12px 14px; border-bottom: 1px solid var(--line); }
     .trace-about strong, .trace-about a { display: block; }
-    .trace-about a { margin-top: 3px; font: 13.5px/1.4 ui-monospace, monospace; }
-    .trace-about p { margin: 6px 0 0; font-size: 14px; }
+    .trace-about a { margin-top: 3px; font: 14px/1.4 ui-monospace, monospace; }
+    .trace-about p { margin: 6px 0 0; font-size: 15px; }
     .trace-about .trace-note { color: var(--amber); }
     .trace-turns { display: grid; gap: 8px; max-height: 520px; padding: 12px; overflow: auto; }
     .turn { display: grid; grid-template-columns: 68px minmax(0, 1fr); gap: 8px; }
-    .turn-role { padding-top: 8px; color: var(--dim); font: 12.5px/1.4 ui-monospace, monospace; text-transform: uppercase; }
+    .turn-role { padding-top: 8px; color: var(--dim); font: 13.5px/1.4 ui-monospace, monospace; text-transform: uppercase; }
     .turn-user .turn-role { color: var(--amber); }
     .turn-assistant .turn-role { color: var(--blue); }
     .turn-tool .turn-role { color: var(--green); }
@@ -121,10 +121,10 @@
     .finding { margin: 14px 0; padding: 0 0 14px 16px; border-left: 2px solid var(--green); border-bottom: 1px solid var(--line); }
     .finding:last-child { border-bottom: 0; }
     .finding p { margin: 0; }
-    .source { color: var(--dim); font: 14.5px/1.6 ui-monospace, monospace; }
-    .demo-note { color: var(--soft); font-size: 15px; }
+    .source { color: var(--dim); font: 15px/1.6 ui-monospace, monospace; }
+    .demo-note { color: var(--soft); font-family: inherit; font-size: 16px; }
     footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); }
-    footer p { color: var(--dim); font-size: 14px; }
+    footer p { color: var(--dim); font-size: 15px; }
     .toc { display: none; }
 
     @media (min-width: 1200px) {
@@ -135,13 +135,13 @@
         display: block;
         width: 180px;
       }
-      .toc p { margin: 0 0 10px; color: var(--dim); font: 700 11px/1.4 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
+      .toc p { margin: 0 0 10px; color: var(--dim); font: 700 12px/1.4 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
       .toc a {
         display: block;
         padding: 6px 9px;
         color: var(--dim);
         border-left: 1px solid var(--line);
-        font-size: 13px;
+        font-size: 14px;
         line-height: 1.35;
       }
       .toc a:hover { color: #fff; text-decoration: none; }
@@ -167,7 +167,7 @@
 <nav class="toc" aria-label="Table of contents">
   <p>On this page</p>
   <a href="#what-i-built">What I built</a>
-  <a href="#ood-check">OOD check</a>
+  <a href="#ood-check">OOD test</a>
   <a href="#sft-data">SFT data</a>
   <a href="#rl-experiment">RL experiment</a>
   <a href="#verifier-gap">Verifier gap</a>
@@ -197,10 +197,9 @@
     <div><strong>pass@8 eval</strong><span>saved rollouts</span></div>
   </div>
   <p>
-    GLYPH is a <code>verifiers</code> environment: it owns the Rust tasks, tool loop, and
-    rewards. PRIME-RL orchestrates rollouts and policy updates against that environment.
-    Each rollout edits a disposable Cargo crate and receives reward from real compiler,
-    test, or stdout results.
+    GLYPH is a <code>verifiers</code> environment. It owns the Rust tasks, tool loop, and rewards;
+    PRIME-RL orchestrates rollouts and policy updates. Each rollout edits a disposable Cargo
+    crate and receives reward from real compiler, test, or stdout results.
   </p>
   <div class="trace"><pre><span class="call">ASSISTANT  CALL read_file {…}</span>
 <span class="result">TOOL       RESULT src/lib.rs</span>
@@ -209,16 +208,15 @@
 <span class="result">TOOL       RESULT 4 passed</span>
 <span class="final">ASSISTANT  FINAL: fixed and tested</span></pre></div>
   <p>
-    That full conversation—not an isolated code patch—is the SFT training unit. The same
-    ChatML renderer and tool runtime are used for data generation, RL, evaluation, and the TUI.
+    The full conversation—not just the patch—is the SFT training unit. The same ChatML renderer
+    and tool runtime power data generation, RL, evaluation, and the TUI.
   </p>
 
-  <h2 id="ood-check">2. One qualitative OOD check</h2>
+  <h2 id="ood-check">2. One OOD test</h2>
   <p>
-    In the TUI, the trained agent solved <code>score_summary</code>: it read an independently
-    authored crate, patched score filtering and capping, ran four passing tests, and stopped with
-    <code>FINAL</code>. The exact task appears in neither training nor evaluation and was created
-    outside their generator.
+    In the TUI, the trained agent solved the independently authored <code>score_summary</code>
+    crate. It fixed score filtering and capping, passed four tests, then emitted <code>FINAL</code>.
+    The task appears in neither training nor evaluation.
   </p>
   <div class="demo-video">
     <video controls muted playsinline preload="metadata" aria-label="GLYPH solving the score_summary Rust crate in the TUI">
@@ -228,21 +226,20 @@
   </div>
   <p class="video-link"><a href="OOD.mp4">Open full-size video ↗</a></p>
   <p class="source demo-note">
-    This is one selected success, not a benchmark. Its aggregation and filtering concepts are
-    adjacent to generator archetypes, so it is source-OOD rather than a clean unseen semantic
-    family. Harder exploratory crates did not reach passing tests within their tool budgets, but
-    those attempts were not a controlled retained evaluation. The demo therefore shows transfer
-    to one new crate, not general Rust capability or a pretraining limit.
+    One selected success, not a benchmark. The crate is new, but its filtering and aggregation
+    concepts resemble training archetypes. Harder exploratory crates failed within their tool
+    budgets and were not a controlled evaluation. This shows transfer to one new crate—not broad
+    Rust capability.
     <a href="https://github.com/JayZenith/GLYPH/tree/main/demo_tui/ood_cases/score_summary">crate and tests</a> ·
     <a href="https://github.com/JayZenith/GLYPH/blob/main/demo_tui/README.md#ood-smoke-test">reproduction</a>
   </p>
 
   <h2 id="sft-data">3. How I made the SFT data</h2>
   <p>
-    A generator proposed structured JSON task specs: a buggy crate, intended edits, and expected
-    tool outcomes. A deterministic materializer built each crate and executed every step through
-    real Cargo. A case was kept only when planned failures failed and final fixes passed.
-    Compiler output in the dataset came from <code>rustc</code>, not the generator.
+    A generator wrote each task as structured JSON: a buggy crate, intended edits, and expected
+    tool outcomes. A deterministic materializer built the crate and ran every step through Cargo.
+    I kept a case only when planned failures failed and the final fix passed. <code>rustc</code>,
+    not the generator, produced the compiler output.
   </p>
   <p>
     Full fine-tuning on those verified traces produced <code>SFT_HALF_A_V8</code>. It solved
@@ -250,9 +247,9 @@
     perfectly.
   </p>
   <div class="note"><p>
-    <strong>Holdout limit:</strong> training and evaluation used the same generator and shared
-    task families. This tests new instances of known bug types, not unseen Rust problem classes.
-    Next time, I would keep some bug types entirely out of training and test on human-written Rust tasks.
+    <strong>Holdout limit:</strong> training and evaluation came from the same generator and task
+    families. The holdout tests new instances of known bug types—not new Rust problem classes.
+    Next time: reserve whole bug families and add human-written tasks.
   </p></div>
 
   <h2 id="rl-experiment">4. The RL experiment</h2>
@@ -310,14 +307,16 @@ Tests: 3/3 pass.
     <h3>I still cannot isolate the cause</h3>
     <p>No matched base-model evaluation means I cannot separate model capacity, narrow synthetic-data coverage, or post-training regression. That is the next experiment.</p>
   </div>
-  <p class="source">
-    Local evidence:
-    <a href="https://github.com/JayZenith/GLYPH/blob/main/analysis/retained_run_stats.py">reproducible statistics</a> ·
-    <a href="https://github.com/JayZenith/GLYPH/blob/main/analysis/pooled_band_analysis.py">three-run sensitivity analysis</a> ·
-    <a href="https://github.com/JayZenith/GLYPH/blob/main/glyph_results/SFT_HALF_A_V8/evals/eval_formal_heldout_150.json">SFT greedy eval</a> ·
-    <a href="https://github.com/JayZenith/GLYPH/blob/main/glyph_results/RLVR_POOL_B_V8_STEP10/evals/eval_formal_heldout_150.json">sparse greedy eval</a> ·
-    <a href="https://github.com/JayZenith/GLYPH/tree/main/glyph_results/RLVR_POOL_B_V8_STEP10/passk8_heldout150_metadata">pass@8 metadata</a>
-  </p>
+  <details class="methodology">
+    <summary>Verify these claims →</summary>
+    <p>
+      <a href="https://github.com/JayZenith/GLYPH/blob/main/analysis/retained_run_stats.py">reproducible statistics</a> ·
+      <a href="https://github.com/JayZenith/GLYPH/blob/main/analysis/pooled_band_analysis.py">three-run sensitivity analysis</a> ·
+      <a href="https://github.com/JayZenith/GLYPH/blob/main/glyph_results/SFT_HALF_A_V8/evals/eval_formal_heldout_150.json">SFT greedy eval</a> ·
+      <a href="https://github.com/JayZenith/GLYPH/blob/main/glyph_results/RLVR_POOL_B_V8_STEP10/evals/eval_formal_heldout_150.json">sparse greedy eval</a> ·
+      <a href="https://github.com/JayZenith/GLYPH/tree/main/glyph_results/RLVR_POOL_B_V8_STEP10/passk8_heldout150_metadata">pass@8 metadata</a>
+    </p>
+  </details>
 
   <h2 id="next-experiment">7. Next: isolate the bottleneck</h2>
   <p>
@@ -334,17 +333,16 @@ Tests: 3/3 pass.
     </tbody>
   </table>
   <p>
-    GLYPH did not establish an RL improvement. It established a working, auditable post-training
-    stack and showed exactly where this experiment stopped being informative.
+    Result: a working, auditable post-training stack—but no established RL gain. The next
+    experiment now has a clear target.
   </p>
 
   <footer>
     <p>
       Technical record:
+      <a href="https://github.com/JayZenith/GLYPH/blob/main/docs/PROVENANCE.md">provenance</a> ·
       <a href="https://github.com/JayZenith/GLYPH/blob/main/docs/AUDIT_2026-07.md">audit</a> ·
-      <a href="https://github.com/JayZenith/GLYPH/blob/main/docs/EXPERIMENT_HISTORY.md">experiment history</a> ·
-      <a href="https://github.com/JayZenith/GLYPH/blob/main/analysis/retained_run_stats.py">statistics</a> ·
-      <a href="https://github.com/JayZenith/GLYPH">reproduction commands</a>
+      <a href="https://github.com/JayZenith/GLYPH">repository</a>
     </p>
   </footer>
 </main>
