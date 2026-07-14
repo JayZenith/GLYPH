@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GLYPH — post-training a 4B Rust coding agent</title>
+  <title>GLYPH — post-training a 4B Rust coding agent with verifiable rewards</title>
   <meta name="description" content="What I learned building GLYPH: synthetic agent traces, full SFT, verifier RL, and audited pass@8 evaluation for a 4B Rust coding agent.">
   <style>
     :root {
@@ -41,7 +41,8 @@
     a { color: var(--green); text-decoration: none; }
     a:hover { text-decoration: underline; }
     .kicker { margin-bottom: 12px; color: var(--green); font: 700 12px/1 ui-monospace, monospace; letter-spacing: .2em; text-transform: uppercase; }
-    .lede { margin-top: 20px; color: var(--text); font-size: 18px; line-height: 1.55; }
+    .key-points { margin: 20px 0 0; padding-left: 20px; color: var(--text); font-size: 16px; }
+    .key-points li { margin: 6px 0; }
     .links { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 18px 0 0; font: 14px/1.5 ui-monospace, monospace; }
     .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 18px 0; }
     .pipeline div { padding: 12px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); text-align: center; }
@@ -120,12 +121,12 @@
 <body>
 <main>
   <p class="kicker">GLYPH</p>
-  <h1>Post-training a 4B Rust coding agent</h1>
-  <p class="lede">
-    I built synthetic agent traces, fully fine-tuned Qwen3-4B, ran three verifier-RL
-    experiments, and audited every result I could support. RL did not reliably beat SFT.
-    The useful result was learning what likely constrained it.
-  </p>
+  <h1>Post-training a 4B Rust coding agent with verifiable rewards</h1>
+  <ul class="key-points">
+    <li><strong>Built:</strong> verified traces → full SFT → three RL rewards → pass@8.</li>
+    <li><strong>Found:</strong> no RL arm reliably beat SFT; the protocol was already saturated.</li>
+    <li><strong>Next:</strong> compare base → SFT → RL on independently authored Rust tasks.</li>
+  </ul>
   <nav class="links" aria-label="Project links">
     <a href="https://github.com/JayZenith/GLYPH">code</a>
     <a href="https://app.primeintellect.ai/dashboard/environments/jayzenith/glyph">environment</a>
@@ -159,68 +160,7 @@
     ChatML renderer and tool runtime are used for data generation, RL, evaluation, and the TUI.
   </p>
 
-  <h2>2. How I made the SFT data</h2>
-  <p>
-    A generator proposed structured JSON task specs: a buggy crate, intended edits, and expected
-    tool outcomes. A deterministic materializer built each crate and executed every step through
-    real Cargo. A case was kept only when planned failures failed and final fixes passed.
-    Compiler output in the dataset came from <code>rustc</code>, not the generator.
-  </p>
-  <p>
-    Full fine-tuning on those verified traces produced <code>SFT_HALF_A_V8</code>. It solved
-    <strong>95 of 150</strong> held-out crates at valid@8 and learned the tool protocol almost
-    perfectly.
-  </p>
-  <div class="note"><p>
-    <strong>Holdout limit:</strong> training and evaluation used the same generator and shared
-    task families. This tests new instances of known bug types, not unseen Rust problem classes.
-    Next time I would reserve entire semantic families and independently authored tasks before
-    generating training data.
-  </p></div>
-
-  <h2>3. The RL experiment</h2>
-  <p>One SFT control. Three RL reward designs. One training run per RL arm.</p>
-  <p class="source"><code>valid@8</code> counts a crate when at least one of eight sampled rollouts reaches Cargo success and ends with one clean <code>FINAL</code>.</p>
-  <div class="arm-list">
-    <div class="arm"><h3>Sparse</h3><p>Clean verifier success dominates; failed attempts receive coarse penalties.</p></div>
-    <div class="arm"><h3>Dense</h3><p>Adds credit for compiling and for the fraction of tests passed.</p></div>
-    <div class="arm"><h3>Compiler-aware</h3><p>Grades failed code by the furthest <code>rustc</code> phase reached.</p></div>
-  </div>
-  <table>
-    <thead><tr><th>Model</th><th>valid@8 (retained)</th></tr></thead>
-    <tbody>
-      <tr><td>SFT</td><td>95</td></tr>
-      <tr><td>Sparse RLVR</td><td>98 / 96 / 98</td></tr>
-      <tr><td>Dense RLVR</td><td>102</td></tr>
-      <tr><td>Compiler-aware</td><td>95 / 96 / 94</td></tr>
-    </tbody>
-  </table>
-  <details class="methodology" id="methodology">
-    <summary>No retained-run comparison reached p&lt;0.05 · methodology →</summary>
-    <p>Prompt-paired and family-grouped tests gave dense versus SFT p≈0.12 and p≈0.15. Aggregate-only SFT 97/100 and dense 102/99 repetitions remain in the chart but not the claims because their rollouts were not saved. Repetitions were not independently seeded.</p>
-  </details>
-  <div class="chart"><img src="valid8_chart.svg" alt="valid@8 evaluations for SFT, sparse, dense, and compiler-aware models; aggregate-only repetitions are faded"></div>
-
-  <h2>4. One verifier gap</h2>
-  <p>One retained RLVR trace passed every test after reversing the written TLS precedence.</p>
-  <div class="verifier-gap"><pre><span class="gap-before">Before (spec-correct): tls = direct.or_else(profile).or(defaults)</span>
-<span class="gap-after">After (model's patch): tls = profile.or_else(direct).or(defaults)</span>
-Tests: 3/3 pass.
-<span class="gap-result">Spec: violated. Verifier: blind.</span></pre></div>
-  <details class="trace-disclosure" id="full-verifier-gap-trace">
-    <summary>Full trace →</summary>
-    <div class="trace-explorer">
-      <div class="trace-about">
-        <strong>RLVR step 10 · config merge recovery</strong>
-        <a href="https://huggingface.co/JayZenith/RLVR_VFINAL_STEP10" rel="noreferrer">JayZenith/RLVR_VFINAL_STEP10</a>
-        <p>Full system, user, assistant, and tool transcript.</p>
-        <p class="trace-note" id="trace-stats"></p>
-      </div>
-      <div class="trace-turns" id="trace-turns"></div>
-    </div>
-  </details>
-
-  <h2>5. One qualitative OOD check</h2>
+  <h2>2. One qualitative OOD check</h2>
   <p>
     In the TUI, the trained agent solved <code>score_summary</code>: it read an independently
     authored crate, patched score filtering and capping, ran four passing tests, and stopped with
@@ -243,6 +183,66 @@ Tests: 3/3 pass.
     <a href="https://github.com/JayZenith/GLYPH/tree/main/demo_tui/ood_cases/score_summary">crate and tests</a> ·
     <a href="https://github.com/JayZenith/GLYPH/blob/main/demo_tui/README.md#ood-smoke-test">reproduction</a>
   </p>
+
+  <h2>3. How I made the SFT data</h2>
+  <p>
+    A generator proposed structured JSON task specs: a buggy crate, intended edits, and expected
+    tool outcomes. A deterministic materializer built each crate and executed every step through
+    real Cargo. A case was kept only when planned failures failed and final fixes passed.
+    Compiler output in the dataset came from <code>rustc</code>, not the generator.
+  </p>
+  <p>
+    Full fine-tuning on those verified traces produced <code>SFT_HALF_A_V8</code>. It solved
+    <strong>95 of 150</strong> held-out crates at valid@8 and learned the tool protocol almost
+    perfectly.
+  </p>
+  <div class="note"><p>
+    <strong>Holdout limit:</strong> training and evaluation used the same generator and shared
+    task families. This tests new instances of known bug types, not unseen Rust problem classes.
+    Next time, I would keep some bug types entirely out of training and test on human-written Rust tasks.
+  </p></div>
+
+  <h2>4. The RL experiment</h2>
+  <p>One SFT control. Three RL reward designs. One training run per RL arm.</p>
+  <p class="source"><code>valid@8</code> counts a crate when at least one of eight sampled rollouts reaches Cargo success and ends with one clean <code>FINAL</code>.</p>
+  <div class="arm-list">
+    <div class="arm"><h3>Sparse</h3><p>Clean verifier success dominates; failed attempts receive coarse penalties.</p></div>
+    <div class="arm"><h3>Dense</h3><p>Adds credit for compiling and for the fraction of tests passed.</p></div>
+    <div class="arm"><h3>Compiler-aware</h3><p>Grades failed code by the furthest <code>rustc</code> phase reached.</p></div>
+  </div>
+  <table>
+    <thead><tr><th>Model</th><th>valid@8 (retained)</th></tr></thead>
+    <tbody>
+      <tr><td>SFT</td><td>95</td></tr>
+      <tr><td>Sparse RLVR</td><td>98 / 96 / 98</td></tr>
+      <tr><td>Dense RLVR</td><td>102</td></tr>
+      <tr><td>Compiler-aware</td><td>95 / 96 / 94</td></tr>
+    </tbody>
+  </table>
+  <details class="methodology" id="methodology">
+    <summary>No retained-run comparison reached p&lt;0.05 · methodology →</summary>
+    <p>Prompt-paired and family-grouped tests gave dense versus SFT p≈0.12 and p≈0.15. Aggregate-only SFT 97/100 and dense 102/99 repetitions remain in the chart but not the claims because their rollouts were not saved. Repetitions were not independently seeded.</p>
+  </details>
+  <div class="chart"><img src="valid8_chart.svg" alt="valid@8 evaluations for SFT, sparse, dense, and compiler-aware models; aggregate-only repetitions are faded"></div>
+
+  <h2>5. One verifier gap</h2>
+  <p>One retained RLVR trace passed every test after reversing the written TLS precedence.</p>
+  <div class="verifier-gap"><pre><span class="gap-before">Before (spec-correct): tls = direct.or_else(profile).or(defaults)</span>
+<span class="gap-after">After (model's patch): tls = profile.or_else(direct).or(defaults)</span>
+Tests: 3/3 pass.
+<span class="gap-result">Spec: violated. Verifier: blind.</span></pre></div>
+  <details class="trace-disclosure" id="full-verifier-gap-trace">
+    <summary>Full trace →</summary>
+    <div class="trace-explorer">
+      <div class="trace-about">
+        <strong>RLVR step 10 · config merge recovery</strong>
+        <a href="https://huggingface.co/JayZenith/RLVR_VFINAL_STEP10" rel="noreferrer">JayZenith/RLVR_VFINAL_STEP10</a>
+        <p>Full system, user, assistant, and tool transcript.</p>
+        <p class="trace-note" id="trace-stats"></p>
+      </div>
+      <div class="trace-turns" id="trace-turns"></div>
+    </div>
+  </details>
 
   <h2>6. What the evidence says</h2>
   <div class="finding">
