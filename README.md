@@ -19,7 +19,7 @@ data and rewards. `verifiers` owns the environment; PRIME-RL runs RL.
 [Environment](https://app.primeintellect.ai/dashboard/environments/jayzenith/glyph) ·
 [SFT model](https://huggingface.co/JayZenith/SFT_HALF_A_V8) ·
 [Dense RLVR](https://huggingface.co/JayZenith/RLVR_VFINAL_STEP10) ·
-[Raw evals](https://huggingface.co/datasets/JayZenith/Glyph-RLVR-Eval-Results)
+[Evaluation files](https://huggingface.co/datasets/JayZenith/Glyph-RLVR-Eval-Results)
 
 ## Results
 
